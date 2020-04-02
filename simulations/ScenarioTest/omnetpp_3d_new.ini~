@@ -1,0 +1,410 @@
+[General]
+network = ScenarioTest
+cmdenv-express-mode = false
+ned-path = ../../src;../;
+**.cloudProvider.cmdenv-log-level = off
+**.userGenerator.cmdenv-log-level = error
+**.cmdenv-log-level = off	## off, error, info, debug and trace
+cmdenv-log-prefix = "(%t):[%l] %m  "
+**.bin-recording = false
+**.module-eventlog-recording = false
+**.scalar-recording = false
+**.statistic-recording = false
+**.vector-recording = false
+
+################################################################
+###  Configuration of Cloud provider:CloudProviderFirstFit
+################################################################
+ScenarioTest.appList = "1 LocalApplication AppDataIntensive 6 inputDataSize int MiB 50 outputDataSize int MiB 75 inputFile string - /inputFile_0.dat outputFile string - /outputFile_0.dat MIs int - 1000 iterations int - 5 "
+ScenarioTest.vmList = "3 VM_medium 15.0 2 2.0 500.0 4.0 VM_large 23.0 4 4.0 1000.0 8.0 VM_small 10.0 1 1.0 250.0 2.0 "
+#ScenarioTest.userList = "2 User_A 1 1 AppDataIntensive 1 1 VM_medium 1 User_B 0 1 AppDataIntensive 1 2 VM_large 1 2000 VM_small 1 3000"
+
+#User Format:
+# #NumUsers [#UserName #NumUserInstances #cd NumApps <#AppName #NumAppInstances> #NumVMs < #VmName #VMInstances #RentTime>]
+
+#Hardcore workload
+#ScenarioTest.userList = "4 User_A 40000 1 AppDataIntensive 1 1 VM_small 5 2000 User_B 5000 1 AppDataIntensive 1 2 VM_medium 5 5000 VM_large 5 5000 User_C 5000 1 AppDataIntensive 1 1 VM_medium 2 5000 User_D 5000 1 AppDataIntensive 1 1 VM_medium 50 6000"
+ScenarioTest.userList = "4 User_A 47000 1 AppDataIntensive 1 1 VM_small 5 2 User_B 5000 1 AppDataIntensive 1 2 VM_medium 5 2 VM_large 5 3 User_C 47000 1 AppDataIntensive 1 1 VM_medium 2 2 User_D 500 1 AppDataIntensive 1 1 VM_medium 50 2"
+
+#4096 Nodes: 
+ScenarioTest.dataCentersList = "1 AdrianDataCenter_100 1 4 Rack_A 32 32 Node_A 500 4.0 4 60000 0 "
+#8192 Nodes: ScenarioTest.dataCentersList = "1 AdrianDataCenter_100 1 8 Rack_A 32 32 Node_A 500 4.0 4 60000 0 "
+#16384 Nodes: ScenarioTest.dataCentersList = "1 AdrianDataCenter_100 1 16 Rack_A 32 32 Node_A 500 4.0 4 60000 0 "
+
+################################################################
+###  Configuration of User Generator:
+################################################################
+#ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+#ScenarioTest.userGenerator.intervalBetweenUsers = exponential(60.5s)
+ScenarioTest.userGenerator.maxStartTime_t1 = 1000
+ScenarioTest.userGenerator.nRentTime_t2 = 10000
+ScenarioTest.userGenerator.maxSubTime_t3 = 55000
+
+
+
+###-----------------------------------------------------------------
+###-.-  Configuration of AdrianDataCenter_100
+###-----------------------------------------------------------------
+ScenarioTest.AdrianDataCenter_100.dcManager.dataCenterConfig = "AdrianDataCenter_100 1 1 Rack_A 1 10 Node_A 500 4.0 4 60000 0"
+
+	## ---------------------------------------------------------------
+	##   Configuration of rack(s) rackCmp_Rack_A_*
+	## ---------------------------------------------------------------
+
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.channelType = "DataCenterEth1G_channel"
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.numBoards = 1
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.bladesPerBoard = 10
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.board[*].blade[*].staticAppAssignment = false
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.board[*].blade[*].isVirtualHardware = true
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.board[*].blade[*].maxUsers = 4
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.board[*].blade[*].maxVMs = 4
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.board[*].blade[*].numCpuCores = 4
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.board[*].blade[*].cpu.cpuCore[*].speed = 60000
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.board[*].blade[*].cpu.cpuCore[*].tick = 0.01s
+	ScenarioTest.dc_AdrianDataCenter_100_000.rackCmp_Rack_A_*.board[*].blade[*].appsVectors[*].appModule[*].userAppName = "DummyApplication"
+
+[Config fast]
+*.userList = "1 User_A 100 1 AppDataIntensive 1 1 VM_medium 1 2000"
+*.dataCentersList = "1 AdrianDataCenter_100 1 1 Rack_A 1 16 Node_A 500 4.0 4 60000 0 "
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(60.5s)
+
+[Config test_base]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(50.5s)
+
+#########################################################################
+#Exponential
+[Config test_0]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 7200
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(7s)
+
+[Config test_1]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(7s)
+
+[Config test_2]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 14400
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(7s)
+
+[Config test_3]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 21600
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(7s)
+
+[Config test_4]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 25200
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(7s)
+
+[Config test_5]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 28800
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(7s)
+
+[Config test_6]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 32400
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(7s)
+
+[Config test_7]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 36000
+ScenarioTest.userGenerator.intervalBetweenUsers = exponential(7s)
+
+#########################################################################
+#Normal
+[Config test_8]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 7200
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(28.8s,1s)
+
+[Config test_9]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(28.8s,1s)
+
+[Config test_10]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 14400
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(28.8s,1s)
+
+[Config test_11]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 21600
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(28.8s,1s)
+
+[Config test_12]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 25200
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(28.8s,1s)
+
+[Config test_13]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 28800
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(28.8s,1s)
+
+[Config test_14]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 32400
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(28.8s,1s)
+
+[Config test_15]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 36000
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(28.8s,1s)
+
+#########################################################################
+#Uniform
+[Config test_16]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 7200
+ScenarioTest.userGenerator.intervalBetweenUsers = uniform(55.0s,60s)
+
+[Config test_17]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = uniform(55.0s,60s)
+
+[Config test_18]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 14400
+ScenarioTest.userGenerator.intervalBetweenUsers = uniform(55.0s,60s)
+
+[Config test_19]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 21600
+ScenarioTest.userGenerator.intervalBetweenUsers = uniform(55.0s,60s)
+
+[Config test_20]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 25200
+ScenarioTest.userGenerator.intervalBetweenUsers = uniform(55.0s,60s)
+
+[Config test_21]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 28800
+ScenarioTest.userGenerator.intervalBetweenUsers = uniform(55.0s,60s)
+
+[Config test_22]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 32400
+ScenarioTest.userGenerator.intervalBetweenUsers = uniform(55.0s,60s)
+
+[Config test_23]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 36000
+ScenarioTest.userGenerator.intervalBetweenUsers = uniform(55.0s,60s)
+
+#########################################################################
+#Erlang
+[Config test_24]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 7200
+ScenarioTest.userGenerator.intervalBetweenUsers = erlang_k(1,15s)
+
+[Config test_25]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = erlang_k(1,15s)
+
+[Config test_26]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 14400
+ScenarioTest.userGenerator.intervalBetweenUsers = erlang_k(1,15s)
+
+[Config test_27]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 21600
+ScenarioTest.userGenerator.intervalBetweenUsers = erlang_k(1,15s)
+
+[Config test_28]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 25200
+ScenarioTest.userGenerator.intervalBetweenUsers = erlang_k(1,15s)
+
+[Config test_29]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 28800
+ScenarioTest.userGenerator.intervalBetweenUsers = erlang_k(1,15s)
+
+[Config test_30]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 32400
+ScenarioTest.userGenerator.intervalBetweenUsers = erlang_k(1,15s)
+
+[Config test_31]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 36000
+ScenarioTest.userGenerator.intervalBetweenUsers = erlang_k(1,15s)
+
+#########################################################################
+#truncnormal
+[Config test_32]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 7200
+ScenarioTest.userGenerator.intervalBetweenUsers = truncnormal(43.2s,2s)
+
+[Config test_33]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = truncnormal(43.2s,2s)
+
+[Config test_34]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 14400
+ScenarioTest.userGenerator.intervalBetweenUsers = truncnormal(43.2s,2s)
+
+[Config test_35]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 21600
+ScenarioTest.userGenerator.intervalBetweenUsers = truncnormal(43.2s,2s)
+
+[Config test_36]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 25200
+ScenarioTest.userGenerator.intervalBetweenUsers = truncnormal(43.2s,2s)
+
+[Config test_37]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 28800
+ScenarioTest.userGenerator.intervalBetweenUsers = truncnormal(43.2s,2s)
+
+[Config test_38]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 32400
+ScenarioTest.userGenerator.intervalBetweenUsers = truncnormal(43.2s,2s)
+
+[Config test_39]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 36000
+ScenarioTest.userGenerator.intervalBetweenUsers = truncnormal(43.2s,2s)
+
+
+#Chi_square
+[Config test_40]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 7200
+ScenarioTest.userGenerator.intervalBetweenUsers = chi_square(21.7)*1s
+
+[Config test_41]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = chi_square(21.7)*1s
+
+[Config test_42]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 14400
+ScenarioTest.userGenerator.intervalBetweenUsers = chi_square(21.7)*1s
+
+[Config test_43]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 21600
+ScenarioTest.userGenerator.intervalBetweenUsers = chi_square(21.7)*1s
+
+[Config test_44]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 25200
+ScenarioTest.userGenerator.intervalBetweenUsers = chi_square(21.7)*1s
+
+[Config test_45]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 28800
+ScenarioTest.userGenerator.intervalBetweenUsers = chi_square(21.7)*1s
+
+[Config test_46]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 32400
+ScenarioTest.userGenerator.intervalBetweenUsers = chi_square(21.7)*1s
+
+[Config test_47]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 36000
+ScenarioTest.userGenerator.intervalBetweenUsers = chi_square(21.7)*1s
+
+#weibull
+[Config test_48]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 7200
+ScenarioTest.userGenerator.intervalBetweenUsers = weibull(36,37)*1s
+
+[Config test_49]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = weibull(36,37)*1s
+
+[Config test_50]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 14400
+ScenarioTest.userGenerator.intervalBetweenUsers = weibull(36,37)*1s
+
+[Config test_51]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 21600
+ScenarioTest.userGenerator.intervalBetweenUsers = weibull(36,37)*1s
+
+[Config test_52]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 25200
+ScenarioTest.userGenerator.intervalBetweenUsers = weibull(36,37)*1s
+
+[Config test_53]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 28800
+ScenarioTest.userGenerator.intervalBetweenUsers = weibull(36,37)*1s
+
+[Config test_54]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 32400
+ScenarioTest.userGenerator.intervalBetweenUsers = weibull(36,37)*1s
+
+[Config test_55]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 36000
+ScenarioTest.userGenerator.intervalBetweenUsers = weibull(36,37)*1s
+
+##allAtOnce
+[Config test_56]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = true
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 7200
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(45.5s,1s)
+
+[Config test_57]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = true
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 10800
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(45.5s,1s)
+
+[Config test_58]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = true
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 14400
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(45.5s,1s)
+
+[Config test_59]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = true
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 21600
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(45.5s,1s)
+
+[Config test_60]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = false
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 25200
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(45.5s,1s)
+
+[Config test_61]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = true
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 28800
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(45.5s,1s)
+
+[Config test_62]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = true
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 32400
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(45.5s,1s)
+
+[Config test_63]
+ScenarioTest.userGenerator.allUsersArriveAtOnce = true
+ScenarioTest.userGenerator.maxSubscriptionTime_t4 = 36000
+ScenarioTest.userGenerator.intervalBetweenUsers = normal(45.5s,1s)

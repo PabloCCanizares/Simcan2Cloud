@@ -1,0 +1,12 @@
+**/SIMCAN-2.0
+out/**
+doc/**
+*.o
+**/.DS_Store
+**/*Message_m.h
+**/*Message_m.cc
+.settings/*.*
+**/.tkenvrc
+**/.cmdenv-log
+**/.project
+
