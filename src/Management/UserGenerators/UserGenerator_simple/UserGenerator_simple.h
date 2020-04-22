@@ -5,6 +5,8 @@
 #include "Messages/SM_UserVM.h"
 #include "Messages/SM_UserAPP.h"
 #include "Messages/SM_CloudProvider_Control_m.h"
+#include <algorithm>
+#include <random>
 
 /**
  * Class that implements a User generator for cloud environments.

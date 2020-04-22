@@ -1,5 +1,4 @@
 #include "UserGenerator_simple.h"
-#include <random>
 
 #define USER_GEN_MSG "USER_GEN"
 
