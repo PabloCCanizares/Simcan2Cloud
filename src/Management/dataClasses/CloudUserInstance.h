@@ -64,6 +64,8 @@ class CloudUserInstance: public UserInstance{
          */
         virtual ~CloudUserInstance();
 
+        bool operator<(const CloudUserInstance &other) const;
+
         /**
          * Converts this user instance in string format.
          *
@@ -130,6 +132,7 @@ class CloudUserInstance: public UserInstance{
         void setInitTime(double initTime);
         void setSubscribe(bool bSubscribe);
         void setInitExecTime(double dExec);
+
 
     protected:
 

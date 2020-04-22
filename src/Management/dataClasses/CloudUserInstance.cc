@@ -194,3 +194,7 @@ bool CloudUserInstance::hasSubscribed()
 {
     return this->bSubscribe;
 }
+
+bool CloudUserInstance::operator <(const CloudUserInstance &other) const {
+    return this->getArrival2Cloud() < other.getArrival2Cloud() ;
+}

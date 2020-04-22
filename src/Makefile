@@ -1,12 +1,12 @@
 #
-# OMNeT++/OMNEST Makefile for simcan2cloud
+# OMNeT++/OMNEST Makefile for SIMCAN-2.0
 #
 # This file was generated with the command:
 #  opp_makemake -f --deep -Isrc -I.
 #
 
 # Name of target to be created (-o option)
-TARGET = simcan2cloud$(D)$(EXE_SUFFIX)
+TARGET = SIMCAN-2.0$(D)$(EXE_SUFFIX)
 TARGET_DIR = .
 
 # User interface (uncomment one) (-u option)

@@ -80,7 +80,7 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
     SM_UserVM *userVm;
     CloudUserInstance *pUserInstance;
     double lastTime;
-    boolean useDistribution = false;
+    bool useDistribution = false;
 
     // Log (INFO)
     EV_INFO << "Starting execution!!!" << endl;
@@ -125,7 +125,7 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
             }
         }
 
-        std::sort(userInstances.begin(), userInstances.end(), compareArrivalTime);
+        std::sort(userInstances.begin(), userInstances.end());
     }
 
     m_nUsersSent = 0;
