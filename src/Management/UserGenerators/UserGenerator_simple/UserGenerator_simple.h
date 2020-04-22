@@ -6,151 +6,171 @@
 #include "Messages/SM_UserAPP.h"
 #include "Messages/SM_CloudProvider_Control_m.h"
 
-
 /**
  * Class that implements a User generator for cloud environments.
  *
  */
-class UserGenerator_simple: public UserGeneratorBase{
+class UserGenerator_simple: public UserGeneratorBase {
 
-    protected:
+protected:
 
-        //Timeouts active
-        bool bMaxStartTime_t1_active;
+    //Timeouts active
+    bool bMaxStartTime_t1_active;
 
-        //TODO: Delete
-        double m_dInitSim;
-        int m_nUsersSent;
+    //TODO: Delete
+    double m_dInitSim;
+    int m_nUsersSent;
 
-        // Timeouts
-        double maxStartTime_t1;
-        double nRentTime_t2;
-        double maxSubTime_t3;
-        double maxSubscriptionTime_t4;
+    // Timeouts
+    double maxStartTime_t1;
+    double nRentTime_t2;
+    double maxSubTime_t3;
+    double maxSubscriptionTime_t4;
+    std::map<const char*, void (*) (cMessage*)> selfFunctions;
+    std::map<const char*, void (*) (cMessage*)> requestFunctions;
+    std::map<const char*, void (*) (cMessage*)> responseFunctions;
 
-        /** Iterators */
-        /**
-         * Destructor
-         */
-        ~UserGenerator_simple();
+    /** Iterators */
+    /**
+     * Destructor
+     */
+    ~UserGenerator_simple();
 
-        /**
-         * Initialize method. Invokes the parsing process to allocate the existing cloud users in the corresponding data structures.
-         */
-        virtual void initialize();
+    /**
+     * Initialize method. Invokes the parsing process to allocate the existing cloud users in the corresponding data structures.
+     */
+    virtual void initialize();
 
-       /**
-        * Processes a self message.
-        *
-        * @param msg Received (self) message.
-        */
-        virtual void processSelfMessage (cMessage *msg);
+    /**
+     * Processes a self message.
+     *
+     * @param msg Received (self) message.
+     */
+    virtual void processSelfMessage(cMessage *msg);
 
-       /**
-        * Processes a request message.
-        *
-        * @param sm Incoming message.
-        */
-        virtual void processRequestMessage (SIMCAN_Message *sm);
+    /**
+     * Processes a self message of type WaitToExecute.
+     *
+     * @param msg Received (WaitToExecute) message.
+     */
+    virtual void processWaitMessage(cMessage *msg);
 
-       /**
-        * Processes a response message from an external module.
-        *
-        * @param sm Incoming message.
-        */
-        virtual void processResponseMessage (SIMCAN_Message *sm);
+    /**
+     * Processes a self message of type USER_GEN_MSG.
+     *
+     * @param msg Received (USER_GEN_MSG) message.
+     */
+    virtual void processUserGenMessage(cMessage *msg);
 
-        //###############################################
-        //API
-        /**
-         * Returns the next cloud user to be processed
-         */
-        virtual CloudUserInstance* getNextUser();
+    /**
+     * Processes a request message.
+     *
+     * @param sm Incoming message.
+     */
+    virtual void processRequestMessage(SIMCAN_Message *sm);
 
-        /**
-         * Shuffles the arrival time of the generated users
-         */
-        virtual void generateShuffledUsers ();
+    /**
+     * Processes a response message from an external module.
+     *
+     * @param sm Incoming message.
+     */
+    virtual void processResponseMessage(SIMCAN_Message *sm);
 
-        /**
-         * Builds the VM request which corresponds with the provided user instance.
-         */
-        virtual SM_UserVM* createVmRequest(CloudUserInstance* pUserInstance);
+    //###############################################
+    //API
+    /**
+     * Returns the next cloud user to be processed
+     */
+    virtual CloudUserInstance* getNextUser();
 
-        /**
-         * Builds an App request given a user
-         */
-        virtual SM_UserAPP* createAppRequest(SM_UserVM* userVm);
+    /**
+     * Shuffles the arrival time of the generated users
+     */
+    virtual void generateShuffledUsers();
 
-        /**
-         * Handles the VM response received from the CloudProvider
-         * @param userVm incoming message
-         */
-        virtual void handleUserVmResponse(SM_UserVM* userVm);
+    /**
+     * Builds the VM request which corresponds with the provided user instance.
+     */
+    virtual SM_UserVM* createVmRequest(CloudUserInstance *pUserInstance);
 
-        /**
-         * Handles the App response sent from the CloudProvider
-         * @param userApp incoming message
-         */
-        virtual void handleUserAppResponse(SM_UserAPP* userApp);
+    /**
+     * Builds an App request given a user
+     */
+    virtual SM_UserAPP* createAppRequest(SM_UserVM *userVm);
 
-        /**
-         * Sends a request of service submission
-         */
-        void submitService(SM_UserVM* userVm);
+    /**
+     * Handles the VM response received from the CloudProvider
+     * @param userVm incoming message
+     */
+    virtual void handleUserVmResponse(SM_UserVM *userVm);
 
-        /**
-         * Sends a subscribe message to the cloudprovider
-         * @param userVm
-         */
-        void subscribe(SM_UserVM* userVm);
+    /**
+     * Handles the App response sent from the CloudProvider
+     * @param userApp incoming message
+     */
+    virtual void handleUserAppResponse(SM_UserAPP *userApp);
 
-        /**
-         * Updates the status of a user
-         */
-        virtual void updateVmUserStatus(SM_UserVM* userVm);
+    /**
+     * Sends a request of service submission
+     */
+    void submitService(SM_UserVM *userVm);
 
-    private:
+    /**
+     * Sends a subscribe message to the cloudprovider
+     * @param userVm
+     */
+    void subscribe(SM_UserVM *userVm);
 
-        /**
-         * This method generates a vm request filled with pre-defined data. Designed for initial debugging
-         *
-         * @return Object that represents a VM request
-         */
-        SM_UserVM* createFakeVmRequest();
+    /**
+     * Updates the status of a user
+     */
+    virtual void updateVmUserStatus(SM_UserVM *userVm);
 
-        /**
-         * Recovers a VM given a user name, and sends a subscribe message to the cloudmanager
-         * @param userApp
-         */
-        void recoverVmAndsubscribe(SM_UserAPP* userApp);
+    inline bool compareArrivalTime(CloudUserInstance *a, CloudUserInstance *b) {
+        return a->getArrival2Cloud() < b->getArrival2Cloud();
+    }
 
-        /**
-         *  Prints the final parameters.
-         */
-        void printFinal();
+private:
 
-        /**
-         * Print the results obtained during the first phase of the experiments.
-         */
-        void printExperiments_phase1();
+    /**
+     * This method generates a vm request filled with pre-defined data. Designed for initial debugging
+     *
+     * @return Object that represents a VM request
+     */
+    SM_UserVM* createFakeVmRequest();
 
-        /**
-         * Checks if all the users have finished.
-         * @return
-         */
-        bool allUsersFinished();
+    /**
+     * Recovers a VM given a user name, and sends a subscribe message to the cloudmanager
+     * @param userApp
+     */
+    void recoverVmAndsubscribe(SM_UserAPP *userApp);
 
-        /**
-         * Calculates the statistics of the experiment.
-         */
-        virtual void calculateStatistics();
+    /**
+     *  Prints the final parameters.
+     */
+    void printFinal();
 
-        /**
-         * Cancels and deletes all the messages corresponding with an specific user instance
-         * @param pUserInstance User instance
-         */
-        void cancelAndDeleteMessages(CloudUserInstance* pUserInstance);
+    /**
+     * Print the results obtained during the first phase of the experiments.
+     */
+    void printExperiments_phase1();
+
+    /**
+     * Checks if all the users have finished.
+     * @return
+     */
+    bool allUsersFinished();
+
+    /**
+     * Calculates the statistics of the experiment.
+     */
+    virtual void calculateStatistics();
+
+    /**
+     * Cancels and deletes all the messages corresponding with an specific user instance
+     * @param pUserInstance User instance
+     */
+    void cancelAndDeleteMessages(CloudUserInstance *pUserInstance);
 };
 
 #endif

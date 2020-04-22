@@ -1,12 +1,12 @@
 #
-# OMNeT++/OMNEST Makefile for SIMCAN-2.0
+# OMNeT++/OMNEST Makefile for simcan2cloud
 #
 # This file was generated with the command:
 #  opp_makemake -f --deep -Isrc -I.
 #
 
 # Name of target to be created (-o option)
-TARGET = SIMCAN-2.0$(D)$(EXE_SUFFIX)
+TARGET = simcan2cloud$(D)$(EXE_SUFFIX)
 TARGET_DIR = .
 
 # User interface (uncomment one) (-u option)
@@ -51,6 +51,7 @@ OBJS = \
     $O/Management/CloudProviders/CloudProvider_firstBestFit/CloudProvider_firstBestFit.o \
     $O/Management/DataCenterManager/DataCenterManager.o \
     $O/Management/UserGenerators/UserGeneratorBase/UserGeneratorBase.o \
+    $O/Management/UserGenerators/UserGeneratorCost/UserGeneratorCost.o \
     $O/Management/UserGenerators/UserGenerator_simple/UserGenerator_simple.o \
     $O/Management/dataClasses/AppInstance.o \
     $O/Management/dataClasses/AppInstanceCollection.o \
@@ -61,12 +62,15 @@ OBJS = \
     $O/Management/dataClasses/DataCenter.o \
     $O/Management/dataClasses/DataCenter_CpuType.o \
     $O/Management/dataClasses/DataCenterInfoCollection.o \
+    $O/Management/dataClasses/DataCenterInfoCollectionReservation.o \
+    $O/Management/dataClasses/DataCenterReservation.o \
     $O/Management/dataClasses/Node.o \
     $O/Management/dataClasses/NodeInfo.o \
     $O/Management/dataClasses/NodeUserInfo_.o \
     $O/Management/dataClasses/Rack.o \
     $O/Management/dataClasses/RackInfo.o \
     $O/Management/dataClasses/RackInstances.o \
+    $O/Management/dataClasses/Sla.o \
     $O/Management/dataClasses/User_.o \
     $O/Management/dataClasses/UserAppReference.o \
     $O/Management/dataClasses/UserInstance.o \
@@ -74,7 +78,12 @@ OBJS = \
     $O/Management/dataClasses/VirtualMachine.o \
     $O/Management/dataClasses/VmInstance.o \
     $O/Management/dataClasses/VmInstanceCollection.o \
+    $O/Management/parser/AppListParser.o \
+    $O/Management/parser/DataCenterListParser.o \
+    $O/Management/parser/DataCenterReservationListParser.o \
+    $O/Management/parser/SlaListParser.o \
     $O/Management/parser/UserListParser.o \
+    $O/Management/parser/VmListParser.o \
     $O/Messages/SIMCAN_Message.o \
     $O/Messages/SM_CPU_Message.o \
     $O/Messages/SM_UserAPP.o \
@@ -87,6 +96,7 @@ OBJS = \
     $O/Messages/SM_UserAPP_m.o \
     $O/Messages/SM_UserAPP_Finish_m.o \
     $O/Messages/SM_UserVM_m.o \
+    $O/Messages/SM_UserVM_Cost_m.o \
     $O/Messages/SM_UserVM_Finish_m.o
 
 # Message files
@@ -97,6 +107,7 @@ MSGFILES = \
     Messages/SM_UserAPP.msg \
     Messages/SM_UserAPP_Finish.msg \
     Messages/SM_UserVM.msg \
+    Messages/SM_UserVM_Cost.msg \
     Messages/SM_UserVM_Finish.msg
 
 # SM files
@@ -169,7 +180,7 @@ $O/%.o: %.cc $(COPTS_FILE) | msgheaders smheaders
 
 %_m.cc %_m.h: %.msg
 	$(qecho) MSGC: $<
-	$(Q)$(MSGC) -s _m.cc -MD -MP -MF $O/$(basename $@).d $(MSGCOPTS) $?
+	$(Q)$(MSGC) -s _m.cc -MD -MP -MF $O/$(basename $<)_m.h.d $(MSGCOPTS) $?
 
 %_sm.cc %_sm.h: %.sm
 	$(qecho) SMC: $<
@@ -192,4 +203,4 @@ cleanall:
 	$(Q)-rm -rf $(PROJECT_OUTPUT_DIR)
 
 # include all dependencies
--include $(OBJS:%.o=%.d)
+-include $(OBJS:%=%.d) $(MSGFILES:%.msg=$O/%_m.h.d)
