@@ -26,8 +26,8 @@ void UserGenerator_simple::initialize() {
 
     m_nUsersSent = 0;
 
-    selfFunctions[Timer_WaitToExecute.c_str()] = processWaitMessage;
-    selfFunctions[USER_GEN_MSG] = processUserGenMessage;
+    selfFunctions[Timer_WaitToExecute.c_str()] = std::bind(&UserGenerator_simple::processWaitMessage, this, std::placeholders::_1);
+    selfFunctions[USER_GEN_MSG] = std::bind(&UserGenerator_simple::processUserGenMessage, this, std::placeholders::_1);
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
 }
@@ -61,7 +61,7 @@ void UserGenerator_simple::generateShuffledUsers() {
  * @param msg
  */
 void UserGenerator_simple::processSelfMessage(cMessage *msg) {
-    std::map<const char*, void (*) (cMessage*)>::iterator it;
+    std::map<const char*, std::function<void(cMessage*)>>::iterator it;
 
     it = selfFunctions.find(msg->getName());
 
@@ -108,7 +108,7 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
         }
     }
     else {
-        double timeEpsilon = m_dInitSim + std::numeric_limits<T>::epsilon();
+        double timeEpsilon = m_dInitSim + std::numeric_limits<double>::epsilon();
         for (int i = 0; i < userInstances.size(); i++) {
             lastTime = timeEpsilon + intervalBetweenUsers->doubleValue(); // Evita problemas de enviar al pasado, creo
 

@@ -9,5 +9,9 @@ doc/**
 **/.tkenvrc
 **/.cmdenv-log
 **/.project
+<<<<<<< HEAD
 src/*.exe
+=======
+src/SIMCAN-2.0_dbg.exe
+>>>>>>> refs/remotes/github/ref/head/master
 
