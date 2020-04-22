@@ -9,4 +9,5 @@ doc/**
 **/.tkenvrc
 **/.cmdenv-log
 **/.project
+src/*.exe
 
