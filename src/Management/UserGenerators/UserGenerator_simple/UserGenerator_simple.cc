@@ -26,7 +26,7 @@ void UserGenerator_simple::initialize() {
 
     m_nUsersSent = 0;
 
-    selfFunctions[Timer_WaitToExecute.c_str()] = std::bind(&UserGenerator_simple::processWaitMessage, this, std::placeholders::_1);
+    selfFunctions[Timer_WaitToExecute] = std::bind(&UserGenerator_simple::processWaitMessage, this, std::placeholders::_1);
     selfFunctions[USER_GEN_MSG] = std::bind(&UserGenerator_simple::processUserGenMessage, this, std::placeholders::_1);
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
@@ -61,7 +61,7 @@ void UserGenerator_simple::generateShuffledUsers() {
  * @param msg
  */
 void UserGenerator_simple::processSelfMessage(cMessage *msg) {
-    std::map<const char*, std::function<void(cMessage*)>>::iterator it;
+    std::map<const std::string, std::function<void(cMessage*)>>::iterator it;
 
     it = selfFunctions.find(msg->getName());
 
@@ -91,11 +91,11 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
     if (!useDistribution) {
         // srand((int)33); // TODO
         generateShuffledUsers();
-        lastTime += std::numeric_limits<double>::epsilon(); // Evita problemas de enviar al pasado, creo
 
         for (int i = 0; i < userInstances.size(); i++) {
             // Get current user
             pUserInstance = userInstances.at(i);
+            userVm = createVmRequest(pUserInstance);
 
             if (userVm != nullptr) {
                 pUserInstance->setRequestVmMsg(userVm);
@@ -108,9 +108,8 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
         }
     }
     else {
-        double timeEpsilon = m_dInitSim + std::numeric_limits<double>::epsilon();
         for (int i = 0; i < userInstances.size(); i++) {
-            lastTime = timeEpsilon + intervalBetweenUsers->doubleValue(); // Evita problemas de enviar al pasado, creo
+            lastTime = m_dInitSim + intervalBetweenUsers->doubleValue(); // Evita problemas de enviar al pasado, creo
 
             // Get current user
             pUserInstance = userInstances.at(i);
@@ -129,7 +128,7 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
 
     m_nUsersSent = 0;
     pUserInstance = userInstances.at(m_nUsersSent);
-    scheduleAt(pUserInstance->getArrival2Cloud(), new cMessage(USER_GEN_MSG));
+    scheduleAt(simTime(), new cMessage(USER_GEN_MSG));
 }
 
 void UserGenerator_simple::processUserGenMessage(cMessage *msg) {
@@ -152,9 +151,16 @@ void UserGenerator_simple::processUserGenMessage(cMessage *msg) {
     }
     m_nUsersSent++;
 
+    //Check if there are more users
     if (m_nUsersSent < userInstances.size()) {
         pUserInstance = userInstances.at(m_nUsersSent);
-        scheduleAt(pUserInstance->getArrival2Cloud(), new cMessage(USER_GEN_MSG));
+
+        //Check if next arrival time is in the future
+        simtime_t nextArrivalTime = SimTime(pUserInstance->getArrival2Cloud());
+        if (nextArrivalTime<simtime())
+            error("Vector of user instances is not sorted by arrival time");
+
+        scheduleAt(SimTime(nextArrivalTime), new cMessage(USER_GEN_MSG));
     }
 }
 

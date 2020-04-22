@@ -1,13 +1,13 @@
 #ifndef __SIMCAN_2_0_USERGENERATOR_H_
 #define __SIMCAN_2_0_USERGENERATOR_H_
 
-#include <functional>
 #include "Management/UserGenerators/UserGeneratorBase/UserGeneratorBase.h"
 #include "Messages/SM_UserVM.h"
 #include "Messages/SM_UserAPP.h"
 #include "Messages/SM_CloudProvider_Control_m.h"
 #include <algorithm>
 #include <random>
+#include <functional>
 
 /**
  * Class that implements a User generator for cloud environments.
@@ -29,9 +29,9 @@ protected:
     double maxSubTime_t3;
     double maxSubscriptionTime_t4;
 
-    std::map<const char*, std::function<void(cMessage*)>> selfFunctions;
-    std::map<const char*, std::function<void(cMessage*)>> requestFunctions;
-    std::map<const char*, std::function<void(cMessage*)>> responseFunctions;
+    std::map<const std::string, std::function<void(cMessage*)>> selfFunctions;
+    std::map<const std::string, std::function<void(cMessage*)>> requestFunctions;
+    std::map<const std::string, std::function<void(cMessage*)>> responseFunctions;
 
     /** Iterators */
     /**
