@@ -1,6 +1,7 @@
 #ifndef __SIMCAN_2_0_USERGENERATOR_H_
 #define __SIMCAN_2_0_USERGENERATOR_H_
 
+#include <functional>
 #include "Management/UserGenerators/UserGeneratorBase/UserGeneratorBase.h"
 #include "Messages/SM_UserVM.h"
 #include "Messages/SM_UserAPP.h"
@@ -13,7 +14,6 @@
 class UserGenerator_simple: public UserGeneratorBase {
 
 protected:
-
     //Timeouts active
     bool bMaxStartTime_t1_active;
 
@@ -26,9 +26,9 @@ protected:
     double nRentTime_t2;
     double maxSubTime_t3;
     double maxSubscriptionTime_t4;
-    std::map<const char*, void (UserGenerator_simple::*) (cMessage*)> selfFunctions;
-    std::map<const char*, void (UserGenerator_simple::*) (cMessage*)> requestFunctions;
-    std::map<const char*, void (UserGenerator_simple::*) (cMessage*)> responseFunctions;
+    std::map<const char*, std::function<void(cMessage*)>> selfFunctions;
+    std::map<const char*, std::function<void(cMessage*)>> requestFunctions;
+    std::map<const char*, std::function<void(cMessage*)>> responseFunctions;
 
     /** Iterators */
     /**

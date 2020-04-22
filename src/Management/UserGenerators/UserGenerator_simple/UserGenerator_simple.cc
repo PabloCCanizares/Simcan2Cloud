@@ -1,6 +1,7 @@
 #include "UserGenerator_simple.h"
 #include <random>
 #include <algorithm>
+#include <functional>
 
 #define USER_GEN_MSG "USER_GEN"
 
@@ -28,8 +29,8 @@ void UserGenerator_simple::initialize() {
 
     m_nUsersSent = 0;
 
-    selfFunctions[Timer_WaitToExecute.c_str()] = &UserGenerator_simple::processWaitMessage;
-    selfFunctions[USER_GEN_MSG] = &UserGenerator_simple::processUserGenMessage;
+    selfFunctions[Timer_WaitToExecute.c_str()] = std::bind(&UserGenerator_simple::processWaitMessage, this, std::placeholders::_1);
+    selfFunctions[USER_GEN_MSG] = std::bind(&UserGenerator_simple::processUserGenMessage, this, std::placeholders::_1);
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
 }
@@ -63,7 +64,7 @@ void UserGenerator_simple::generateShuffledUsers() {
  * @param msg
  */
 void UserGenerator_simple::processSelfMessage(cMessage *msg) {
-    std::map<const char*, void (UserGenerator_simple::*) (cMessage*)>::iterator it;
+    std::map<const char*, std::function<void(cMessage*)>>::iterator it;
 
     it = selfFunctions.find(msg->getName());
 
@@ -71,7 +72,7 @@ void UserGenerator_simple::processSelfMessage(cMessage *msg) {
         error("Unknown self message [%s]", msg->getName());
     }
     else {
-        (this->*(it->second))(msg);
+        it->second(msg);
     }
 
     delete (msg);
