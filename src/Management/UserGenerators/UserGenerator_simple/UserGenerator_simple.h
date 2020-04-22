@@ -26,9 +26,9 @@ protected:
     double nRentTime_t2;
     double maxSubTime_t3;
     double maxSubscriptionTime_t4;
-    std::map<const char*, void (*) (cMessage*)> selfFunctions;
-    std::map<const char*, void (*) (cMessage*)> requestFunctions;
-    std::map<const char*, void (*) (cMessage*)> responseFunctions;
+    std::map<const char*, void (UserGenerator_simple::*) (cMessage*)> selfFunctions;
+    std::map<const char*, void (UserGenerator_simple::*) (cMessage*)> requestFunctions;
+    std::map<const char*, void (UserGenerator_simple::*) (cMessage*)> responseFunctions;
 
     /** Iterators */
     /**
@@ -126,7 +126,7 @@ protected:
      */
     virtual void updateVmUserStatus(SM_UserVM *userVm);
 
-    inline bool compareArrivalTime(CloudUserInstance *a, CloudUserInstance *b) {
+    inline static bool compareArrivalTime(CloudUserInstance *a, CloudUserInstance *b) {
         return a->getArrival2Cloud() < b->getArrival2Cloud();
     }
 

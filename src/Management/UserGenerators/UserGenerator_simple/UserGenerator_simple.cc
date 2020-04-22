@@ -1,5 +1,6 @@
 #include "UserGenerator_simple.h"
 #include <random>
+#include <algorithm>
 
 #define USER_GEN_MSG "USER_GEN"
 
@@ -27,8 +28,8 @@ void UserGenerator_simple::initialize() {
 
     m_nUsersSent = 0;
 
-    selfFunctions[Timer_WaitToExecute.c_str()] = processWaitMessage;
-    selfFunctions[USER_GEN_MSG] = processUserGenMessage;
+    selfFunctions[Timer_WaitToExecute.c_str()] = &UserGenerator_simple::processWaitMessage;
+    selfFunctions[USER_GEN_MSG] = &UserGenerator_simple::processUserGenMessage;
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
 }
@@ -62,7 +63,7 @@ void UserGenerator_simple::generateShuffledUsers() {
  * @param msg
  */
 void UserGenerator_simple::processSelfMessage(cMessage *msg) {
-    std::map<const char*, void (*) (cMessage*)>::iterator it;
+    std::map<const char*, void (UserGenerator_simple::*) (cMessage*)>::iterator it;
 
     it = selfFunctions.find(msg->getName());
 
@@ -70,7 +71,7 @@ void UserGenerator_simple::processSelfMessage(cMessage *msg) {
         error("Unknown self message [%s]", msg->getName());
     }
     else {
-        it->second(msg);
+        (this->*(it->second))(msg);
     }
 
     delete (msg);
@@ -80,7 +81,7 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
     SM_UserVM *userVm;
     CloudUserInstance *pUserInstance;
     double lastTime;
-    boolean useDistribution = false;
+    bool useDistribution = false;
 
     // Log (INFO)
     EV_INFO << "Starting execution!!!" << endl;
@@ -109,7 +110,7 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
         }
     }
     else {
-        double timeEpsilon = m_dInitSim + std::numeric_limits<T>::epsilon();
+        double timeEpsilon = m_dInitSim + std::numeric_limits<double>::epsilon();
         for (int i = 0; i < userInstances.size(); i++) {
             lastTime = timeEpsilon + intervalBetweenUsers->doubleValue(); // Evita problemas de enviar al pasado, creo
 
