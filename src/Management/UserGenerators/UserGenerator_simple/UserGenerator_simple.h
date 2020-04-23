@@ -29,9 +29,9 @@ protected:
     double maxSubTime_t3;
     double maxSubscriptionTime_t4;
 
-    std::map<const std::string, std::function<void(cMessage*)>> selfFunctions;
-    std::map<const std::string, std::function<void(cMessage*)>> requestFunctions;
-    std::map<const std::string, std::function<void(cMessage*)>> responseFunctions;
+    std::map<std::string, std::function<void(cMessage*)>> selfFunctions;
+    std::map<std::string, std::function<void(cMessage*)>> requestFunctions;
+    std::map<int, std::function<void(SIMCAN_Message*)>> responseFunctions;
 
     /** Iterators */
     /**
@@ -65,6 +65,11 @@ protected:
      */
     virtual void processUserGenMessage(cMessage *msg);
 
+    /**
+     * Schedules the next user generation by scheduling an USER_GEN_MSG.
+     *
+     */
+    virtual void scheduleNextGenMessage();
     /**
      * Processes a request message.
      *
@@ -105,12 +110,16 @@ protected:
      * Handles the VM response received from the CloudProvider
      * @param userVm incoming message
      */
+    virtual void processUserVmResponse(SIMCAN_Message *userVm);
     virtual void handleUserVmResponse(SM_UserVM *userVm);
+    virtual void handleUserVmReqResponse(SM_UserVM *userVm);
+    virtual void handleUserVmNotify(SM_UserVM *userVm);
 
     /**
      * Handles the App response sent from the CloudProvider
      * @param userApp incoming message
      */
+    virtual void processUserAppResponse(SIMCAN_Message *userApp);
     virtual void handleUserAppResponse(SM_UserAPP *userApp);
 
     /**

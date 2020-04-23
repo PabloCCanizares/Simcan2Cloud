@@ -2,7 +2,7 @@
 
 #define USER_GEN_MSG "USER_GEN"
 
-Define_Module (UserGenerator_simple);
+Define_Module(UserGenerator_simple);
 
 UserGenerator_simple::~UserGenerator_simple() {
 
@@ -26,8 +26,21 @@ void UserGenerator_simple::initialize() {
 
     m_nUsersSent = 0;
 
-    selfFunctions[Timer_WaitToExecute] = std::bind(&UserGenerator_simple::processWaitMessage, this, std::placeholders::_1);
-    selfFunctions[USER_GEN_MSG] = std::bind(&UserGenerator_simple::processUserGenMessage, this, std::placeholders::_1);
+    selfFunctions[Timer_WaitToExecute] = std::bind(
+            &UserGenerator_simple::processWaitMessage, this,
+            std::placeholders::_1);
+    selfFunctions[USER_GEN_MSG] = std::bind(
+            &UserGenerator_simple::processUserGenMessage, this,
+            std::placeholders::_1);
+
+    std::function<void(SIMCAN_Message*)> vmFunc = std::bind(
+            &UserGenerator_simple::processUserVmResponse, this,
+            std::placeholders::_1);
+    responseFunctions[SM_VM_Req_Rsp] = vmFunc;
+    responseFunctions[SM_VM_Notify] = vmFunc;
+    responseFunctions[SM_APP_Rsp] = std::bind(
+            &UserGenerator_simple::processUserAppResponse, this,
+            std::placeholders::_1);
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
 }
@@ -45,7 +58,7 @@ void UserGenerator_simple::generateShuffledUsers() {
     nSize = userInstances.size();
 
     EV_INFO << "UserGenerator::generateShuffledUsers - instances size: "
-            << userInstances.size() << endl;
+                   << userInstances.size() << endl;
     //
     for (int i = 0; i < nSize; i++) {
         nRandom = rand() % nSize;
@@ -61,14 +74,13 @@ void UserGenerator_simple::generateShuffledUsers() {
  * @param msg
  */
 void UserGenerator_simple::processSelfMessage(cMessage *msg) {
-    std::map<const std::string, std::function<void(cMessage*)>>::iterator it;
+    std::map<std::string, std::function<void(cMessage*)>>::iterator it;
 
     it = selfFunctions.find(msg->getName());
 
     if (it == selfFunctions.end()) {
         error("Unknown self message [%s]", msg->getName());
-    }
-    else {
+    } else {
         it->second(msg);
     }
 
@@ -106,10 +118,9 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
 
             lastTime += intervalBetweenUsers->doubleValue();
         }
-    }
-    else {
+    } else {
         for (int i = 0; i < userInstances.size(); i++) {
-            lastTime = m_dInitSim + intervalBetweenUsers->doubleValue(); // Evita problemas de enviar al pasado, creo
+            lastTime = m_dInitSim + intervalBetweenUsers->doubleValue();
 
             // Get current user
             pUserInstance = userInstances.at(i);
@@ -127,8 +138,8 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
     }
 
     m_nUsersSent = 0;
-    pUserInstance = userInstances.at(m_nUsersSent);
-    scheduleAt(simTime(), new cMessage(USER_GEN_MSG));
+
+    scheduleNextGenMessage();
 }
 
 void UserGenerator_simple::processUserGenMessage(cMessage *msg) {
@@ -146,18 +157,25 @@ void UserGenerator_simple::processUserGenMessage(cMessage *msg) {
 
         //TODO:¿Dejamos este mensaje o lo quitamos?
         EV_FATAL << "#___ini#" << m_nUsersSent << " "
-                << (simTime().dbl() - m_dInitSim) / 3600 << "   \n"
-                << endl;
+                        << (simTime().dbl() - m_dInitSim) / 3600 << "   \n"
+                        << endl;
     }
     m_nUsersSent++;
+
+    scheduleNextGenMessage();
+}
+
+void UserGenerator_simple::scheduleNextGenMessage() {
+    CloudUserInstance *pUserInstance;
+    simtime_t nextArrivalTime;
 
     //Check if there are more users
     if (m_nUsersSent < userInstances.size()) {
         pUserInstance = userInstances.at(m_nUsersSent);
 
         //Check if next arrival time is in the future
-        simtime_t nextArrivalTime = SimTime(pUserInstance->getArrival2Cloud());
-        if (nextArrivalTime<simTime())
+        nextArrivalTime = SimTime(pUserInstance->getArrival2Cloud());
+        if (nextArrivalTime < simTime())
             error("Vector of user instances is not sorted by arrival time");
 
         scheduleAt(SimTime(nextArrivalTime), new cMessage(USER_GEN_MSG));
@@ -165,31 +183,30 @@ void UserGenerator_simple::processUserGenMessage(cMessage *msg) {
 }
 
 void UserGenerator_simple::processRequestMessage(SIMCAN_Message *sm) {
-
     error("This module cannot process request messages:%s",
             sm->contentsToString(true, false).c_str());
 }
 
 void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
-
-    SM_UserVM *userVM_Rq;
-    SM_UserAPP *userAPP_Rq;
+    std::map<int, std::function<void(SIMCAN_Message*)>>::iterator it;
 
     EV_INFO << "processResponseMessage - Received Response Message" << endl;
 
-    //Receive response, check type!
-    userVM_Rq = dynamic_cast<SM_UserVM*>(sm);
-    userAPP_Rq = dynamic_cast<SM_UserAPP*>(sm);
-
-    if (userVM_Rq != nullptr) {
-        EV_INFO << "processResponseMessage - handle UserVmResponse" << endl;
-        handleUserVmResponse(userVM_Rq);
-    } else if (userAPP_Rq != nullptr) {
-        EV_INFO << "processResponseMessage - handle UserAppResponse" << endl;
-        handleUserAppResponse(userAPP_Rq);
-    } else {
+    it = responseFunctions.find(sm->getOperation());
+    if (it == responseFunctions.end()) {
         EV_INFO << "processResponseMessage - Unhandled response" << endl;
+    } else {
+        it->second(sm);
+    }
+}
 
+void UserGenerator_simple::processUserAppResponse(SIMCAN_Message *userApp) {
+    SM_UserAPP *userAPP_Rq = dynamic_cast<SM_UserAPP*>(userApp);
+
+    if (userAPP_Rq != nullptr) {
+        this->handleUserAppResponse(userAPP_Rq);
+    } else {
+        error("Could not cast cMessage to SM_UserAPP (wrong operation code?)");
     }
 }
 
@@ -200,55 +217,57 @@ void UserGenerator_simple::handleUserAppResponse(SM_UserAPP *userApp) {
     userApp->printUserAPP();
 
     EV_INFO << "handleUserAppResponse - Init" << endl;
+    EV_INFO << "handleUserAppResponse - SM_APP_Rsp" << endl;
+    //Check the response
+    switch (userApp->getResult()) {
+    case SM_APP_Res_Accept:
+        EV_INFO << "handleUserAppResponse - SM_APP_Res_Accept" << endl;
 
-    if (userApp->getOperation() == SM_APP_Rsp) {
-        EV_INFO << "handleUserAppResponse - SM_APP_Rsp" << endl;
-        //Check the response
-        if (userApp->getResult() == SM_APP_Res_Accept) {
-            EV_INFO << "handleUserAppResponse - SM_APP_Res_Accept" << endl;
+        //End of the protocol, exit!!
+        pUserInstance = userHashMap.at(userApp->getUserID());
+        pUserInstance->setEndTime(simTime().dbl());
+        pUserInstance->setFinished(true);
+        nUserInstancesFinished++;
 
-            //End of the protocol, exit!!
-            pUserInstance = userHashMap.at(userApp->getUserID());
-            pUserInstance->setEndTime(simTime().dbl());
-            pUserInstance->setFinished(true);
-            nUserInstancesFinished++;
+        cancelAndDeleteMessages(pUserInstance);
 
-            cancelAndDeleteMessages(pUserInstance);
-
-            bFinish = allUsersFinished();
-            if (bFinish) {
-                sendRequestMessage(new SM_CloudProvider_Control(),
-                        toCloudProviderGate);
-                printFinal();
-            }
-        } else if (userApp->getResult() == SM_APP_Res_Reject) {
-            //The next step is to send a subscription to the cloudprovider
-            //Recover the user instance, and get the VmRequest
-
-            recoverVmAndsubscribe(userApp);
-        } else if (userApp->getResult() == SM_APP_Res_Timeout) {
-            EV_INFO << "handleUserAppResponse - SM_APP_Res_Timeout" << endl;
-
-            //End of the protocol, exit!!
-            pUserInstance = userHashMap.at(userApp->getUserID());
-            pUserInstance->setEndTime(simTime().dbl());
-            pUserInstance->setFinished(true);
-            pUserInstance->setTimeoutMaxRentTime();
-            nUserInstancesFinished++;
-
-            bFinish = allUsersFinished();
-            cancelAndDeleteMessages(pUserInstance);
-
-            if (bFinish) {
-                sendRequestMessage(new SM_CloudProvider_Control(),
-                        toCloudProviderGate);
-                printFinal();
-            }
+        bFinish = allUsersFinished();
+        if (bFinish) {
+            sendRequestMessage(new SM_CloudProvider_Control(),
+                    toCloudProviderGate);
+            printFinal();
         }
+        break;
+    case SM_APP_Res_Reject:
+        //The next step is to send a subscription to the cloudprovider
+        //Recover the user instance, and get the VmRequest
+
+        recoverVmAndsubscribe(userApp);
+        break;
+    case SM_APP_Res_Timeout:
+        EV_INFO << "handleUserAppResponse - SM_APP_Res_Timeout" << endl;
+
+        //End of the protocol, exit!!
+        pUserInstance = userHashMap.at(userApp->getUserID());
+        pUserInstance->setEndTime(simTime().dbl());
+        pUserInstance->setFinished(true);
+        pUserInstance->setTimeoutMaxRentTime();
+        nUserInstancesFinished++;
+
+        bFinish = allUsersFinished();
+        cancelAndDeleteMessages(pUserInstance);
+
+        if (bFinish) {
+            sendRequestMessage(new SM_CloudProvider_Control(),
+                    toCloudProviderGate);
+            printFinal();
+        }
+        break;
     }
     EV_INFO << "handleUserAppResponse - End" << endl;
 
 }
+
 void UserGenerator_simple::cancelAndDeleteMessages(
         CloudUserInstance *pUserInstance) {
     SM_UserVM *pVmMessage;
@@ -271,6 +290,7 @@ void UserGenerator_simple::cancelAndDeleteMessages(
         cancelAndDelete(pSubscribeVmMessage);
 
 }
+
 void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
     bool bSent = false;
     SM_UserVM *userVM_Rq;
@@ -281,8 +301,8 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
 
     if (strUserId.size() > 0) {
         EV_INFO
-                << "recoverVmAndsubscribe - Subscribing to the cluster with user: "
-                << strUserId << endl;
+                       << "recoverVmAndsubscribe - Subscribing to the cluster with user: "
+                       << strUserId << endl;
         pUserInstance = userHashMap.at(strUserId);
         if (pUserInstance != nullptr) {
             userVM_Rq = pUserInstance->getRequestVmMsg();
@@ -299,7 +319,53 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
     }
 }
 
+void UserGenerator_simple::processUserVmResponse(SIMCAN_Message *userVm) {
+    SM_UserVM *userVM_Rq = dynamic_cast<SM_UserVM*>(userVm);
+
+    if (userVM_Rq != nullptr) {
+        this->handleUserVmResponse(userVM_Rq);
+    } else {
+        error("Could not cast cMessage to SM_UserVM (wrong operation code?)");
+    }
+}
+
 void UserGenerator_simple::handleUserVmResponse(SM_UserVM *userVm) {
+    switch (userVm->getOperation()) {
+    case SM_VM_Req_Rsp:
+        this->handleUserVmReqResponse(userVm);
+        break;
+    case SM_VM_Notify:
+        this->handleUserVmNotify(userVm);
+        break;
+    }
+}
+
+void UserGenerator_simple::handleUserVmReqResponse(SM_UserVM *userVm) {
+    CloudUserInstance *pUserInstance;
+    bool rejected;
+
+    userVm->printUserVM();
+
+    //Update the status
+    updateVmUserStatus(userVm);
+
+    //Check the response and proceed with the next action
+    pUserInstance = userHashMap.at(userVm->getUserID());
+    rejected = userVm->getResult() == SM_VM_Res_Reject;
+    if (pUserInstance != nullptr) {
+        pUserInstance->setInitExecTime(simTime().dbl());
+        // If the vm-request has been rejected by the cloudprovider
+        // we have to subscribe the service
+        pUserInstance->setSubscribe(rejected);
+        if (rejected)
+            subscribe(userVm);
+        // otherwise the next step is to submit the required services.
+        else
+            submitService(userVm);
+    }
+}
+
+void UserGenerator_simple::handleUserVmNotify(SM_UserVM *userVm) {
     CloudUserInstance *pUserInstance;
     bool bFinish;
 
@@ -308,62 +374,36 @@ void UserGenerator_simple::handleUserVmResponse(SM_UserVM *userVm) {
     //Update the status
     updateVmUserStatus(userVm);
 
-    //Check the response and proceed with the next action
-    switch (userVm->getOperation()) {
-    case SM_VM_Req_Rsp:
-        //Check the response!!
-        if (userVm->getResult() == SM_VM_Res_Accept) {
-            EV_INFO << "VM Response Accepted ... submiting" << endl;
-            //The user vm-request has been accepted by the cloudprovider
-            //The next step is to submit the required services.
-            pUserInstance = userHashMap.at(userVm->getUserID());
+    pUserInstance = userHashMap.at(userVm->getUserID());
 
-            if (pUserInstance != nullptr) {
-                pUserInstance->setInitExecTime(simTime().dbl());
-                pUserInstance->setSubscribe(false);
-                submitService(userVm);
-            }
-        } else if (userVm->getResult() == SM_VM_Res_Reject) {
-            EV_INFO << "VM Response Reject ... subscribing" << endl;
-            //The user vm-request has been rejected by the cloudprovider!!
-            //Is the moment to subscribe the service.
-            pUserInstance = userHashMap.at(userVm->getUserID());
-            if (pUserInstance != nullptr) {
-                pUserInstance->setInitExecTime(simTime().dbl());
-                pUserInstance->setSubscribe(true);
-                subscribe(userVm);
-            }
+    //Check the result and proceed with the next action
+    switch (userVm->getResult()) {
+    case SM_APP_Sub_Accept:
+        EV_INFO << "Subscription accepted ...  " << endl;
+
+        if (pUserInstance != nullptr) {
+            pUserInstance->setInitExecTime(simTime().dbl());
+            submitService(userVm);
         }
         break;
-    case SM_VM_Notify:
-        if (userVm->getResult() == SM_APP_Sub_Accept) {
-            EV_INFO << "Subscription accepted ...  " << endl;
-            pUserInstance = userHashMap.at(userVm->getUserID());
+    case SM_APP_Sub_Timeout:
+        // End of the party.
+        EV_INFO << "VM timeout ... go home" << endl;
 
-            if (pUserInstance != nullptr) {
-                pUserInstance->setInitExecTime(simTime().dbl());
-                submitService(userVm);
-            }
-        } else if (userVm->getResult() == SM_APP_Sub_Timeout) {
-            // End of the party.
-            EV_INFO << "VM timeout ... go home" << endl;
-            pUserInstance = userHashMap.at(userVm->getUserID());
+        if (pUserInstance != nullptr) {
+            EV_INFO << "Set itself finished" << endl;
+            pUserInstance->setFinished(true);
+            pUserInstance->setEndTime(simTime().dbl());
+            pUserInstance->setTimeoutMaxSubscribed();
 
-            if (pUserInstance != nullptr) {
-                EV_INFO << "Set itself finished" << endl;
-                pUserInstance->setFinished(true);
-                pUserInstance->setEndTime(simTime().dbl());
-                pUserInstance->setTimeoutMaxSubscribed();
+            cancelAndDeleteMessages(pUserInstance);
 
-                cancelAndDeleteMessages(pUserInstance);
-
-                //Check if all the users has ended
-                bFinish = allUsersFinished();
-                if (bFinish) {
-                    sendRequestMessage(new SM_CloudProvider_Control(),
-                            toCloudProviderGate);
-                    printFinal();
-                }
+            //Check if all the users has ended
+            bFinish = allUsersFinished();
+            if (bFinish) {
+                sendRequestMessage(new SM_CloudProvider_Control(),
+                        toCloudProviderGate);
+                printFinal();
             }
         }
         break;
@@ -438,14 +478,15 @@ CloudUserInstance* UserGenerator_simple::getNextUser() {
     if (nUserIndex < userInstances.size()) {
         pUserInstance = userInstances.at(nUserIndex);
         EV_INFO
-                << "UserGenerator::getNextUser - The next user to be processed is "
-                << pUserInstance->getUserID() << " [" << nUserIndex << " of "
-                << userInstances.size() << "]" << endl;
+                       << "UserGenerator::getNextUser - The next user to be processed is "
+                       << pUserInstance->getUserID() << " [" << nUserIndex
+                       << " of " << userInstances.size() << "]" << endl;
         nUserIndex++;
     } else {
         EV_INFO
-                << "UserGenerator::getNextUser - The requested user index is greater than the collection size. ["
-                << nUserIndex << " of " << userInstances.size() << "]" << endl;
+                       << "UserGenerator::getNextUser - The requested user index is greater than the collection size. ["
+                       << nUserIndex << " of " << userInstances.size() << "]"
+                       << endl;
     }
     return pUserInstance;
 }
@@ -472,10 +513,11 @@ SM_UserVM* UserGenerator_simple::createVmRequest(
         userId = pUserInstance->getUserID();
 
         EV_TRACE << "UserGenerator::createNextVmRequest - UserId: " << userId
-                << " | maxStartTime_t1: " << maxStartTime_t1
-                << " | rentTime_t2: " << nRentTime_t2 << " | maxSubTime: "
-                << maxSubTime_t3 << " | MaxSubscriptionTime_T4:"
-                << maxSubscriptionTime_t4 << endl;
+                        << " | maxStartTime_t1: " << maxStartTime_t1
+                        << " | rentTime_t2: " << nRentTime_t2
+                        << " | maxSubTime: " << maxSubTime_t3
+                        << " | MaxSubscriptionTime_T4:"
+                        << maxSubscriptionTime_t4 << endl;
 
         if (nCollectionNumber > 0 && userId.size() > 0) {
             //Creation of the message
@@ -503,23 +545,23 @@ SM_UserVM* UserGenerator_simple::createVmRequest(
                     }
                 } else {
                     EV_TRACE
-                            << "WARNING! [UserGenerator] The VM collection is empty"
-                            << endl;
+                                    << "WARNING! [UserGenerator] The VM collection is empty"
+                                    << endl;
                     throw omnetpp::cRuntimeError(
                             "[UserGenerator] The VM collection is empty!");
                 }
             }
         } else {
             EV_TRACE
-                    << "WARNING! [UserGenerator] Collection or User-ID malformed"
-                    << endl;
+                            << "WARNING! [UserGenerator] Collection or User-ID malformed"
+                            << endl;
             throw omnetpp::cRuntimeError(
                     "[UserGenerator] Collection or User-ID malformed!");
         }
     } else {
         EV_INFO
-                << "UserGenerator::createNextVmRequest - The user instance is null"
-                << endl;
+                       << "UserGenerator::createNextVmRequest - The user instance is null"
+                       << endl;
     }
 
     EV_TRACE << "UserGenerator::createNextVmRequest - End" << endl;
@@ -584,9 +626,9 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
                         } else {
                             //The rent time proposed by the server is too high.
                             EV_INFO
-                                    << "The maximum start rent time provided by the cloudprovider is greater than the maximum required by the user: "
-                                    << nMaxStarTime << " < " << nStartRentTime
-                                    << endl;
+                                           << "The maximum start rent time provided by the cloudprovider is greater than the maximum required by the user: "
+                                           << nMaxStarTime << " < "
+                                           << nStartRentTime << endl;
                         }
                     } else {
                         userApp->createNewAppRequest(strService, strIp, strVmId,
@@ -596,7 +638,7 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
 
             } else
                 EV_INFO << "WARNING! Invalid response in user: "
-                        << userVm->getName() << endl;
+                               << userVm->getName() << endl;
         }
     }
 
@@ -625,13 +667,14 @@ bool UserGenerator_simple::allUsersFinished() {
                 nFinished++;
             } else {
                 EV_INFO << "allUsersFinished - User  "
-                        << pUserInstance->toString(false, false)
-                        << " | is already running" << endl;
+                               << pUserInstance->toString(false, false)
+                               << " | is already running" << endl;
             }
         }
     }
     EV_INFO << "allUsersFinished - Res " << bRet << " | NFinished: "
-            << nFinished << " vs Total: " << nUserInstancesFinished << endl;
+                   << nFinished << " vs Total: " << nUserInstancesFinished
+                   << endl;
 
     return bRet;
 }
@@ -673,10 +716,10 @@ void UserGenerator_simple::printExperiments_phase1() {
 
         if (pUserInstance->isTimeout())
             EV_FATAL << "#___#Timeout " << nIndex << " -1 " << dMaxSub
-                    << "   \n" << endl;
+                            << "   \n" << endl;
         else
             EV_FATAL << "#___#Success " << nIndex << " " << dSubTime << " -1 "
-                    << "   \n" << endl;
+                            << "   \n" << endl;
 
         nIndex++;
     }
@@ -757,12 +800,12 @@ void UserGenerator_simple::calculateStatistics() {
 
         if (pUserInstance->isTimeout()) {
             EV_FATAL << "#___#Timeout " << nIndex << " -1 " << dMaxSub
-                    << "   \n" << endl;
+                            << "   \n" << endl;
             dSubTime += dMaxSub;
             nTotalTimeouts++;
         } else {
             EV_FATAL << "#___#Success " << nIndex << " " << dSubTime << " -1 "
-                    << "   \n" << endl;
+                            << "   \n" << endl;
             dTotalSub += dSubTime;
         }
         if (pUserInstance->hasSubscribed())
@@ -779,7 +822,8 @@ void UserGenerator_simple::calculateStatistics() {
     //Print the experiments data
     EV_FATAL << "#___3d#" << dMeanSub << "   \n" << endl;
     EV_FATAL << "#___t#" << dMaxSub << " " << dMeanSub << " " << nTotalTimeouts
-            << " " << dNoWaitUsers << " " << dWaitUsers << "   \n" << endl;
+                    << " " << dNoWaitUsers << " " << dWaitUsers << "   \n"
+                    << endl;
 }
 SM_UserVM* UserGenerator_simple::createFakeVmRequest() {
     SM_UserVM *userVm;
