@@ -157,7 +157,7 @@ void UserGenerator_simple::processUserGenMessage(cMessage *msg) {
 
         //Check if next arrival time is in the future
         simtime_t nextArrivalTime = SimTime(pUserInstance->getArrival2Cloud());
-        if (nextArrivalTime<simtime())
+        if (nextArrivalTime<simTime())
             error("Vector of user instances is not sorted by arrival time");
 
         scheduleAt(SimTime(nextArrivalTime), new cMessage(USER_GEN_MSG));

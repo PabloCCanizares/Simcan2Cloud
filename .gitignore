@@ -1,4 +1,5 @@
 **/SIMCAN-2.0
+out/
 out/**
 doc/**
 *.o
