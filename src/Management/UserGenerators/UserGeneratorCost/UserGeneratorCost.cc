@@ -119,6 +119,12 @@ SM_UserAPP* UserGeneratorCost::createAppRequest(SM_UserVM* userVm)
 
 void UserGeneratorCost::handleUserAppResponse(SM_UserAPP* userApp)
 {
+
+    //Version hack
+    UserGenerator_simple::handleUserAppResponse(userApp);
+
+    if (false) {
+    ////////***********
     bool bFinish;
     CloudUserInstance* pUserInstance;
 
@@ -147,6 +153,7 @@ void UserGeneratorCost::handleUserAppResponse(SM_UserAPP* userApp)
         }
     }
     EV_INFO << "UserGeneratorCost::handleUserAppResponse - End" << endl;
+    }
 
 }
 

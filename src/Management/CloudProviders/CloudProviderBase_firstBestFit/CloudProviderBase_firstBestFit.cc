@@ -904,6 +904,7 @@ void CloudProviderBase_firstBestFit::notifySubscription(SM_UserVM* userVM_Rq)
     if(pMsgTimeout != nullptr)
     {
         cancelAndDelete(pMsgTimeout);
+        userVM_Rq->setTimeoutSubscribeMsg(nullptr);
     }
 
     //Send the values

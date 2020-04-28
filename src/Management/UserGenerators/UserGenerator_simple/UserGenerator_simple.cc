@@ -243,25 +243,41 @@ void UserGenerator_simple::handleUserAppResponse(SM_UserAPP *userApp) {
     case SM_APP_Res_Timeout:
         EV_INFO << "handleUserAppResponse - SM_APP_Res_Timeout" << endl;
 
-        //End of the protocol, exit!!
-        pUserInstance = userHashMap.at(userApp->getUserID());
-        pUserInstance->setEndTime(simTime().dbl());
-        pUserInstance->setFinished(true);
-        pUserInstance->setTimeoutMaxRentTime();
-        nUserInstancesFinished++;
 
-        bFinish = allUsersFinished();
-        cancelAndDeleteMessages(pUserInstance);
+        ///New version
+        if (hasToSubscribeVm(userApp)) {
+            recoverVmAndsubscribe(userApp);
+        } else {
+            //End of the protocol, exit!!
+            pUserInstance = userHashMap.at(userApp->getUserID());
+            pUserInstance->setEndTime(simTime().dbl());
+            pUserInstance->setFinished(true);
+            pUserInstance->setTimeoutMaxRentTime();
+            nUserInstancesFinished++;
 
-        if (bFinish) {
-            sendRequestMessage(new SM_CloudProvider_Control(),
-                    toCloudProviderGate);
-            printFinal();
+            bFinish = allUsersFinished();
+            cancelAndDeleteMessages(pUserInstance);
+
+            if (bFinish) {
+                sendRequestMessage(new SM_CloudProvider_Control(),
+                        toCloudProviderGate);
+                printFinal();
+            }
         }
         break;
+
     }
     EV_INFO << "handleUserAppResponse - End" << endl;
 
+}
+
+bool UserGenerator_simple::hasToSubscribeVm(SM_UserAPP* userApp)
+{
+    double dRandom;
+
+    dRandom = ((double) rand() / (RAND_MAX));
+
+    return dRandom<=1;
 }
 
 void UserGenerator_simple::cancelAndDeleteMessages(
@@ -459,11 +475,21 @@ void UserGenerator_simple::subscribe(SM_UserVM *userVM_Rq) {
 }
 void UserGenerator_simple::submitService(SM_UserVM *userVm) {
     SM_UserAPP *pAppRq;
+    CloudUserInstance *pUserInstance;
+    std::string strUserName;
 
-    pAppRq = createAppRequest(userVm);
+    strUserName = userVm->getUserID();
+    pUserInstance = userHashMap.at(strUserName);
+    pAppRq = pUserInstance->getRequestAppMsg();
 
-    if (pAppRq != nullptr)
+    if (pAppRq == nullptr)
+        pAppRq = createAppRequest(userVm);
+
+    if (pAppRq != nullptr) {
+        pAppRq->setIsResponse(false);
+        pAppRq->setOperation(SM_APP_Req);
         sendRequestMessage(pAppRq, toCloudProviderGate);
+    }
 }
 
 CloudUserInstance* UserGenerator_simple::getNextUser() {

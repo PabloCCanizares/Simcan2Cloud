@@ -121,6 +121,7 @@ protected:
      */
     virtual void processUserAppResponse(SIMCAN_Message *userApp);
     virtual void handleUserAppResponse(SM_UserAPP *userApp);
+    virtual bool hasToSubscribeVm(SM_UserAPP* userApp);
 
     /**
      * Sends a request of service submission

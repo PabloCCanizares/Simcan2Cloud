@@ -9,7 +9,7 @@
 
 SM_UserVM::SM_UserVM() {
     // TODO Auto-generated constructor stub
-    pMsgTimeoutSub = nullptr;
+    this->pMsgTimeoutSub = nullptr;
 }
 
 SM_UserVM::~SM_UserVM() {
@@ -17,7 +17,7 @@ SM_UserVM::~SM_UserVM() {
 }
 SM_UserVM::SM_UserVM(const char *name, short kind) : ::SM_UserVM_Base(name,kind)
 {
-
+    this->pMsgTimeoutSub = nullptr;
 }
 SM_UserVM* SM_UserVM::dup() const
 {

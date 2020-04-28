@@ -524,6 +524,9 @@ void CloudProvider_firstBestFit::handleExecVmRentTimeout(SM_UserVM_Finish* pUser
                     //if so, notify this.
                     userApp->setVmId(strVmId.c_str());
                     timeoutAppRunningRequest(userApp);
+                    /// Version hack
+                    freeVm(strVmId);
+                    updateSubsQueue();
                 } else {
                     EV_INFO << "All the applications have already finished" << endl;
                     //Free the VM resources
@@ -588,7 +591,7 @@ void CloudProvider_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq)
         {
             //Get the user name, and recover the info about the VmRequests;
             bool bHandle;
-            int nIndexVmFound;
+            int nIndexVmFound, appStartTime, appExecutedTime;
             std::string strUsername, strVmId, strIp, strAppName;
             Application* appType;
             SM_UserAPP_Finish* pMsgFinish;
@@ -639,39 +642,59 @@ void CloudProvider_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq)
                             {
                                 userApp =userAPP_Rq->getApp(i);
 
-                                if(strVmId.compare(userApp.vmId)==0)
-                                {
-                                    appType = searchAppTypeById(userApp.strAppType);
+                                if ( !(userApp.eState == appFinishedOK || userApp.eState == appFinishedError) ) {
 
-                                    if(appType != nullptr)
+
+                                    if(strVmId.compare(userApp.vmId)==0)
                                     {
-                                        //Assing the app to core with less utilization time
-                                        //std::sort(totalTimePerCore, totalTimePerCore+vmType->getNumCores());
-                                        nTotalTime = TEMPORAL_calculateTotalTime(appType);
-                                        totalTimePerCore[0] = totalTimePerCore[0] + nTotalTime;
+                                        appType = searchAppTypeById(userApp.strAppType);
 
-                                        strAppName = userApp.strApp;
+                                        if(appType != nullptr)
+                                        {
+                                            //Assing the app to core with less utilization time
+                                            //std::sort(totalTimePerCore, totalTimePerCore+vmType->getNumCores());
+                                            nTotalTime = TEMPORAL_calculateTotalTime(appType);
+                                            appStartTime = simTime().dbl()+totalTimePerCore[0];
 
-                                        //Create new Message
-                                        pMsgFinish = new SM_UserAPP_Finish();
-                                        pMsgFinish->setUserID(strUsername.c_str());
-                                        pMsgFinish->setStrApp(strAppName.c_str());
-                                        pMsgFinish->setStrVmId(strVmId.c_str());
-                                        pMsgFinish->setNTotalTime(totalTimePerCore[0]);
-                                        pMsgFinish->setName(EXEC_APP_END_SINGLE);
+                                            if (userApp.eState == appFinishedTimeout) {
+                                                userAPP_Rq->decreaseFinishedApps();
+                                                appExecutedTime = userApp.finishTime - userApp.startTime;
+                                                if (appExecutedTime>0){
+                                                    nTotalTime -= appExecutedTime;
+                                                    appStartTime -= appExecutedTime;
+                                                }
 
-                                        userAPP_Rq->getApp(i).pMsgTimeout = pMsgFinish;
-                                        //userApp.vmId =  vmRequest.strVmId;
 
-                                        //Change status to running
-                                        userAPP_Rq->changeState(strAppName, strVmId, appRunning);
-                                        userAPP_Rq->changeStateByIndex(i, strAppName, appRunning);
-                                        userAPP_Rq->setVmIdByIndex(i, userApp.strIp, strVmId);
+                                            }
 
-                                        EV_INFO << "Scheduling time rental Msg, " << userAPP_Rq->getApp(i).pMsgTimeout->getName() << endl;
-                                        scheduleAt(simTime().dbl()+totalTimePerCore[0], userAPP_Rq->getApp(i).pMsgTimeout);
-                                        bHandle = true;
 
+
+                                            totalTimePerCore[0] = totalTimePerCore[0] + nTotalTime;
+
+                                            strAppName = userApp.strApp;
+
+                                            //Create new Message
+                                            pMsgFinish = new SM_UserAPP_Finish();
+                                            pMsgFinish->setUserID(strUsername.c_str());
+                                            pMsgFinish->setStrApp(strAppName.c_str());
+                                            pMsgFinish->setStrVmId(strVmId.c_str());
+                                            pMsgFinish->setNTotalTime(totalTimePerCore[0]);
+                                            pMsgFinish->setName(EXEC_APP_END_SINGLE);
+
+                                            userAPP_Rq->getApp(i).startTime = appStartTime;
+                                            userAPP_Rq->getApp(i).pMsgTimeout = pMsgFinish;
+                                            //userApp.vmId =  vmRequest.strVmId;
+
+                                            //Change status to running
+                                            userAPP_Rq->changeState(strAppName, strVmId, appRunning);
+                                            userAPP_Rq->changeStateByIndex(i, strAppName, appRunning);
+                                            userAPP_Rq->setVmIdByIndex(i, userApp.strIp, strVmId);
+
+                                            EV_INFO << "Scheduling time rental Msg, " << userAPP_Rq->getApp(i).pMsgTimeout->getName() << " at " << simTime().dbl()+totalTimePerCore[0] << "s" << endl;
+                                            scheduleAt(simTime().dbl()+totalTimePerCore[0], userAPP_Rq->getApp(i).pMsgTimeout);
+                                            bHandle = true;
+
+                                        }
                                     }
                                 }
                             }
@@ -898,9 +921,6 @@ void CloudProvider_firstBestFit::endVmAndAbortApp(SM_UserAPP* userAPP_Rq)
 
 void CloudProvider_firstBestFit::scheduleRentingTimeout(VM_Request& vmRequest, std::string strUsername)
 {
-    if (strUsername.compare("(3)User_D[244/1000]")==0)
-                        EV_INFO << "eee" << endl;
-
     vmRequest.pMsg = new SM_UserVM_Finish();
     vmRequest.pMsg->setUserID(strUsername.c_str());
     if(!vmRequest.strVmId.empty())
