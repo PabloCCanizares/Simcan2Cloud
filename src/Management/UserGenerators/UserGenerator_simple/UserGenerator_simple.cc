@@ -26,20 +26,16 @@ void UserGenerator_simple::initialize() {
 
     m_nUsersSent = 0;
 
-    selfFunctions[Timer_WaitToExecute] = std::bind(
-            &UserGenerator_simple::processWaitMessage, this,
+    selfFunctions[Timer_WaitToExecute] = std::bind(&processWaitMessage, this,
             std::placeholders::_1);
-    selfFunctions[USER_GEN_MSG] = std::bind(
-            &UserGenerator_simple::processUserGenMessage, this,
+    selfFunctions[USER_GEN_MSG] = std::bind(&processUserGenMessage, this,
             std::placeholders::_1);
 
     std::function<void(SIMCAN_Message*)> vmFunc = std::bind(
-            &UserGenerator_simple::processUserVmResponse, this,
-            std::placeholders::_1);
+            &processUserVmResponse, this, std::placeholders::_1);
     responseFunctions[SM_VM_Req_Rsp] = vmFunc;
     responseFunctions[SM_VM_Notify] = vmFunc;
-    responseFunctions[SM_APP_Rsp] = std::bind(
-            &UserGenerator_simple::processUserAppResponse, this,
+    responseFunctions[SM_APP_Rsp] = std::bind(&processUserAppResponse, this,
             std::placeholders::_1);
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
