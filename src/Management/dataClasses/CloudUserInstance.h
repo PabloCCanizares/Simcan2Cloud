@@ -34,6 +34,7 @@ class CloudUserInstance: public UserInstance{
         int nRentTime_t2;
         int maxSubTime_t3;
         int maxSubscriptionTime_t4;
+        int nId;
 
         double dArrival2Cloud;
         double dInitTime;
@@ -57,7 +58,7 @@ class CloudUserInstance: public UserInstance{
          * @param currentInstanceIndex User instance. First instance of this user must be 0.
          * @param totalUserInstances Total number of user instances to be created for this <b>userNumber</b>.
          */
-        CloudUserInstance(CloudUser *ptrUser, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances);
+        CloudUserInstance(CloudUser *ptrUser, unsigned int totalUserInstance, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances);
 
         /**
          * Destructor.
@@ -132,7 +133,8 @@ class CloudUserInstance: public UserInstance{
         void setInitTime(double initTime);
         void setSubscribe(bool bSubscribe);
         void setInitExecTime(double dExec);
-
+    int getId() const;
+    void setId(int id);
 
     protected:
 

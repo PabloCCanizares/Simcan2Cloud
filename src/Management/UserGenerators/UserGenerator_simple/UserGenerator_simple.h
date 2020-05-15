@@ -29,9 +29,23 @@ protected:
     double maxSubTime_t3;
     double maxSubscriptionTime_t4;
 
-    std::map<std::string, std::function<void(cMessage*)>> selfFunctions;
-    std::map<std::string, std::function<void(cMessage*)>> requestFunctions;
-    std::map<int, std::function<void(SIMCAN_Message*)>> responseFunctions;
+    // Handlers hashMap
+    std::map<std::string, std::function<void(cMessage*)>> selfMessageHandlers;
+    std::map<std::string, std::function<void(cMessage*)>> requestHandlers;
+    std::map<int, std::function<void(SIMCAN_Message*)>> responseHandlers;
+
+    // Signals
+    simsignal_t requestSignal;
+    simsignal_t responseSignal;
+    simsignal_t executeIpSignal;
+    simsignal_t executeNotSignal;
+    simsignal_t okSignal;
+    simsignal_t failSignal;
+    simsignal_t subscribeNoipSignal;
+    simsignal_t subscribeFailSignal;
+    simsignal_t notifySignal;
+    simsignal_t timeOutSignal;
+
 
     /** Iterators */
     /**
@@ -56,20 +70,20 @@ protected:
      *
      * @param msg Received (WaitToExecute) message.
      */
-    virtual void processWaitMessage(cMessage *msg);
+    virtual void processWaitToExecuteMessage(cMessage *msg);
 
     /**
      * Processes a self message of type USER_GEN_MSG.
      *
-     * @param msg Received (USER_GEN_MSG) message.
+     * @param msg Received (USER_REQ_GEN_MSG) message.
      */
-    virtual void processUserGenMessage(cMessage *msg);
+    virtual void processUserReqGenMessage(cMessage *msg);
 
     /**
      * Schedules the next user generation by scheduling an USER_GEN_MSG.
      *
      */
-    virtual void scheduleNextGenMessage();
+    virtual void scheduleNextReqGenMessage();
     /**
      * Processes a request message.
      *

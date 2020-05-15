@@ -13,8 +13,9 @@ void UserGeneratorBase::initialize(){
 
     // Init module parameters
     startDelay = par ("startDelay");
-    intervalBetweenUsers = &par ("intervalBetweenUsers");
-    allUsersArriveAtOnce = par ("allUsersArriveAtOnce");
+    distribution = &par ("distribution");
+    intervalBetweenUsers = par ("intervalBetweenUsers");
+    shuffleUsers = par ("shuffleUsers");
     showUserInstances = par ("showUserInstances");
 
     // Gates
@@ -68,14 +69,14 @@ void UserGeneratorBase::generateUsersBeforeSimulationStarts (){
 
     std::vector<CloudUser*>::iterator userTypeIterator;
     std::vector <CloudUserInstance*> userInstancesLocal;
-    unsigned int currentUserNumber, currentUserInstance;
+    unsigned int currentUserNumber, currentUserInstance, totalUserInstance;
     CloudUserInstance* newUser;
     CloudUserInstance* pUser;
     int  nSize;
 
     // Init...
     userTypeIterator = userTypes.begin();
-    currentUserNumber = 0;
+    currentUserNumber = totalUserInstance = 0;
 
     EV_DEBUG << "UserGeneratorBase::generateUsersBeforeSimulationStarts - Init" << endl;
 
@@ -94,7 +95,7 @@ void UserGeneratorBase::generateUsersBeforeSimulationStarts (){
 
             EV_DEBUG << "UserGeneratorBase::generateUsersBeforeSimulationStarts - 2" << endl;
             // Create a new user instance
-            newUser = new CloudUserInstance (*userTypeIterator, currentUserNumber, currentUserInstance, (*userTypeIterator)->getNumInstances());
+            newUser = new CloudUserInstance (*userTypeIterator, totalUserInstance, currentUserNumber, currentUserInstance, (*userTypeIterator)->getNumInstances());
 
             EV_DEBUG << "UserGeneratorBase::generateUsersBeforeSimulationStarts - 3" << endl;
             // Insert current user instance into the corresponding vector
@@ -103,6 +104,8 @@ void UserGeneratorBase::generateUsersBeforeSimulationStarts (){
 
             EV_DEBUG << "UserGeneratorBase::generateUsersBeforeSimulationStarts - 4" << endl;
             //update user instance
+            totalUserInstance++;
+
             userInstances.push_back(newUser);
         }
 

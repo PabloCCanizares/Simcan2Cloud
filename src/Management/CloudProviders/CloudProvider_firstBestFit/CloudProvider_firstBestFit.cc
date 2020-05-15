@@ -633,10 +633,10 @@ void CloudProvider_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq)
                             strVmId = vmRequest.strVmId;
                             vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
 
-//                            int totalTimePerCore[vmType->getNumCores()];
-//                            for (int i=0; i<vmType->getNumCores();i++)
-//                                totalTimePerCore[i]=0;
-                            int totalTimePerCore[1] = { 0 };
+                            int totalTimePerCore[vmType->getNumCores()];
+                            for (int i=0; i<vmType->getNumCores();i++)
+                                totalTimePerCore[i]=0;
+                            //int totalTimePerCore[1] = { 0 };
 
                             for(int i=0;i<userAPP_Rq->getAppArraySize();i++)
                             {
@@ -652,7 +652,7 @@ void CloudProvider_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq)
                                         if(appType != nullptr)
                                         {
                                             //Assing the app to core with less utilization time
-                                            //std::sort(totalTimePerCore, totalTimePerCore+vmType->getNumCores());
+                                            std::sort(totalTimePerCore, totalTimePerCore+vmType->getNumCores());
                                             nTotalTime = TEMPORAL_calculateTotalTime(appType);
                                             appStartTime = simTime().dbl()+totalTimePerCore[0];
 

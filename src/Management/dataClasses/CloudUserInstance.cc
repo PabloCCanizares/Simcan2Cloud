@@ -1,7 +1,7 @@
 #include "CloudUserInstance.h"
 
 
-CloudUserInstance::CloudUserInstance(CloudUser *ptrUser, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances)
+CloudUserInstance::CloudUserInstance(CloudUser *ptrUser, unsigned int totalUserInstance, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances)
                   : UserInstance((CloudUser*) ptrUser, userNumber, currentInstanceIndex, totalUserInstances){
 
     UserVmReference* vmReference;
@@ -18,6 +18,8 @@ CloudUserInstance::CloudUserInstance(CloudUser *ptrUser, unsigned int userNumber
         }
 
     processApplicationCollection();
+
+    nId = totalUserInstance;
 
     requestVmMsg = nullptr;
     requestAppMsg = nullptr;
@@ -94,6 +96,14 @@ void CloudUserInstance::setRentTimes(int maxStartTime_t1, int nRentTime_t2, int 
     this->nRentTime_t2 =  nRentTime_t2;
     this->maxSubTime_t3 = maxSubTime_t3;
     this->maxSubscriptionTime_t4 = maxSubscriptionTime_t4;
+}
+
+int CloudUserInstance::getId() const {
+    return nId;
+}
+
+void CloudUserInstance::setId(int id) {
+    nId = id;
 }
 
 void CloudUserInstance::processApplicationCollection()

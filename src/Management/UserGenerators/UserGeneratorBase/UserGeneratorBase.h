@@ -39,13 +39,13 @@ class UserGeneratorBase: public CloudManagerBase{
         bool showUserInstances;
 
         /** Flag for generating all the user instances at once */
-        bool allUsersArriveAtOnce;
+        bool intervalBetweenUsers;
 
         /**< Starting time delay */
         double startDelay;
 
         /** Interval gap between users arrivals */
-        cPar *intervalBetweenUsers;
+        cPar *distribution;
 
         /**
          * Destructor

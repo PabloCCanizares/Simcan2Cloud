@@ -1,6 +1,6 @@
 #include "UserGenerator_simple.h"
 
-#define USER_GEN_MSG "USER_GEN"
+#define USER_REQ_GEN_MSG "USER_REQ_GEN"
 
 Define_Module(UserGenerator_simple);
 
@@ -15,6 +15,19 @@ void UserGenerator_simple::initialize() {
     // Init super-class
     UserGeneratorBase::initialize();
 
+    //Signals initialization
+    requestSignal   = registerSignal("request");
+    responseSignal  = registerSignal("response");
+    executeIpSignal   = registerSignal("executeIp");
+    executeNotSignal   = registerSignal("executeNot");
+    okSignal        = registerSignal("ok");
+    failSignal      = registerSignal("fail");
+    subscribeNoipSignal = registerSignal("subscribeNoip");
+    subscribeFailSignal = registerSignal("subscribeFail");
+    notifySignal    = registerSignal("notify");
+    timeOutSignal   = registerSignal("timeOut");
+
+
     bMaxStartTime_t1_active = false;
 
     maxStartTime_t1 = par("maxStartTime_t1");
@@ -26,17 +39,11 @@ void UserGenerator_simple::initialize() {
 
     m_nUsersSent = 0;
 
-    selfFunctions[Timer_WaitToExecute] = std::bind(&processWaitMessage, this,
-            std::placeholders::_1);
-    selfFunctions[USER_GEN_MSG] = std::bind(&processUserGenMessage, this,
-            std::placeholders::_1);
-
-    std::function<void(SIMCAN_Message*)> vmFunc = std::bind(
-            &processUserVmResponse, this, std::placeholders::_1);
-    responseFunctions[SM_VM_Req_Rsp] = vmFunc;
-    responseFunctions[SM_VM_Notify] = vmFunc;
-    responseFunctions[SM_APP_Rsp] = std::bind(&processUserAppResponse, this,
-            std::placeholders::_1);
+    selfMessageHandlers[Timer_WaitToExecute] = std::bind(processWaitToExecuteMessage, this, std::placeholders::_1);
+    selfMessageHandlers[USER_REQ_GEN_MSG] = std::bind(processUserReqGenMessage, this, std::placeholders::_1);
+    responseHandlers[SM_VM_Req_Rsp] = std::bind(processUserVmResponse, this, std::placeholders::_1);;
+    responseHandlers[SM_VM_Notify] = std::bind(processUserVmResponse, this, std::placeholders::_1);;
+    responseHandlers[SM_APP_Rsp] = std::bind(processUserAppResponse, this,std::placeholders::_1);
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
 }
@@ -72,9 +79,9 @@ void UserGenerator_simple::generateShuffledUsers() {
 void UserGenerator_simple::processSelfMessage(cMessage *msg) {
     std::map<std::string, std::function<void(cMessage*)>>::iterator it;
 
-    it = selfFunctions.find(msg->getName());
+    it = selfMessageHandlers.find(msg->getName());
 
-    if (it == selfFunctions.end()) {
+    if (it == selfMessageHandlers.end()) {
         error("Unknown self message [%s]", msg->getName());
     } else {
         it->second(msg);
@@ -83,11 +90,14 @@ void UserGenerator_simple::processSelfMessage(cMessage *msg) {
     delete (msg);
 }
 
-void UserGenerator_simple::processWaitMessage(cMessage *msg) {
+//TODO: aquí habria que refactorizar para que no se repita el codigo en el if y en else.
+//Por ejemplo yo dejaría solo el codigo del for. Y una función que sea la que compruebe si esta
+// habilitado el between users o no y entonces devuelva el tiempo a partir de la distución.
+// añadir tb la variable que he creado shuffleUsers para barajar los usuarios o no.
+void UserGenerator_simple::processWaitToExecuteMessage(cMessage *msg) {
     SM_UserVM *userVm;
     CloudUserInstance *pUserInstance;
     double lastTime;
-    bool useDistribution = false;
 
     // Log (INFO)
     EV_INFO << "Starting execution!!!" << endl;
@@ -96,9 +106,9 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
     m_dInitSim = simTime().dbl();
     lastTime = m_dInitSim;
 
-    if (!useDistribution) {
+    if (!intervalBetweenUsers) {
         // srand((int)33); // TODO
-        generateShuffledUsers();
+        //generateShuffledUsers();
 
         for (int i = 0; i < userInstances.size(); i++) {
             // Get current user
@@ -112,11 +122,11 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
                 pUserInstance->setArrival2Cloud(lastTime);
             }
 
-            lastTime += intervalBetweenUsers->doubleValue();
+            lastTime += distribution->doubleValue();
         }
     } else {
         for (int i = 0; i < userInstances.size(); i++) {
-            lastTime = m_dInitSim + intervalBetweenUsers->doubleValue();
+            lastTime = m_dInitSim + distribution->doubleValue();
 
             // Get current user
             pUserInstance = userInstances.at(i);
@@ -138,17 +148,18 @@ void UserGenerator_simple::processWaitMessage(cMessage *msg) {
     scheduleNextGenMessage();
 }
 
-void UserGenerator_simple::processUserGenMessage(cMessage *msg) {
+void UserGenerator_simple::processUserReqGenMessage(cMessage *msg) {
     SM_UserVM *userVm;
     CloudUserInstance *pUserInstance;
 
-    EV_INFO << "processSelfMessage - USER_GEN_MSG" << endl;
+    EV_INFO << "processSelfMessage - USER_REQ_GEN_MSG" << endl;
     // Get current user
     pUserInstance = userInstances.at(m_nUsersSent);
     userVm = pUserInstance->getRequestVmMsg();
 
     if (userVm != nullptr) {
         // Send user to cloud provider
+        emit(requestSignal, pUserInstance->getId());
         sendRequestMessage(userVm, toCloudProviderGate);
 
         //TODO:Â¿Dejamos este mensaje o lo quitamos?
@@ -158,10 +169,10 @@ void UserGenerator_simple::processUserGenMessage(cMessage *msg) {
     }
     m_nUsersSent++;
 
-    scheduleNextGenMessage();
+    scheduleNextReqGenMessage();
 }
 
-void UserGenerator_simple::scheduleNextGenMessage() {
+void UserGenerator_simple::scheduleNextReqGenMessage() {
     CloudUserInstance *pUserInstance;
     simtime_t nextArrivalTime;
 
@@ -174,7 +185,7 @@ void UserGenerator_simple::scheduleNextGenMessage() {
         if (nextArrivalTime < simTime())
             error("Vector of user instances is not sorted by arrival time");
 
-        scheduleAt(SimTime(nextArrivalTime), new cMessage(USER_GEN_MSG));
+        scheduleAt(SimTime(nextArrivalTime), new cMessage(USER_REQ_GEN_MSG));
     }
 }
 
@@ -188,8 +199,8 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
 
     EV_INFO << "processResponseMessage - Received Response Message" << endl;
 
-    it = responseFunctions.find(sm->getOperation());
-    if (it == responseFunctions.end()) {
+    it = responseHandlers.find(sm->getOperation());
+    if (it == responseHandlers.end()) {
         EV_INFO << "processResponseMessage - Unhandled response" << endl;
     } else {
         it->second(sm);
@@ -225,6 +236,8 @@ void UserGenerator_simple::handleUserAppResponse(SM_UserAPP *userApp) {
         pUserInstance->setFinished(true);
         nUserInstancesFinished++;
 
+        emit(okSignal, pUserInstance->getId());
+
         cancelAndDeleteMessages(pUserInstance);
 
         bFinish = allUsersFinished();
@@ -237,19 +250,24 @@ void UserGenerator_simple::handleUserAppResponse(SM_UserAPP *userApp) {
     case SM_APP_Res_Reject:
         //The next step is to send a subscription to the cloudprovider
         //Recover the user instance, and get the VmRequest
+        pUserInstance = userHashMap.at(userApp->getUserID());
+        if (pUserInstance!=nullptr)
+            emit(failSignal, pUserInstance->getId());
 
         recoverVmAndsubscribe(userApp);
         break;
     case SM_APP_Res_Timeout:
         EV_INFO << "handleUserAppResponse - SM_APP_Res_Timeout" << endl;
-
+        pUserInstance = userHashMap.at(userApp->getUserID());
+        if (pUserInstance!=nullptr)
+            emit(failSignal, pUserInstance->getId());
 
         ///New version
         if (hasToSubscribeVm(userApp)) {
             recoverVmAndsubscribe(userApp);
         } else {
             //End of the protocol, exit!!
-            pUserInstance = userHashMap.at(userApp->getUserID());
+
             pUserInstance->setEndTime(simTime().dbl());
             pUserInstance->setFinished(true);
             pUserInstance->setTimeoutMaxRentTime();
@@ -317,6 +335,7 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
                        << strUserId << endl;
         pUserInstance = userHashMap.at(strUserId);
         if (pUserInstance != nullptr) {
+            emit(subscribeFailSignal, pUserInstance->getId());
             userVM_Rq = pUserInstance->getRequestVmMsg();
             if (userVM_Rq != nullptr) {
                 bSent = true;
@@ -341,6 +360,7 @@ void UserGenerator_simple::processUserVmResponse(SIMCAN_Message *userVm) {
     }
 }
 
+// TODO: Aquí abria que hacer lo mismo con un array de handlers para las operaciones
 void UserGenerator_simple::handleUserVmResponse(SM_UserVM *userVm) {
     switch (userVm->getOperation()) {
     case SM_VM_Req_Rsp:
@@ -352,6 +372,16 @@ void UserGenerator_simple::handleUserVmResponse(SM_UserVM *userVm) {
     }
 }
 
+class cCustomNotification : public cObject, noncopyable
+{
+  public:
+    SM_UserVM *userVm;
+};
+
+
+//TODO: Aquí en realidad se hace lo mismo que en handleUserVmNotify y se compureba el  resultado, se puede juntar.
+// Y hacer otro array de handlers para resultados. Habri tres, uno para mesajes, otro por operacion y otro por resultado.
+// Este permitirá que como en los dos métodos que digo mucho codigo se sustituya por uno solo.
 void UserGenerator_simple::handleUserVmReqResponse(SM_UserVM *userVm) {
     CloudUserInstance *pUserInstance;
     bool rejected;
@@ -363,17 +393,23 @@ void UserGenerator_simple::handleUserVmReqResponse(SM_UserVM *userVm) {
 
     //Check the response and proceed with the next action
     pUserInstance = userHashMap.at(userVm->getUserID());
+
     rejected = userVm->getResult() == SM_VM_Res_Reject;
     if (pUserInstance != nullptr) {
+        emit(responseSignal, pUserInstance->getId());
         pUserInstance->setInitExecTime(simTime().dbl());
         // If the vm-request has been rejected by the cloudprovider
         // we have to subscribe the service
         pUserInstance->setSubscribe(rejected);
-        if (rejected)
+        if (rejected) {
+            emit(subscribeNoipSignal, pUserInstance->getId());
             subscribe(userVm);
         // otherwise the next step is to submit the required services.
-        else
+        } else {
+            emit(executeIpSignal, pUserInstance->getId());
             submitService(userVm);
+
+        }
     }
 }
 
@@ -394,6 +430,8 @@ void UserGenerator_simple::handleUserVmNotify(SM_UserVM *userVm) {
         EV_INFO << "Subscription accepted ...  " << endl;
 
         if (pUserInstance != nullptr) {
+            emit(notifySignal, pUserInstance->getId());
+            emit(executeNotSignal, pUserInstance->getId());
             pUserInstance->setInitExecTime(simTime().dbl());
             submitService(userVm);
         }
@@ -403,6 +441,7 @@ void UserGenerator_simple::handleUserVmNotify(SM_UserVM *userVm) {
         EV_INFO << "VM timeout ... go home" << endl;
 
         if (pUserInstance != nullptr) {
+            emit(timeOutSignal, pUserInstance->getId());
             EV_INFO << "Set itself finished" << endl;
             pUserInstance->setFinished(true);
             pUserInstance->setEndTime(simTime().dbl());
@@ -422,6 +461,9 @@ void UserGenerator_simple::handleUserVmNotify(SM_UserVM *userVm) {
     }
 }
 
+//TODO: Esto en princpio esta bien y lo dejamos así, más adelante debemos discutir si es preferible así
+// o con encapsulación. La ecapsulación nos prodría traer el problema de que si queremos modificar la clase
+// VmInstance tengamos que modificar todas en cascada. Porque tal vez no. si pasamos el mensaje completo de una a otra.
 void UserGenerator_simple::updateVmUserStatus(SM_UserVM *userVm) {
     CloudUserInstance *pUserInstance;
     VmInstanceCollection *pVmCollection;
@@ -513,6 +555,8 @@ CloudUserInstance* UserGenerator_simple::getNextUser() {
     return pUserInstance;
 }
 
+//TODO: Aquí tenemos el mismo problema de la encapsulación. Aquí tendriamos el mismo problema
+//Aqui no podemos pasar el mensaje. Entonces o se hace una estrucutra que se pase y se encapsula o se queda así
 SM_UserVM* UserGenerator_simple::createVmRequest(
         CloudUserInstance *pUserInstance) {
     int nVmIndex, nCollectionNumber, nInstances;
@@ -591,6 +635,7 @@ SM_UserVM* UserGenerator_simple::createVmRequest(
     return pUserRet;
 }
 
+//TODO: Mismo problema de encapsulación
 SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
     VM_Response *pRes;
     VM_Request vmRq;
@@ -668,6 +713,9 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
 
     return userApp;
 }
+
+//TODO: Esto tal vez deberiamos cambiarlo por un contador total que se actualize cada vez que acabe un user,
+//así no hay que hacer un bucle cada vez.
 bool UserGenerator_simple::allUsersFinished() {
     bool bRet;
     int nFinished, nSize;
@@ -700,6 +748,9 @@ bool UserGenerator_simple::allUsersFinished() {
 
     return bRet;
 }
+
+//TODO: Las salidas se podrian hacer con omnet. Como hago lo de los emit, así se puede analizar facil con python y apliaciones van añadiendo no
+// tienen que implmentar todo el metodo de nuevo.
 void UserGenerator_simple::printExperiments_phase1() {
     int nIndex, nSize;
     std::map<std::string, CloudUserInstance*>::iterator it;

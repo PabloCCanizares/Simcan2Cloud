@@ -21,7 +21,7 @@ import simcan2.Management.UserGenerators.UserGenerator_simple.UserGenerator_simp
 //
 simple UserGeneratorCost extends UserGenerator_simple
 {
-    parameters:         
+    parameters:
         double offerAcceptanceRate = default (1.0);
         double offerCostIncrease = default(0.5);
         

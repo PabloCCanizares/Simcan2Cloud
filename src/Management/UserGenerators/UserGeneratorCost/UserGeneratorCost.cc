@@ -45,8 +45,6 @@ SM_UserAPP* UserGeneratorCost::createAppRequest(SM_UserVM* userVm)
         strUserName = userVm->getUserID();
         userApp->setUserID(strUserName.c_str());
         userApp->setOperation(SM_APP_Req);
-        if (strUserName.compare("(2)User_C[3215/3725]")==0)
-            EV_INFO << "eee" << endl;
 
         pUserInstance = userHashMap.at(strUserName);
         pUserInstance->setRequestApp(userApp);

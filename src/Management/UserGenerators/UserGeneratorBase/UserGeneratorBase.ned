@@ -9,8 +9,9 @@ simple UserGeneratorBase extends CloudManagerBase{
     parameters:
         bool showUserInstances = default (true);						// Show parsed user instances
         	double startDelay @unit(s) = default (5s);					// Delay time for processing users
-        	bool allUsersArriveAtOnce = default (false);					// By default, each user arrives at a specific time
-        	volatile double intervalBetweenUsers @unit(s);				// Interval gap between users arrivals
+        	bool intervalBetweenUsers = default (false);					// By default, each user arrives at a specific time
+        	bool shuffleUsers = default (false);					// By default, each user arrives at a specific time
+        	volatile double distribution @unit(s);				// Interval gap between users arrivals
                                
                 
    	gates:
