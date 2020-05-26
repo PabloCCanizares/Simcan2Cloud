@@ -41,6 +41,8 @@ class UserGeneratorBase: public CloudManagerBase{
         /** Flag for generating all the user instances at once */
         bool intervalBetweenUsers;
 
+        bool shuffleUsers;
+
         /**< Starting time delay */
         double startDelay;
 

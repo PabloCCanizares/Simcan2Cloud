@@ -39,11 +39,12 @@ void UserGenerator_simple::initialize() {
 
     m_nUsersSent = 0;
 
-    selfMessageHandlers[Timer_WaitToExecute] = std::bind(processWaitToExecuteMessage, this, std::placeholders::_1);
-    selfMessageHandlers[USER_REQ_GEN_MSG] = std::bind(processUserReqGenMessage, this, std::placeholders::_1);
-    responseHandlers[SM_VM_Req_Rsp] = std::bind(processUserVmResponse, this, std::placeholders::_1);;
-    responseHandlers[SM_VM_Notify] = std::bind(processUserVmResponse, this, std::placeholders::_1);;
-    responseHandlers[SM_APP_Rsp] = std::bind(processUserAppResponse, this,std::placeholders::_1);
+    selfMessageHandlers[Timer_WaitToExecute] = [this](cMessage *msg) { processWaitToExecuteMessage(msg); };
+    //selfMessageHandlers[Timer_WaitToExecute] = std::bind(&UserGenerator_simple::processWaitToExecuteMessage, this, std::placeholders::_1);
+    selfMessageHandlers[USER_REQ_GEN_MSG] = std::bind(&UserGenerator_simple::processUserReqGenMessage, this, std::placeholders::_1);
+    responseHandlers[SM_VM_Req_Rsp] = std::bind(&UserGenerator_simple::processUserVmResponse, this, std::placeholders::_1);;
+    responseHandlers[SM_VM_Notify] = std::bind(&UserGenerator_simple::processUserVmResponse, this, std::placeholders::_1);;
+    responseHandlers[SM_APP_Rsp] = std::bind(&UserGenerator_simple::processUserAppResponse, this, std::placeholders::_1);
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
 }
@@ -106,7 +107,7 @@ void UserGenerator_simple::processWaitToExecuteMessage(cMessage *msg) {
     m_dInitSim = simTime().dbl();
     lastTime = m_dInitSim;
 
-    if (!intervalBetweenUsers) {
+    if (intervalBetweenUsers) {
         // srand((int)33); // TODO
         //generateShuffledUsers();
 
@@ -145,7 +146,7 @@ void UserGenerator_simple::processWaitToExecuteMessage(cMessage *msg) {
 
     m_nUsersSent = 0;
 
-    scheduleNextGenMessage();
+    scheduleNextReqGenMessage();
 }
 
 void UserGenerator_simple::processUserReqGenMessage(cMessage *msg) {
