@@ -52,13 +52,13 @@ class UserGeneratorCost : public UserGenerator_simple
      * Handles the App response sent from the CloudProvider
      * @param userApp incoming message
      */
-    virtual void handleUserAppResponse(SM_UserAPP* userApp) override;
+    //virtual void handleUserAppResponse(SIMCAN_Message* userApp) override;
 
     /**
      * Handles the VM response received from the CloudProvider
      * @param userVm incoming message
      */
-    virtual void handleUserVmResponse(SM_UserVM* userVm) override;
+    //virtual void handleUserVmResponse(SM_UserVM* userVm) override;
 
     /**
      * Calculates the statistics of the experiment.

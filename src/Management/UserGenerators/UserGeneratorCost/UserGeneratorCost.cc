@@ -115,45 +115,46 @@ SM_UserAPP* UserGeneratorCost::createAppRequest(SM_UserVM* userVm)
     return userApp;
 }
 
-void UserGeneratorCost::handleUserAppResponse(SM_UserAPP* userApp)
+/*
+void UserGeneratorCost::handleUserAppResponse(SIMCAN_Message* userApp_RAW)
 {
+    SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(userApp_RAW);
+    if (userApp == nullptr) {
+        return;
+    }
 
     //Version hack
     UserGenerator_simple::handleUserAppResponse(userApp);
 
     if (false) {
-    ////////***********
-    bool bFinish;
-    CloudUserInstance* pUserInstance;
+        EV_INFO << "UserGeneratorCost::handleUserAppResponse - Init" << endl;
 
-    EV_INFO << "UserGeneratorCost::handleUserAppResponse - Init" << endl;
-
-    if(userApp->getOperation() == SM_APP_Rsp)
-    {
-        EV_INFO << "UserGeneratorCost::handleUserAppResponse - SM_APP_Rsp" << endl;
-        //Check the response
-        if(userApp->getResult() == SM_APP_Res_Timeout)
+        if(userApp->getOperation() == SM_APP_Rsp)
         {
-            EV_INFO << "UserGeneratorCost::handleUserAppResponse - SM_APP_Res_Timeout" << endl;
-            if (userApp->getFinished()) {
+            EV_INFO << "UserGeneratorCost::handleUserAppResponse - SM_APP_Rsp" << endl;
+            //Check the response
+            if(userApp->getResult() == SM_APP_Res_Timeout)
+            {
+                EV_INFO << "UserGeneratorCost::handleUserAppResponse - SM_APP_Res_Timeout" << endl;
+                if (userApp->getFinished()) {
+                    UserGenerator_simple::handleUserAppResponse(userApp);
+                }
+                else if(hasToExtendVm(userApp))
+                {
+                    resumeExecution(userApp);
+                }
+                else
+                {
+                    endExecution(userApp);
+                }
+            } else {
                 UserGenerator_simple::handleUserAppResponse(userApp);
             }
-            else if(hasToExtendVm(userApp))
-            {
-                resumeExecution(userApp);
-            }
-            else
-            {
-                endExecution(userApp);
-            }
-        } else {
-            UserGenerator_simple::handleUserAppResponse(userApp);
         }
+        EV_INFO << "UserGeneratorCost::handleUserAppResponse - End" << endl;
     }
-    EV_INFO << "UserGeneratorCost::handleUserAppResponse - End" << endl;
-    }
-
 }
+*/
 
 bool UserGeneratorCost::hasToExtendVm(SM_UserAPP* userApp)
 {
@@ -261,6 +262,7 @@ CloudUser* UserGeneratorCost::findUserTypeById (std::string userId){
     return result;
 }
 
+/*
 void UserGeneratorCost::handleUserVmResponse(SM_UserVM* userVm) {
     CloudUser* pCloudUser;
     CloudUserInstance* pUserInstance;
@@ -282,6 +284,7 @@ void UserGeneratorCost::handleUserVmResponse(SM_UserVM* userVm) {
     UserGenerator_simple::handleUserVmResponse(userVm);
 
 }
+*/
 
 SM_UserVM* UserGeneratorCost::createVmRequest(CloudUserInstance* pUserInstance)
 {
