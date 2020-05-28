@@ -23,6 +23,8 @@ protected:
     double m_dInitSim;
     int m_nUsersSent;
 
+    int numUsersFinished;
+
     // Timeouts
     double maxStartTime_t1;
     double nRentTime_t2;
@@ -32,7 +34,7 @@ protected:
     // Handlers hashMap
     std::map<std::string, std::function<void(cMessage*)>> selfMessageHandlers;
     std::map<std::string, std::function<void(cMessage*)>> requestHandlers;
-    std::map<int, std::function<void(SIMCAN_Message*)>> responseHandlers;
+    std::map<int, std::function<CloudUserInstance*(SIMCAN_Message*)>> responseHandlers;
 
     // Signals
     simsignal_t requestSignal;
@@ -147,11 +149,11 @@ protected:
      * Handles the VM response received from the CloudProvider
      * @param userVm incoming message
      */
-    virtual void handleResponse(SIMCAN_Message *userVm);
-    virtual void handleAppOk(SIMCAN_Message *userVm);
-    virtual void handleAppTimeout(SIMCAN_Message *userVm);
-    virtual void handleSubNotify(SIMCAN_Message *userVm);
-    virtual void handleSubTimeout(SIMCAN_Message *userVm);
+    virtual CloudUserInstance* handleResponse(SIMCAN_Message *userVm);
+    virtual CloudUserInstance* handleAppOk(SIMCAN_Message *userVm);
+    virtual CloudUserInstance* handleAppTimeout(SIMCAN_Message *userVm);
+    virtual CloudUserInstance* handleSubNotify(SIMCAN_Message *userVm);
+    virtual CloudUserInstance* handleSubTimeout(SIMCAN_Message *userVm);
 
     /**
      * Handles the App response sent from the CloudProvider

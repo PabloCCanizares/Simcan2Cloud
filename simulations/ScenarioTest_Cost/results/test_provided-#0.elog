@@ -1,5 +1,5 @@
 E # 0 t 0 m 1 ce -1 msg -1
-SB v 1286 rid test_provided-0-20200528-15:15:08-11212 b 1000
+SB v 1286 rid test_provided-0-20200528-15:41:00-8484 b 1000
 KF p -1 c "" s ""
 MC id 1 c omnetpp::cModule t simcan2.simulations.ScenarioTest_Cost.ScenarioTest_Cost n ScenarioTest_Cost cm 1
 MS id 1 d ""

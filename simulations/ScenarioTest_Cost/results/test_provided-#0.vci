@@ -1,15 +1,15 @@
-file 10615 1590671765                                           
+file 10613 1590673265                                           
 version 2
-run test_provided-0-20200528-15:15:08-11212
+run test_provided-0-20200528-15:41:00-8484
 attr configname test_provided
-attr datetime 20200528-15:15:08
+attr datetime 20200528-15:41:00
 attr experiment test_provided
 attr inifile omnetpp.ini
 attr iterationvars ""
 attr iterationvarsf ""
 attr measurement ""
 attr network ScenarioTest_Cost
-attr processid 11212
+attr processid 8484
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -57,8 +57,8 @@ vector 0 ScenarioTest_Cost.userGenerator request:vector ETV
 vector 1 ScenarioTest_Cost.userGenerator response:vector ETV
 vector 2 ScenarioTest_Cost.userGenerator subscribeNoip:vector ETV
 vector 3 ScenarioTest_Cost.userGenerator timeOut:vector ETV
-0	10477 32 4 8 5 53.150407526229 2 0 1 1 1
-1	10509 33 6 10 5 53.150407526229 2 0 1 1 1
-2	10542 33 6 10 5 53.150407526229 2 0 1 1 1
-3	10575 38 13 15 7205 7253.15040752623 2 0 1 1 1
+0	10475 32 4 8 5 53.150407526229 2 0 1 1 1
+1	10507 33 6 10 5 53.150407526229 2 0 1 1 1
+2	10540 33 6 10 5 53.150407526229 2 0 1 1 1
+3	10573 38 13 15 7205 7253.15040752623 2 0 1 1 1
 
