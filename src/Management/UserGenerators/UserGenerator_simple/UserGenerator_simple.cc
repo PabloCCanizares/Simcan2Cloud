@@ -76,37 +76,13 @@ void UserGenerator_simple::initializeResponseHandlers() {
     //responseHandlers[SM_VM_Notify] = std::bind(&UserGenerator_simple::processUserVmResponse, this, std::placeholders::_1);;
     //responseHandlers[SM_APP_Rsp] = std::bind(&UserGenerator_simple::processUserAppResponse, this, std::placeholders::_1);
 
-    responseHandlers[SM_RESPONSE] = [this](SIMCAN_Message *msg) { handleResponse(msg); };
-    responseHandlers[SM_EXEC_OK] = [this](SIMCAN_Message *msg) { handleAppOk(msg); };
-    responseHandlers[SM_EXEC_TIMEOUT] = [this](SIMCAN_Message *msg) { handleAppTimeout(msg); };
-    responseHandlers[SM_SUB_NOTIFY] = [this](SIMCAN_Message *msg) { handleSubNotify(msg); };
-    responseHandlers[SM_SUB_TIMEOUT] = [this](SIMCAN_Message *msg) { handleSubTimeout(msg); };
-}
-
-int UserGenerator_simple::getMsgType(SIMCAN_Message *sm) {
-    int type = SM_UNKNOWN;
-
-    switch (sm->getOperation()) {
-        case SM_VM_Req_Rsp: // Response
-            type = SM_RESPONSE;
-            break;
-        case SM_VM_Notify: // Subscribe result
-            if (sm->getResult() == SM_APP_Sub_Accept) // Notify
-                type = SM_SUB_NOTIFY;
-            else if (sm->getResult() == SM_APP_Sub_Timeout) // Timeout
-                type = SM_SUB_TIMEOUT;
-            break;
-        case SM_APP_Rsp: // Execute result
-            if (sm->getResult() == SM_APP_Res_Accept) // Ok
-                type = SM_EXEC_OK;
-            else if (sm->getResult() == SM_APP_Res_Reject) // exec_timeout due to VM error
-                type = SM_EXEC_TIMEOUT;
-            else if (sm->getResult() == SM_APP_Res_Timeout) // exec_timeout
-                type = SM_EXEC_TIMEOUT;
-            break;
-    }
-
-    return type;
+    responseHandlers[SM_VM_Res_Accept] = [this](SIMCAN_Message *msg) { handleResponse(msg); };
+    responseHandlers[SM_VM_Res_Reject] = [this](SIMCAN_Message *msg) { handleResponse(msg); };
+    responseHandlers[SM_APP_Res_Accept] = [this](SIMCAN_Message *msg) { handleAppOk(msg); };
+    responseHandlers[SM_APP_Res_Reject] = [this](SIMCAN_Message *msg) { handleAppTimeout(msg); };
+    responseHandlers[SM_APP_Res_Timeout] = [this](SIMCAN_Message *msg) { handleAppTimeout(msg); };
+    responseHandlers[SM_APP_Sub_Accept] = [this](SIMCAN_Message *msg) { handleSubNotify(msg); };
+    responseHandlers[SM_APP_Sub_Timeout] = [this](SIMCAN_Message *msg) { handleSubTimeout(msg); };
 }
 
 /**
@@ -260,7 +236,7 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
 
     EV_INFO << "processResponseMessage - Received Response Message" << endl;
 
-    it = responseHandlers.find(getMsgType(sm));
+    it = responseHandlers.find(sm->getResult());
 
     if (it == responseHandlers.end())
         EV_INFO << "processResponseMessage - Unhandled response" << endl;

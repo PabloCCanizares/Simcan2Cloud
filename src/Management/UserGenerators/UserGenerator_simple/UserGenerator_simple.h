@@ -9,13 +9,6 @@
 #include <random>
 #include <functional>
 
-static const int SM_RESPONSE=1;
-static const int SM_EXEC_OK=3;
-static const int SM_EXEC_TIMEOUT=4;
-static const int SM_SUB_NOTIFY=5;
-static const int SM_SUB_TIMEOUT=6;
-static const int SM_UNKNOWN=-1;
-
 /**
  * Class that implements a User generator for cloud environments.
  *
@@ -40,8 +33,6 @@ protected:
     std::map<std::string, std::function<void(cMessage*)>> selfMessageHandlers;
     std::map<std::string, std::function<void(cMessage*)>> requestHandlers;
     std::map<int, std::function<void(SIMCAN_Message*)>> responseHandlers;
-    std::map<int, std::function<void(SM_UserAPP*)>> appResultHandlers;
-    std::map<int, std::function<void(SM_UserVM*)>> vmResultHandlers;
 
     // Signals
     simsignal_t requestSignal;
@@ -81,11 +72,6 @@ protected:
      * Initializes the response handlers.
      */
     virtual void initializeResponseHandlers();
-
-    /**
-     * Initializes the response handlers.
-     */
-    virtual int getMsgType(SIMCAN_Message *msg);
 
     /**
      * Processes a self message.
