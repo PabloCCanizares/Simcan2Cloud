@@ -14,3 +14,4 @@ src/*.exe
 src/.tmp*
 simulations/**/.qtenvrc
 simulations/**/results/
+simulations/**/results/*.*
