@@ -48,6 +48,11 @@ protected:
     simsignal_t notifySignal;
     simsignal_t timeOutSignal;
 
+    // Consts
+    static const int REASON_OK=0;
+    static const int REASON_APP_TIMEOUT=1;
+    static const int REASON_SUB_TIMEOUT=2;
+
 
     /** Iterators */
     /**
@@ -74,6 +79,12 @@ protected:
      * Initializes the response handlers.
      */
     virtual void initializeResponseHandlers();
+
+    virtual void execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm);
+
+    virtual void trySubscribe(CloudUserInstance *pUserInstance, SM_UserAPP *userApp);
+
+    virtual void finishUser(CloudUserInstance *pUserInstance, int reason);
 
     /**
      * Processes a self message.

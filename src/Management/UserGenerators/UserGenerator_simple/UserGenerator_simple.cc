@@ -253,6 +253,41 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
     }
 }
 
+void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm) {
+    emit(notifySignal, pUserInstance->getId());
+    emit(executeNotSignal, pUserInstance->getId());
+    pUserInstance->setInitExecTime(simTime().dbl());
+    submitService(userVm);
+}
+
+void UserGenerator_simple::trySubscribe(CloudUserInstance *pUserInstance, SM_UserAPP *userApp) {
+    if (hasToSubscribeVm(userApp)) {
+        recoverVmAndsubscribe(userApp);
+    }
+    else {
+        //End of the protocol, exit!!
+        finishUser(pUserInstance, REASON_APP_TIMEOUT);
+
+        cancelAndDeleteMessages(pUserInstance);
+    }
+}
+
+void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance, int reason) {
+    pUserInstance->setEndTime(simTime().dbl());
+    pUserInstance->setFinished(true);
+
+    switch (reason) {
+        case REASON_APP_TIMEOUT:
+            pUserInstance->setTimeoutMaxRentTime();
+        case REASON_OK:
+            nUserInstancesFinished++;
+            break;
+        case REASON_SUB_TIMEOUT:
+            pUserInstance->setTimeoutMaxSubscribed();
+            break;
+    }
+}
+
 CloudUserInstance* UserGenerator_simple::handleResponse(SIMCAN_Message *userVm_RAW) {
     CloudUserInstance *pUserInstance;
     bool rejected;
@@ -307,9 +342,8 @@ CloudUserInstance* UserGenerator_simple::handleAppOk(SIMCAN_Message *userApp_RAW
 
         //End of the protocol, exit!!
         pUserInstance = userHashMap.at(userApp->getUserID());
-        pUserInstance->setEndTime(simTime().dbl());
-        pUserInstance->setFinished(true);
-        nUserInstancesFinished++;
+        if (pUserInstance != nullptr)
+            finishUser(pUserInstance, REASON_OK);
 
         emit(okSignal, pUserInstance->getId());
 
@@ -337,22 +371,10 @@ CloudUserInstance* UserGenerator_simple::handleAppTimeout(SIMCAN_Message *userAp
         //The next step is to send a subscription to the cloudprovider
         //Recover the user instance, and get the VmRequest
         pUserInstance = userHashMap.at(userApp->getUserID());
-        if (pUserInstance != nullptr)
+        if (pUserInstance != nullptr) {
             emit(failSignal, pUserInstance->getId());
 
-        ///New version
-        if (hasToSubscribeVm(userApp)) {
-            recoverVmAndsubscribe(userApp);
-        }
-        else {
-            //End of the protocol, exit!!
-
-            pUserInstance->setEndTime(simTime().dbl());
-            pUserInstance->setFinished(true);
-            pUserInstance->setTimeoutMaxRentTime();
-            nUserInstancesFinished++;
-
-            cancelAndDeleteMessages(pUserInstance);
+            trySubscribe(pUserInstance, userApp);
         }
 
         EV_INFO << "handleAppTimeout - End" << endl;
@@ -379,10 +401,7 @@ CloudUserInstance* UserGenerator_simple::handleSubNotify(SIMCAN_Message *userVm_
         EV_INFO << "Subscription accepted ...  " << endl;
 
         if (pUserInstance != nullptr) {
-            emit(notifySignal, pUserInstance->getId());
-            emit(executeNotSignal, pUserInstance->getId());
-            pUserInstance->setInitExecTime(simTime().dbl());
-            submitService(userVm);
+            execute(pUserInstance, userVm);
         }
     }
     else {
@@ -391,6 +410,8 @@ CloudUserInstance* UserGenerator_simple::handleSubNotify(SIMCAN_Message *userVm_
 
     return pUserInstance;
 }
+
+
 
 CloudUserInstance* UserGenerator_simple::handleSubTimeout(SIMCAN_Message *userVm_RAW) {
     CloudUserInstance *pUserInstance;
@@ -411,9 +432,7 @@ CloudUserInstance* UserGenerator_simple::handleSubTimeout(SIMCAN_Message *userVm
         if (pUserInstance != nullptr) {
             emit(timeOutSignal, pUserInstance->getId());
             EV_INFO << "Set itself finished" << endl;
-            pUserInstance->setFinished(true);
-            pUserInstance->setEndTime(simTime().dbl());
-            pUserInstance->setTimeoutMaxSubscribed();
+            finishUser(pUserInstance, REASON_SUB_TIMEOUT);
 
             cancelAndDeleteMessages(pUserInstance);
         }
@@ -532,6 +551,7 @@ void UserGenerator_simple::updateVmUserStatus(SM_UserVM *userVm) {
         }
     }
 }
+
 void UserGenerator_simple::subscribe(SM_UserVM *userVM_Rq) {
     EV_INFO << "UserGenerator::subscribe - Sending Subscribe message" << endl;
     if (userVM_Rq != nullptr) {
@@ -545,6 +565,7 @@ void UserGenerator_simple::subscribe(SM_UserVM *userVM_Rq) {
     }
     EV_INFO << "UserGenerator::subscribe - End" << endl;
 }
+
 void UserGenerator_simple::submitService(SM_UserVM *userVm) {
     SM_UserAPP *pAppRq;
     CloudUserInstance *pUserInstance;
