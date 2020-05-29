@@ -11,4 +11,5 @@ doc/**
 **/.cmdenv-log
 **/.project
 src/*.exe
-
+simulations/**/.qtenvrc
+simulations/**/results/
