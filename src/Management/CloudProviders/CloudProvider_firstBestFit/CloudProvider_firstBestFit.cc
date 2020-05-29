@@ -62,7 +62,11 @@ int CloudProvider_firstBestFit::parseDataCentersList (){
     return result;
 }
 
-//Default
+//ToDo: Comprueba primero con el método del padre y luego si es prioritario. Es muy hardcoded. Se puede separar la comprobación de los prioritarios,
+//en otro metódo y entonces es solo llamar a cada una de las funciones dependiendo de lo que necesites. Y se debe añadir un parámetro configurable
+//desde el ini para indicar que comprueba primero. Ya que tenemos una lista con los tipos de máquinas, ahora solo Normal o Reserved, pero en un
+//futuro podrían ser más, se podría hacer que para cada tipo de usuario se indique en una lista dónde puede ser alojado y en que orden.
+//Seguramente se pueda separar el método en varios ya que es muy largo y seguro que hay código repetido de otras funciones.
 bool CloudProvider_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
 {
     bool bRet, bAccepted;
@@ -341,6 +345,8 @@ bool CloudProvider_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
 //    return bRet;
 //}
 
+//ToDo: Comprueba que empieza por el string, por lo que puede dar errores si un user se llama User_A y y el otro User_A2
+//Hay que comprobar que sea exacta la cadena.
 CloudUser* CloudProvider_firstBestFit::findUserTypeById (std::string userId){
 
     std::vector<CloudUser*>::iterator it;
@@ -377,6 +383,7 @@ void CloudProvider_firstBestFit::abortAllApps(SM_UserAPP* userApp, std::string s
     }
 }
 
+//Todo: tiene una nota interna. Supongo que se refiere a eliminar el mensaje de otras apps que esten en otro estado.
 void CloudProvider_firstBestFit::cancelAndDeleteAppFinishMsgs(SM_UserAPP* userApp, std::string strVmId)
 {
     // Terminar este mÃ©todo, para cancelar el resto de eventos si se requiere.
@@ -391,6 +398,7 @@ void CloudProvider_firstBestFit::cancelAndDeleteAppFinishMsgs(SM_UserAPP* userAp
     }
 }
 
+//
 void CloudProvider_firstBestFit::handleAppExecEndSingle(SM_UserAPP_Finish* pUserAppFinish) {
 
     SM_UserAPP* userApp;
