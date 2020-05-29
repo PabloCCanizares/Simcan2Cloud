@@ -232,7 +232,6 @@ void UserGenerator_simple::processRequestMessage(SIMCAN_Message *sm) {
 }
 
 void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
-    bool bFinish;
     CloudUserInstance *pUserInstance;
     std::map<int, std::function<CloudUserInstance*(SIMCAN_Message*)>>::iterator it;
 
@@ -249,11 +248,8 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
         numUsersFinished++;
 
         //Check if all the users have ended
-        bFinish = numUsersFinished >= userInstances.size();
-        if (bFinish) {
-            sendRequestMessage(new SM_CloudProvider_Control(), toCloudProviderGate);
-            printFinal();
-        }
+        if (allUsersFinished())
+            onFinish();
     }
 }
 
@@ -752,35 +748,21 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
 //así no hay que hacer un bucle cada vez.
 bool UserGenerator_simple::allUsersFinished() {
     bool bRet;
-    int nFinished, nSize;
-    std::map<std::string, CloudUserInstance*>::iterator it;
-    CloudUserInstance *pUserInstance;
-
-    nFinished = 0;
-    bRet = true;
 
     EV_INFO << "allUsersFinished - Checking if all users have finished" << endl;
 
-    if (userInstances.size() > 0) {
-        nSize = userInstances.size();
+    bRet = numUsersFinished >= userInstances.size();
 
-        for (int i = 0; (i < nSize) && bRet; i++) {
-            pUserInstance = userInstances.at(i);
-            bRet = pUserInstance->isFinished();
-            if (bRet) {
-                nFinished++;
-            } else {
-                EV_INFO << "allUsersFinished - User  "
-                               << pUserInstance->toString(false, false)
-                               << " | is already running" << endl;
-            }
-        }
-    }
     EV_INFO << "allUsersFinished - Res " << bRet << " | NFinished: "
-                   << nFinished << " vs Total: " << nUserInstancesFinished
+                   << numUsersFinished << " vs Total: " << userInstances.size() // Antes comparaba con nUserInstancesFinished. No se actualiza en los timeout
                    << endl;
 
     return bRet;
+}
+
+void UserGenerator_simple::onFinish() {
+    sendRequestMessage(new SM_CloudProvider_Control(), toCloudProviderGate);
+    printFinal();
 }
 
 //TODO: Las salidas se podrian hacer con omnet. Como hago lo de los emit, así se puede analizar facil con python y apliaciones van añadiendo no

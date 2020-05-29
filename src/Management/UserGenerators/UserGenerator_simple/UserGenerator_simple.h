@@ -220,6 +220,11 @@ private:
     /**
      * Calculates the statistics of the experiment.
      */
+    virtual void onFinish();
+
+    /**
+     * Calculates the statistics of the experiment.
+     */
     virtual void calculateStatistics();
 
     /**
