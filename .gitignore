@@ -9,7 +9,6 @@ doc/**
 .settings/*.*
 **/.tkenvrc
 **/.cmdenv-log
-**/.project
 src/*.exe
 src/.tmp*
 simulations/**/.qtenvrc
