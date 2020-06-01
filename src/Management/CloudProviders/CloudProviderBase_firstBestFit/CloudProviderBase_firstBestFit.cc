@@ -260,6 +260,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(SM_UserAPP_Finish* p
     }
 }
 
+//TODO: asignar la vm que hace el timout al mensaje de la app. Duplicarlo y enviarlo.
 void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(SM_UserVM_Finish* pUserVmFinish) {
     SM_UserAPP *userApp;
     std::string strUsername, strVmId, strAppName, strIp;

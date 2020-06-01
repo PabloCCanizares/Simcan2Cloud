@@ -231,6 +231,8 @@ void UserGenerator_simple::processRequestMessage(SIMCAN_Message *sm) {
             sm->contentsToString(true, false).c_str());
 }
 
+
+//TODO: probar si el método onFinish se puede quitar y usar el método finish que tiene por defecto omnetpp
 void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
     CloudUserInstance *pUserInstance;
     std::map<int, std::function<CloudUserInstance*(SIMCAN_Message*)>>::iterator it;
@@ -358,6 +360,8 @@ CloudUserInstance* UserGenerator_simple::handleAppOk(SIMCAN_Message *userApp_RAW
     return pUserInstance;
 }
 
+//TODO: En este el subscribe debe de hacerse duplicando el mensaje y enviando solo la vm que se quiere suscribir.
+//En realidad no hace falta duplicarlo, como no es una respuesta, se puede crear el mensaje desde 0.
 CloudUserInstance* UserGenerator_simple::handleAppTimeout(SIMCAN_Message *userApp_RAW) {
     CloudUserInstance *pUserInstance;
     SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(userApp_RAW);
