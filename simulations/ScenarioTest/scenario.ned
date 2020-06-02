@@ -1,4 +1,4 @@
-package simcan2.simulations.ScenarioTest_Cost; 
+package simcan2.simulations.ScenarioTest; 
 
 import simcan2.Architecture.Nodes.Cloud.CloudBlade;
 import simcan2.Architecture.Nodes.Cloud.CloudBoard;
@@ -6,7 +6,7 @@ import simcan2.Architecture.Nodes.Cloud.CloudRack;
 import simcan2.Management.DataCenterManager.DataCenterManager;
 import simcan2.Management.CloudProviders.*.*;
 import simcan2.Architecture.Network.DataCenterNetwork.*;
-import simcan2.Management.UserGenerators.UserGeneratorCost.*;
+import simcan2.Management.UserGenerators.UserGenerator_simple.*;
 
 // ---------------------------------------------------------------
 //   Definition of the data-center DataCenter_A
@@ -76,7 +76,7 @@ module DataCenter_A{
 // ---------------------------------------------------------------
 //   Definition of the scenario
 // ---------------------------------------------------------------
-network ScenarioTest_Cost{
+network ScenarioTest{
 
 	parameters:
 		string appList;
@@ -120,7 +120,7 @@ network ScenarioTest_Cost{
 		// -------------------------------------------------------
 		//   Definition of the user generator
 		// -------------------------------------------------------
-		userGenerator:UserGeneratorCost{
+		userGenerator:UserGenerator_simple{
 			parameters:
 				appList=appList;
 				vmList=vmList;
