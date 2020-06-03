@@ -43,19 +43,19 @@ void CloudManagerBase::initialize(){
            EV_DEBUG << vmsToString ();
         }
 
-        // Init module parameters
-        showSlas = par ("showSlas");
-
-        // Parse sla list
-        result = parseSlasList();
+//        // Init module parameters
+//        showSlas = par ("showSlas");
+//
+//        // Parse sla list
+//        result = parseSlasList();
 
         // Something goes wrong...
-        if (result == SC_ERROR){
-           error ("Error while parsing slas list");
-        }
-        else if (showUsersVms){
-           EV_DEBUG << slasToString ();
-        }
+//        if (result == SC_ERROR){
+//           error ("Error while parsing slas list");
+//        }
+//        else if (showSlas){
+//           EV_DEBUG << slasToString ();
+//        }
 
         // Parse user list
         result = parseUsersList();
@@ -95,25 +95,36 @@ int CloudManagerBase::parseVmsList (){
     return result;
 }
 
-int CloudManagerBase::parseSlasList (){
-    int result;
-    const char *slaListChr;
-
-    slaListChr= par ("slaList");
-    SlaListParser slaParser(slaListChr, &vmTypes);
-    result = slaParser.parse();
-    if (result == SC_OK) {
-        slaTypes = slaParser.getResult();
-    }
-    return result;
-}
+//int CloudManagerBase::parseSlasList (){
+//    int result;
+//    const char *slaListChr;
+//
+//    slaListChr= par ("slaList");
+//    SlaListParser slaParser(slaListChr, &vmTypes);
+//    result = slaParser.parse();
+//    if (result == SC_OK) {
+//        slaTypes = slaParser.getResult();
+//    }
+//    return result;
+//}
 
 int CloudManagerBase::parseUsersList (){
+//    int result;
+//    const char *userListChr;
+//
+//    userListChr= par ("userList");
+//    UserListParser userParser(userListChr, &vmTypes, &appTypes, &slaTypes);
+//    result = userParser.parse();
+//    if (result == SC_OK) {
+//        userTypes = userParser.getResult();
+//    }
+//    return result;
+
     int result;
     const char *userListChr;
 
     userListChr= par ("userList");
-    UserListParser userParser(userListChr, &vmTypes, &slaTypes, &appTypes);
+    UserListParser userParser(userListChr, &vmTypes, &appTypes);
     result = userParser.parse();
     if (result == SC_OK) {
         userTypes = userParser.getResult();
@@ -170,22 +181,22 @@ std::string CloudManagerBase::vmsToString (){
     return info.str();
 }
 
-std::string CloudManagerBase::slasToString (){
-
-    std::ostringstream info;
-    int i;
-
-        // Main text for the users of this manager
-        info << std::endl << slaTypes.size() << " Slas parsed from ManagerBase in " << getFullPath() << endl << endl;
-
-        for (i=0; i<slaTypes.size(); i++){
-            info << "\tSla[" << i << "]  --> " << slaTypes.at(i)->toString() << endl;
-        }
-
-        info << "---------------- End of parsed Slas in " << getFullPath() << " ----------------" << endl;
-
-    return info.str();
-}
+//std::string CloudManagerBase::slasToString (){
+//
+//    std::ostringstream info;
+//    int i;
+//
+//        // Main text for the users of this manager
+//        info << std::endl << slaTypes.size() << " Slas parsed from ManagerBase in " << getFullPath() << endl << endl;
+//
+//        for (i=0; i<slaTypes.size(); i++){
+//            info << "\tSla[" << i << "]  --> " << slaTypes.at(i)->toString() << endl;
+//        }
+//
+//        info << "---------------- End of parsed Slas in " << getFullPath() << " ----------------" << endl;
+//
+//    return info.str();
+//}
 
 
 std::string CloudManagerBase::usersToString (){
@@ -257,30 +268,30 @@ VirtualMachine* CloudManagerBase::findVirtualMachine (std::string vmType){
     return result;
 }
 
-Sla* CloudManagerBase::findSla (std::string slaType){
-
-    std::vector<Sla*>::iterator it;
-    Sla* result;
-    bool found;
-
-        // Init
-        found = false;
-        result = nullptr;
-        it = slaTypes.begin();
-
-        // Search...
-        while((!found) && (it != slaTypes.end())){
-
-            if ((*it)->getType() == slaType){
-                found = true;
-                result = (*it);
-            }
-            else
-                it++;
-        }
-
-    return result;
-}
+//Sla* CloudManagerBase::findSla (std::string slaType){
+//
+//    std::vector<Sla*>::iterator it;
+//    Sla* result;
+//    bool found;
+//
+//        // Init
+//        found = false;
+//        result = nullptr;
+//        it = slaTypes.begin();
+//
+//        // Search...
+//        while((!found) && (it != slaTypes.end())){
+//
+//            if ((*it)->getType() == slaType){
+//                found = true;
+//                result = (*it);
+//            }
+//            else
+//                it++;
+//        }
+//
+//    return result;
+//}
 
 
 CloudUser* CloudManagerBase::findUser (std::string userType){

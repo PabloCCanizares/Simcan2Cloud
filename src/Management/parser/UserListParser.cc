@@ -15,9 +15,8 @@
 
 #include "UserListParser.h"
 
-UserListParser::UserListParser(const char *s, std::vector<VirtualMachine*> *vmTypesVector, std::vector<Sla*> *slaTypesVector, std::vector<Application*> *appTypesVector) : Parser<CloudUser>(s) {
+UserListParser::UserListParser(const char *s, std::vector<VirtualMachine*> *vmTypesVector, std::vector<Application*> *appTypesVector) : Parser<CloudUser>(s) {
     vmTypes = vmTypesVector;
-    slaTypes = slaTypesVector;
     appTypes = appTypesVector;
     // Init...
     result = SC_OK;
@@ -57,43 +56,6 @@ int UserListParser::parse() {
                 result = SC_ERROR;
             }
 
-            // Get the user priority type
-            if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
-                const char *priorityTypeChr = tokenizer.nextToken();
-                priorityTypeStr = priorityTypeChr;
-
-                if (priorityTypeStr.compare(tPriorityTypeLabel[Regular])==0) {
-                    priorityType = Regular;
-                } else if (priorityTypeStr.compare(tPriorityTypeLabel[Priority])==0) {
-                    priorityType = Priority;
-                } else {
-                    EV_ERROR << "User priority " << priorityTypeStr << " does not exist, user priority set to Regular for user:" << currentUser << endl;
-                    result = SC_ERROR;
-                }
-            }
-            else{
-                EV_ERROR << "Cannot read the user priority for user:" << currentUser << endl;
-                result = SC_ERROR;
-            }
-
-            // Get the user sla type
-            if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
-                const char *slaTypeChr = tokenizer.nextToken();
-                slaTypeStr = slaTypeChr;
-                // Locate the Sla in the vector
-                slaPtr = findSla (slaTypeStr);
-
-                // Sla not found!
-                if (slaPtr == nullptr){
-                    EV_ERROR << "Sla not found [" << slaTypeStr << "] in user:" << userTypeStr << endl;
-                    result = SC_ERROR;
-                }
-            }
-            else{
-                EV_ERROR << "Cannot read the sla type for user:" << userTypeStr << endl;
-                result = SC_ERROR;
-            }
-
             // Get the number of user instances
             if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
                const char *numUserInstancesChr = tokenizer.nextToken();
@@ -122,7 +84,7 @@ int UserListParser::parse() {
                     currentApp = 0;
 
                     // Create current user instance
-                    currentUserObject = new CloudUser(userTypeStr, numUserInstances, priorityType, slaPtr);
+                    currentUserObject = new CloudUser(userTypeStr, numUserInstances);
 
                     // Include each application
                     while ((currentApp<numApps) && (result==SC_OK)){
@@ -293,27 +255,3 @@ VirtualMachine* UserListParser::findVirtualMachine (std::string vmType){
     return result;
 }
 
-Sla* UserListParser::findSla (std::string slaType){
-
-    std::vector<Sla*>::iterator it;
-    Sla* result;
-    bool found;
-
-        // Init
-        found = false;
-        result = nullptr;
-        it = slaTypes->begin();
-
-        // Search...
-        while((!found) && (it != slaTypes->end())){
-
-            if ((*it)->getType() == slaType){
-                found = true;
-                result = (*it);
-            }
-            else
-                it++;
-        }
-
-    return result;
-}

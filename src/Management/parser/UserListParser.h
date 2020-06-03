@@ -29,7 +29,7 @@ public:
      * @param vmTypesVector Vector of vm types to reference them
      * @param appTypesVector Vector of application types to reference them
      */
-    UserListParser(const char *s, std::vector<VirtualMachine*> *vmTypesVector, std::vector<Sla*> *slaTypesVector, std::vector<Application*> *appTypesVector);
+    UserListParser(const char *s, std::vector<VirtualMachine*> *vmTypesVector, std::vector<Application*> *appTypesVector);
 
     /**
      * Destructor
@@ -44,16 +44,12 @@ protected:
     int result;
     Application* appPtr;
     VirtualMachine* vmPtr;
-    Sla* slaPtr;
     CloudUser* currentUserObject;
-    std::string userTypeStr, slaTypeStr, appNameStr, vmNameStr, priorityTypeStr;
-    tPriorityType priorityType;
+    std::string userTypeStr, appNameStr, vmNameStr;
     /** Pointer to the vector that contains the set of application types used in the current simulation */
     std::vector<Application*> *appTypes;
     /** Pointer to the vector that contains the types of VM used in the current simulation */
     std::vector<VirtualMachine*> *vmTypes;
-    /** Pointer to the vector that contains the types of sla used in the current simulation */
-    std::vector<Sla*> *slaTypes;
 
 
     /**
@@ -71,14 +67,6 @@ protected:
      * @return If the requested type of VM is located in the vmTypes vector, then a pointer to its object is returned. In other case, a \a nullptr is returned.
      */
      VirtualMachine* findVirtualMachine (std::string vmType);
-
-     /**
-      * Search for a specific type of Sla.
-      *
-      * @param slaType Type of a Sla.
-      * @return If the requested type of Sla is located in the slaTypes vector, then a pointer to its object is returned. In other case, a \a nullptr is returned.
-      */
-     Sla* findSla (std::string slaType);
 };
 
 #endif /* MANAGEMENT_PARSER_USERLISTPARSER_H_ */

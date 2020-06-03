@@ -16,7 +16,7 @@ module DataCenter_A{
 	parameters:
 		string appList;
 		string vmList;
-		string slaList;
+		//string slaList;
 		string userList;
 
 	gates:
@@ -35,7 +35,7 @@ module DataCenter_A{
 			parameters:
 				appList=appList;
 				vmList=vmList;
-				slaList=slaList;
+				//slaList=slaList;
 				userList=userList;
 		}
 
@@ -81,7 +81,7 @@ network ScenarioTest{
 	parameters:
 		string appList;
 		string vmList;
-		string slaList;
+		//string slaList;
 		string userList;
 		string dataCentersList;
 
@@ -97,7 +97,7 @@ network ScenarioTest{
 			parameters:
 				appList=appList;
 				vmList=vmList;
-				slaList=slaList;
+				//slaList=slaList;
 				userList=userList;
 		}
 
@@ -108,7 +108,7 @@ network ScenarioTest{
 			parameters:
 				appList=appList;
 				vmList=vmList;
-				slaList=slaList;
+				//slaList=slaList;
 				userList=userList;
 				dataCentersList=dataCentersList;
 
@@ -124,7 +124,7 @@ network ScenarioTest{
 			parameters:
 				appList=appList;
 				vmList=vmList;
-				slaList=slaList;
+				//slaList=slaList;
 				userList=userList;
 		}
 

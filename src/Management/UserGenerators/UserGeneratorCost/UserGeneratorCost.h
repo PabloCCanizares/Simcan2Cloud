@@ -19,6 +19,7 @@
 #include <algorithm>
 #include "Management/UserGenerators/UserGenerator_simple/UserGenerator_simple.h"
 #include "Messages/SM_UserVM_Cost_m.h"
+#include "Management/dataClasses/CloudUserPriority.h"
 
 using namespace omnetpp;
 

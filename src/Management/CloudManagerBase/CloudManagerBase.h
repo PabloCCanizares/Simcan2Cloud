@@ -16,7 +16,7 @@ class CloudManagerBase: public cSIMCAN_Core{
 
     protected:
         /** Show parsed slas */
-        bool showSlas;
+//        bool showSlas;
 
         /** Show parsed users and VMs */
         bool showUsersVms;
@@ -31,7 +31,7 @@ class CloudManagerBase: public cSIMCAN_Core{
         std::vector<VirtualMachine*> vmTypes;
 
         /** Vector that contains the types of slas generated in the current simulation */
-        std::vector<Sla*> slaTypes;
+//        std::vector<Sla*> slaTypes;
 
         /** Vector that contains the types of users generated in the current simulation */
         std::vector<CloudUser*> userTypes;
@@ -66,7 +66,7 @@ class CloudManagerBase: public cSIMCAN_Core{
          *
          * @return If the parsing process is successfully executed, this method returns SC_OK. In other case, it returns SC_ERROR.
          */
-        virtual int parseSlasList();
+//        virtual int parseSlasList();
 
         /**
          * Parses each user type used in the simulation. These users are allocated in the <b>userTypes</b> vector.
@@ -94,7 +94,7 @@ class CloudManagerBase: public cSIMCAN_Core{
          *
          * @return A string containing the parsed slas.
          */
-        std::string slasToString();
+//        std::string slasToString();
 
         /**
          * Converts the parsed user into string format.
@@ -125,7 +125,7 @@ class CloudManagerBase: public cSIMCAN_Core{
          * @param userType Type of a user.
          * @return If the requested type of user is located in the userTypes vector, then a pointer to its object is returned. In other case, \a nullptr is returned.
          */
-         Sla* findSla (std::string slaType);
+//         Sla* findSla (std::string slaType);
 
 
        /**

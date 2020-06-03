@@ -59,6 +59,7 @@ OBJS = \
     $O/Management/dataClasses/AppParameter.o \
     $O/Management/dataClasses/CloudUser.o \
     $O/Management/dataClasses/CloudUserInstance.o \
+    $O/Management/dataClasses/CloudUserPriority.o \
     $O/Management/dataClasses/DataCenter.o \
     $O/Management/dataClasses/DataCenter_CpuType.o \
     $O/Management/dataClasses/DataCenterInfoCollection.o \
@@ -83,6 +84,7 @@ OBJS = \
     $O/Management/parser/DataCenterReservationListParser.o \
     $O/Management/parser/SlaListParser.o \
     $O/Management/parser/UserListParser.o \
+    $O/Management/parser/UserPriorityListParser.o \
     $O/Management/parser/VmListParser.o \
     $O/Messages/SIMCAN_Message.o \
     $O/Messages/SM_CPU_Message.o \

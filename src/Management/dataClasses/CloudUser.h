@@ -13,7 +13,7 @@
  */
 class CloudUser{
 
-    private:
+    protected:
 
         /** Vector of virtual machines required by this user */
         std::vector<UserVmReference*> virtualMachines;
@@ -27,12 +27,6 @@ class CloudUser{
         /** Number of instances of this user to be generated in the simulated environment. */
         int numInstances;
 
-        /** Priority type of the user requests in the cloud  */
-        tPriorityType priorityType;
-
-        /** Sla signed by the user */
-        Sla* sla;
-
     public:
 
         /**
@@ -41,12 +35,12 @@ class CloudUser{
          * @param type User type.
          * @param numInstances Number of instances of this user to be created in the simulation environment.
          */
-        CloudUser(std::string type, int numInstances, tPriorityType priorityType, Sla* slaPtr);
+        CloudUser(std::string type, int numInstances);
 
         /**
          * Destructor.
          */
-        ~CloudUser();
+        virtual ~CloudUser();
 
         /**
          * Assigns a new virtual machine to this user.
@@ -118,33 +112,7 @@ class CloudUser{
          */
         std::string toString ();
 
-        /**
-         * Gets the priority type assigned to this user.
-         *
-         * @return tPriorityType Priority type of the user requests in the cloud
-         */
-        tPriorityType getPriorityType() const;
 
-        /**
-         * Assigns a priority type to this user.
-         *
-         * @param priorityType Priority type of the user requests in the cloud
-         */
-        void setPriorityType(tPriorityType priorityType);
-
-        /**
-         * Gets the sla assigned to this user.
-         *
-         * @return Sla signed by the user in the cloud
-         */
-        Sla* getSla() const;
-
-        /**
-         * Assigns a sla to this user.
-         *
-         * @param sla signed by the user in the cloud
-         */
-        void setSla(Sla* sla);
 };
 
 #endif /* CLOUDUSER_H_ */

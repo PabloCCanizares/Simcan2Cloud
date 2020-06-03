@@ -369,7 +369,7 @@ void UserGeneratorCost::calculateStatistics() {
     double dUserCost, dTotalCost, dMeanCost, dBaseCost, dRentingBaseCost, dOfferCost, dTotalOfferCost;
     int nIndex, nSize, nTotalUnprovided, nTotalRentTimeout, nRentTime, nAcceptOffer;
     CloudUserInstance* pUserInstance;
-    CloudUser* pCloudUser;
+    CloudUserPriority* pCloudUser;
     Sla* pSla;
     std::vector <CloudUserInstance*> userVector;
     SM_UserVM* pUserVM_Rq;
@@ -406,8 +406,9 @@ void UserGeneratorCost::calculateStatistics() {
 
         bPriorized = priorizedHashMap.at(strUserId);
 
-        pCloudUser = findUser(strUserType);
-        pSla = pCloudUser->getSla();
+        pCloudUser = dynamic_cast<CloudUserPriority*>(findUser(strUserType));
+        if (pCloudUser!=nullptr)
+            pSla = pCloudUser->getSla();
 
         pUserVM_Rq = pUserInstance->getRequestVmMsg();
 

@@ -1,10 +1,8 @@
 #include "CloudUser.h"
 
-CloudUser::CloudUser(std::string type, int numInstances, tPriorityType priorityType, Sla* slaPtr){
+CloudUser::CloudUser(std::string type, int numInstances){
     this->type = type;
     this->numInstances = numInstances;
-    this->priorityType = priorityType;
-    this->sla = slaPtr;
 }
 
 CloudUser::~CloudUser() {
@@ -44,7 +42,8 @@ std::string CloudUser::toString (){
     std::ostringstream info;
     int i;
 
-        info << "Type:" << type << " - Priority: " << tPriorityTypeLabel[priorityType] << " - Sla: " << sla->getType() << " -  #Instances:" << numInstances << std::endl;
+//        info << "Type:" << type << " - Priority: " << tPriorityTypeLabel[priorityType] << " - Sla: " << sla->getType() << " -  #Instances:" << numInstances << std::endl;
+        info << "Type:" << type << " -  #Instances:" << numInstances << std::endl;
 
            // Parses applications
            for (i=0; i<applications.size(); i++){
@@ -91,21 +90,5 @@ const std::string& CloudUser::getType() const {
 
 int CloudUser::getNumInstances() const {
     return numInstances;
-}
-
-tPriorityType CloudUser::getPriorityType() const {
-    return priorityType;
-}
-
-Sla* CloudUser::getSla() const {
-    return sla;
-}
-
-void CloudUser::setSla(Sla* sla) {
-    this->sla = sla;
-}
-
-void CloudUser::setPriorityType(tPriorityType priorityType) {
-    this->priorityType = priorityType;
 }
 
