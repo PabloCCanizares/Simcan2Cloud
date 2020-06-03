@@ -20,11 +20,22 @@ void CloudProviderBase_firstBestFit::initialize(){
     // Init data-center structures
     //Fill the meta-structures created to improve the performance of the cloudprovider
     loadNodes();
+    initializeRequestHandlers();
 
     bFinished = false;
     scheduleAt(simTime().dbl()+1, new cMessage(INITIAL_STAGE));
     EV_INFO << "CloudProviderFirstFit::initialize - End" << endl;
 }
+
+/**
+ * This method initializes the request handlers
+ */
+void CloudProviderBase_firstBestFit::initializeRequestHandlers() {
+    requestHandlers[SM_VM_Req] = [this](SIMCAN_Message *msg) -> void { return handleVmRequestFits(msg); };
+    requestHandlers[SM_VM_Sub] = [this](SIMCAN_Message *msg) -> void { return handleVmSubscription(msg); };
+    requestHandlers[SM_APP_Req] = [this](SIMCAN_Message *msg) -> void { return handleUserAppRequest(msg); };
+}
+
 void CloudProviderBase_firstBestFit::loadNodes()
 {
     DataCenter* pDataCenter;
@@ -610,77 +621,81 @@ void CloudProviderBase_firstBestFit::insertRack(int nIndex, int nRack, RackInfo*
     EV_INFO << "CloudProviderFirstFit::insertRack - End "<< endl;
 }
 
-void CloudProviderBase_firstBestFit::handleVmRequestFits(SM_UserVM* userVM_Rq) {
+void CloudProviderBase_firstBestFit::handleVmRequestFits(SIMCAN_Message *sm)
+{
+    SM_UserVM *userVM_Rq;
+
+    userVM_Rq = dynamic_cast<SM_UserVM *>(sm);
+    EV_INFO << "CloudProviderFirstFit::processRequestMessage - Handle VMrequest"  << endl;
 
     if(userVM_Rq != nullptr)
-    {
+      {
         userVM_Rq->printUserVM();
         //Check if is a VmRequest or a subscribe
-        if (checkVmUserFit(userVM_Rq)) {
+        if (checkVmUserFit(userVM_Rq))
+          {
             acceptVmRequest(userVM_Rq);
-        } else
+          }
+        else
+          {
             rejectVmRequest(userVM_Rq);
-    }
+          }
+      }
 }
 
-void CloudProviderBase_firstBestFit::handleVmSubscription(SM_UserVM* userVM_Rq) {
-    if (checkVmUserFit(userVM_Rq)) {
-        notifySubscription(userVM_Rq);
-    } else {
-        //Store the vmRequest
-        storeVmSubscribe(userVM_Rq);
-    }
+void CloudProviderBase_firstBestFit::handleVmSubscription(SIMCAN_Message *sm)
+{
+    SM_UserVM *userVM_Rq;
+
+    userVM_Rq = dynamic_cast<SM_UserVM *>(sm);
+    EV_INFO << "CloudProviderFirstFit::processRequestMessage - Received Subscribe operation"  << endl;
+
+    if(userVM_Rq != nullptr)
+      {
+        if (checkVmUserFit(userVM_Rq))
+          {
+            notifySubscription(userVM_Rq);
+          }
+        else
+          {
+            //Store the vmRequest
+            storeVmSubscribe(userVM_Rq);
+          }
+      }
 }
 
 void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm){
-
-    SM_UserVM *userVM_Rq;
-    SM_UserAPP *userAPP_Rq;
     SM_CloudProvider_Control* userControl;
+    std::map<int, std::function<void(SIMCAN_Message*)>>::iterator it;
 
-    userVM_Rq = dynamic_cast<SM_UserVM *>(sm);
-    userAPP_Rq = dynamic_cast<SM_UserAPP *>(sm);
-    userControl = dynamic_cast<SM_CloudProvider_Control *>(sm);
+    EV_INFO << "processResponseMessage - Received Request Message" << endl;
 
-    //Request message from user generator.
-    if(userVM_Rq != nullptr)
-    {
+    it = requestHandlers.find(sm->getOperation());
 
-        EV_INFO << "CloudProviderFirstFit::processRequestMessage - Handle VMrequest"  << endl;
+    if (it == requestHandlers.end())
+      {
+        userControl = dynamic_cast<SM_CloudProvider_Control *>(sm);
 
-        //Handle a VmRequest
-        if(userVM_Rq->getOperation() == SM_VM_Req)
-        {
-            handleVmRequestFits(userVM_Rq);
-        }
-        //Handle a Subscribe
-        else if(userVM_Rq->getOperation() == SM_VM_Sub)
-        {
-            //Subscribe request
-            EV_INFO << "CloudProviderFirstFit::processRequestMessage - Received Subscribe operation"  << endl;
-            handleVmSubscription(userVM_Rq);
-        }
-    }
-    else if(userAPP_Rq != nullptr)
-    {
-        EV_INFO << "CloudProviderFirstFit::processRequestMessage - Handle AppRequest"  << endl;
-
-        //Perform the operations ...
-        handleUserAppRequest(userAPP_Rq);
-
-    }else if(userControl != nullptr)
-    {
-        EV_INFO << "CloudProviderFirstFit::processRequestMessage - Received end of party"  << endl;
-        //Stop the checking process.
-        bFinished = true;
-        cancelAndDelete(userControl);
-    }
+        if(userControl != nullptr)
+          {
+            EV_INFO << "CloudProviderFirstFit::processRequestMessage - Received end of party"  << endl;
+            //Stop the checking process.
+            bFinished = true;
+            cancelAndDelete(userControl);
+          }
+        else
+          {
+            EV_INFO << "Unknown message:"  << sm->getName() << endl;
+          }
+      }
     else
-    {
-        EV_INFO << "Unknown message:"  << sm->getName() << endl;
-    }
+      {
+        //Perform the operations...
+        it->second(sm);
+      }
 }
-void CloudProviderBase_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq)
+
+void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 {
     //Get the user name, and recover the info about the VmRequests;
     bool bHandle;
@@ -692,40 +707,45 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq
     APP_Request userApp;
 
     int nTotalTime;
+    SM_UserAPP *userAPP_Rq;
 
-    //Las aplicaciones estan relacionadas con las VM
-    //Hay que relacionar la APP con la VM para asi poder terminar con ella.
-    //Suponemos 1 VM por app, en el momento en que nos quedemos sin VM, le damos el ID de la ultima.
-    bHandle = false;
+    EV_INFO << "CloudProviderFirstFit::processRequestMessage - Handle AppRequest"  << endl;
+    userAPP_Rq = dynamic_cast<SM_UserAPP *>(sm);
 
     if(userAPP_Rq != nullptr)
-    {
+      {
+
+        //Las aplicaciones estan relacionadas con las VM
+        //Hay que relacionar la APP con la VM para asi poder terminar con ella.
+        //Suponemos 1 VM por app, en el momento en que nos quedemos sin VM, le damos el ID de la ultima.
+        bHandle = false;
+
         //APPRequest
         userAPP_Rq->printUserAPP();
 
         strUsername = userAPP_Rq->getUserID();
         if(acceptedUsersRqMap.find(strUsername) != acceptedUsersRqMap.end())
-        {
+          {
             userVmRequest = acceptedUsersRqMap.at(strUsername);
             if(handlingAppsRqMap.find(strUsername) == handlingAppsRqMap.end())
-            {
+              {
                 //Registering the appRq
                 handlingAppsRqMap[strUsername] = userAPP_Rq;
-            }
+              }
             EV_INFO << "Executing the VMs corresponding with the user: " << strUsername << " | Total: "<< userVmRequest.getVmsArraySize()<< endl;
 
             //First step consists in calculating the total units of time spent in executing the application.
             if(userAPP_Rq->getArrayAppsSize()>0)
-            {
+              {
                 for(int i=0;i<userAPP_Rq->getAppArraySize();i++)
-                {
+                  {
                     //Get the app
                     userApp =userAPP_Rq->getApp(i);
                     strAppType = userApp.strApp;
 
                     //Get the VM
                     if(i<userVmRequest.getVmsArraySize())
-                    {
+                      {
                         //Getting VM and scheduling renting timeout
                         vmRequest = userVmRequest.getVms(i);
                         vmRequest.pMsg = new SM_UserVM_Finish();
@@ -742,17 +762,19 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq
 
                         EV_INFO << "Scheduling Msg name " << vmRequest.pMsg << " at "<< simTime().dbl()+vmRequest.nRentTime_t2 <<endl;
                         scheduleAt(simTime().dbl()+vmRequest.nRentTime_t2, vmRequest.pMsg);
-                    }
+                      }
                     else
+                      {
                         vmRequest = userVmRequest.getVms(0);
+                      }
 
                     appType = searchAppTypeById(strAppType);
 
                     if(appType != nullptr)
-                    {
+                      {
                         //Get the parameters
                         if(strAppType.compare(appType->getAppName())==0)
-                        {
+                          {
                             nTotalTime = TEMPORAL_calculateTotalTime(appType);
 
                             strAppName = userApp.strApp;
@@ -776,32 +798,31 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq
                             EV_INFO << "Scheduling time rental Msg, " << userApp.pMsgTimeout->getName() << endl;
                             scheduleAt(simTime().dbl()+nTotalTime, userApp.pMsgTimeout);
                             bHandle = true;
-                        }
-                    }
-                }
-            }
+                          }
+                      }
+                  }
+              }
             else
-            {
+              {
                 EV_INFO << "WARNING! [CloudProviderFirstFit] The user: " << strUsername << "has the application list empty!"<< endl;
                 throw omnetpp::cRuntimeError("[CloudProviderFirstFit] The list of applications of a the user is empty!!");
-            }
-        }
+              }
+          }
         else
-        {
+          {
             EV_INFO << "WARNING! [CloudProviderFirstFit] The user: " << strUsername << "has not previously registered!!"<< endl;
-        }
-    }
+          }
+
+        if(!bHandle)
+          {
+            userAPP_Rq->setResult(0);
+            rejectAppRequest(userAPP_Rq);
+          }
+      }
     else
-    {
+      {
         throw omnetpp::cRuntimeError("[CloudProviderFirstFit] Wrong userAPP_Rq. Nullpointer!!");
-    }
-
-    if(!bHandle)
-    {
-        userAPP_Rq->setResult(0);
-        rejectAppRequest(userAPP_Rq);
-    }
-
+      }
 }
 Application* CloudProviderBase_firstBestFit::searchAppTypeById(std::string strAppType)
 {
@@ -948,9 +969,11 @@ void CloudProviderBase_firstBestFit::storeVmSubscribe(SM_UserVM* userVM_Rq)
         scheduleAt(simTime().dbl()+dMaxSubscribeTime, pMsg);
     }
 }
+
 void CloudProviderBase_firstBestFit::processResponseMessage (SIMCAN_Message *sm){
 
 }
+
 bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
 {
     bool bRet, bAccepted;
