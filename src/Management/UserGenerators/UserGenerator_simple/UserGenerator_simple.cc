@@ -126,10 +126,6 @@ void UserGenerator_simple::processSelfMessage(cMessage *msg) {
     delete (msg);
 }
 
-//TODO: aquí habria que refactorizar para que no se repita el codigo en el if y en else.
-//Por ejemplo yo dejaría solo el codigo del for. Y una función que sea la que compruebe si esta
-// habilitado el between users o no y entonces devuelva el tiempo a partir de la distución.
-// añadir tb la variable que he creado shuffleUsers para barajar los usuarios o no.
 void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg) {
     SM_UserVM *userVm;
     CloudUserInstance *pUserInstance;
@@ -231,8 +227,6 @@ void UserGenerator_simple::processRequestMessage(SIMCAN_Message *sm) {
             sm->contentsToString(true, false).c_str());
 }
 
-
-//TODO: probar si el método onFinish se puede quitar y usar el método finish que tiene por defecto omnetpp
 void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
     CloudUserInstance *pUserInstance;
     std::map<int, std::function<CloudUserInstance*(SIMCAN_Message*)>>::iterator it;
@@ -360,8 +354,6 @@ CloudUserInstance* UserGenerator_simple::handleAppOk(SIMCAN_Message *userApp_RAW
     return pUserInstance;
 }
 
-//TODO: En este el subscribe debe de hacerse duplicando el mensaje y enviando solo la vm que se quiere suscribir.
-//En realidad no hace falta duplicarlo, como no es una respuesta, se puede crear el mensaje desde 0.
 CloudUserInstance* UserGenerator_simple::handleAppTimeout(SIMCAN_Message *userApp_RAW) {
     CloudUserInstance *pUserInstance;
     SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(userApp_RAW);
