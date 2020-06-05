@@ -157,7 +157,7 @@ void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg) {
     }
 
     if (!intervalBetweenUsers) {
-        std::sort(userInstances.begin(), userInstances.end(), [](CloudUserInstance* cloudUser1, CloudUserInstance* cloudUser2){*cloudUser1<*cloudUser2});
+        std::sort(userInstances.begin(), userInstances.end(), [](CloudUserInstance* cloudUser1, CloudUserInstance* cloudUser2){return *cloudUser1<*cloudUser2;});
     }
 
     m_nUsersSent = 0;
