@@ -30,7 +30,7 @@ void UserGenerator_simple::initialize() {
     EV_INFO << "UserGenerator::initialize - Base initialized" << endl;
 
     m_nUsersSent = 0;
-    numUsersFinished = 0;
+    //numUsersFinished = 0;
 
     initializeSelfHandlers();
     initializeResponseHandlers();
@@ -240,12 +240,9 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
     else
         pUserInstance = it->second(sm);
 
-    if (pUserInstance != nullptr && pUserInstance->isFinished()) {
-        numUsersFinished++;
-
-        //Check if all the users have ended
-        if (allUsersFinished())
-            onFinish();
+    //Check if all the users have ended
+    if (pUserInstance != nullptr && pUserInstance->isFinished() && allUsersFinished()) {
+        sendRequestMessage(new SM_CloudProvider_Control(), toCloudProviderGate);
     }
 }
 
@@ -275,13 +272,15 @@ void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance, int reas
     switch (reason) {
         case REASON_APP_TIMEOUT:
             pUserInstance->setTimeoutMaxRentTime();
+            break;
         case REASON_OK:
-            nUserInstancesFinished++;
             break;
         case REASON_SUB_TIMEOUT:
             pUserInstance->setTimeoutMaxSubscribed();
             break;
     }
+
+    nUserInstancesFinished++;
 }
 
 CloudUserInstance* UserGenerator_simple::handleResponse(SIMCAN_Message *userVm_RAW) {
@@ -768,17 +767,16 @@ bool UserGenerator_simple::allUsersFinished() {
 
     EV_INFO << "allUsersFinished - Checking if all users have finished" << endl;
 
-    bRet = numUsersFinished >= userInstances.size();
+    bRet = nUserInstancesFinished >= userInstances.size();
 
     EV_INFO << "allUsersFinished - Res " << bRet << " | NFinished: "
-                   << numUsersFinished << " vs Total: " << userInstances.size() // Antes comparaba con nUserInstancesFinished. No se actualiza en los timeout
+                   << nUserInstancesFinished << " vs Total: " << userInstances.size() // Antes comparaba con nUserInstancesFinished. No se actualiza en los timeout
                    << endl;
 
     return bRet;
 }
 
-void UserGenerator_simple::onFinish() {
-    sendRequestMessage(new SM_CloudProvider_Control(), toCloudProviderGate);
+void UserGenerator_simple::finish() {
     printFinal();
 }
 

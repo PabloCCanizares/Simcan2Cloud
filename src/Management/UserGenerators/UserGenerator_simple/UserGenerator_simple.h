@@ -23,8 +23,6 @@ protected:
     double m_dInitSim;
     int m_nUsersSent;
 
-    int numUsersFinished;
-
     // Timeouts
     double maxStartTime_t1;
     double nRentTime_t2;
@@ -231,7 +229,7 @@ private:
     /**
      * Calculates the statistics of the experiment.
      */
-    virtual void onFinish();
+    virtual void finish() override;
 
     /**
      * Calculates the statistics of the experiment.
