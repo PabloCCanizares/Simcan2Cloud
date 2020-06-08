@@ -748,20 +748,20 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                       {
                         //Getting VM and scheduling renting timeout
                         vmRequest = userVmRequest.getVms(i);
-                        vmRequest.pMsg = new SM_UserVM_Finish();
-                        vmRequest.pMsg->setUserID(strUsername.c_str());
-
-                        strVmId = vmRequest.strVmId;
-                        if(strVmId.empty())
-                            strVmId="emptyVmId";
-
-                        if(!strVmId.empty())
-                            vmRequest.pMsg ->setStrVmId(strVmId.c_str());
-
-                        vmRequest.pMsg->setName(EXEC_VM_RENT_TIMEOUT);
-
-                        EV_INFO << "Scheduling Msg name " << vmRequest.pMsg << " at "<< simTime().dbl()+vmRequest.nRentTime_t2 <<endl;
-                        scheduleAt(simTime().dbl()+vmRequest.nRentTime_t2, vmRequest.pMsg);
+//                        vmRequest.pMsg = new SM_UserVM_Finish();
+//                        vmRequest.pMsg->setUserID(strUsername.c_str());
+//
+//                        strVmId = vmRequest.strVmId;
+//                        if(strVmId.empty())
+//                            strVmId="emptyVmId";
+//
+//                        if(!strVmId.empty())
+//                            vmRequest.pMsg ->setStrVmId(strVmId.c_str());
+//
+//                        vmRequest.pMsg->setName(EXEC_VM_RENT_TIMEOUT);
+//
+//                        EV_INFO << "Scheduling Msg name " << vmRequest.pMsg << " at "<< simTime().dbl()+vmRequest.nRentTime_t2 <<endl;
+//                        scheduleAt(simTime().dbl()+vmRequest.nRentTime_t2, vmRequest.pMsg);
                       }
                     else
                       {
@@ -1024,7 +1024,6 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
                 //Send the request to the DC
                 bAccepted = datacenterCollection->handleVmRequest(pNode);
 
-
                 //We need to know the price of the Node.
                 userVM_Rq->createResponse(i, bAccepted, pNode->getStartTime(), pNode->getIp(), pNode->getPrice());
                 bRet &= bAccepted;
@@ -1035,12 +1034,23 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
                     {
                         vmRequest = userVM_Rq->getVms(j);
                         strVmId = vmRequest.strVmId;
+                        cancelAndDelete(vmRequest.pMsg);
                         datacenterCollection->freeVmRequest(strVmId);
                     }
                     EV_DEBUG << "checkVmUserFit - The VM: " << i << "has not been handled, not enough space, all the request of the user "<< strUserName <<"have been deleted"<< endl;
                 }
                 else
                 {
+                    //Getting VM and scheduling renting timeout
+                    vmRequest.pMsg = new SM_UserVM_Finish();
+                    vmRequest.pMsg->setUserID(strUsername.c_str());
+                    strVmId = vmRequest.strVmId;
+                    vmRequest.pMsg ->setStrVmId(strVmId.c_str());
+                    vmRequest.pMsg->setName(EXEC_VM_RENT_TIMEOUT);
+
+                    EV_INFO << "Scheduling Msg name " << vmRequest.pMsg << " at "<< simTime().dbl()+vmRequest.nRentTime_t2 <<endl;
+                    scheduleAt(simTime()+SimTime(vmRequest.nRentTime_t2), vmRequest.pMsg);
+
                     //Update value
                     nAvailableCores = datacenterCollection->getTotalAvailableCores();
                     EV_DEBUG << "checkVmUserFit - The VM: " << i << " has been handled and stored sucessfully, available cores: "<< nAvailableCores << endl;
