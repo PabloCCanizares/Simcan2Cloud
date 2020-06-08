@@ -77,8 +77,8 @@ void UserGenerator_simple::initializeResponseHandlers() {
     //responseHandlers[SM_VM_Notify] = std::bind(&UserGenerator_simple::processUserVmResponse, this, std::placeholders::_1);;
     //responseHandlers[SM_APP_Rsp] = std::bind(&UserGenerator_simple::processUserAppResponse, this, std::placeholders::_1);
 
-    responseHandlers[SM_VM_Res_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponse(msg); };
-    responseHandlers[SM_VM_Res_Reject] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponse(msg); };
+    responseHandlers[SM_VM_Res_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseAccept(msg); };
+    responseHandlers[SM_VM_Res_Reject] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseReject(msg); };
     responseHandlers[SM_APP_Res_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleAppOk(msg); };
     responseHandlers[SM_APP_Res_Reject] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleAppTimeout(msg); };
     responseHandlers[SM_APP_Res_Timeout] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleAppTimeout(msg); };
@@ -283,9 +283,8 @@ void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance, int reas
     nUserInstancesFinished++;
 }
 
-CloudUserInstance* UserGenerator_simple::handleResponse(SIMCAN_Message *userVm_RAW) {
+CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *userVm_RAW) {
     CloudUserInstance *pUserInstance;
-    bool rejected;
     SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
 
     if (userVm != nullptr) {
@@ -300,22 +299,47 @@ CloudUserInstance* UserGenerator_simple::handleResponse(SIMCAN_Message *userVm_R
         pUserInstance = userHashMap.at(userVm->getUserID());
 
         if (pUserInstance != nullptr) {
-            rejected = userVm->getResult() == SM_VM_Res_Reject;
             emit(responseSignal, pUserInstance->getId());
             pUserInstance->setInitExecTime(simTime().dbl());
 
             // If the vm-request has been rejected by the cloudprovider
             // we have to subscribe the service
-            pUserInstance->setSubscribe(rejected);
-            if (rejected) { // IPs = {}
-                emit(subscribeNoipSignal, pUserInstance->getId());
-                subscribe(userVm);
-            // otherwise the next step is to submit the required services.
-            }
-            else { // IPs != {}
-                emit(executeIpSignal, pUserInstance->getId());
-                submitService(userVm);
-            }
+            pUserInstance->setSubscribe(false);
+            emit(executeIpSignal, pUserInstance->getId());
+            submitService(userVm);
+        }
+    }
+    else {
+        error("Could not cast SIMCAN_Message to SM_UserVM (wrong operation code?)");
+    }
+
+    return pUserInstance;
+}
+
+CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *userVm_RAW) {
+    CloudUserInstance *pUserInstance;
+    SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
+
+    if (userVm != nullptr) {
+        EV_INFO << "handleResponse - Response message" << endl;
+
+        userVm->printUserVM();
+
+        //Update the status
+        updateVmUserStatus(userVm);
+
+        //Check the response and proceed with the next action
+        pUserInstance = userHashMap.at(userVm->getUserID());
+
+        if (pUserInstance != nullptr) {
+            emit(responseSignal, pUserInstance->getId());
+            pUserInstance->setInitExecTime(simTime().dbl());
+
+            // If the vm-request has been rejected by the cloudprovider
+            // we have to subscribe the service
+            pUserInstance->setSubscribe(true);
+            emit(subscribeNoipSignal, pUserInstance->getId());
+            subscribe(userVm);
         }
     }
     else {

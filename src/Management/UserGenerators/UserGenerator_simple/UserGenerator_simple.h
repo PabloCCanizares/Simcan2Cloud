@@ -158,7 +158,8 @@ protected:
      * Handles the VM response received from the CloudProvider
      * @param userVm incoming message
      */
-    virtual CloudUserInstance* handleResponse(SIMCAN_Message *userVm);
+    virtual CloudUserInstance* handleResponseAccept(SIMCAN_Message *userVm);
+    virtual CloudUserInstance* handleResponseReject(SIMCAN_Message *userVm);
     virtual CloudUserInstance* handleAppOk(SIMCAN_Message *userVm);
     virtual CloudUserInstance* handleAppTimeout(SIMCAN_Message *userVm);
     virtual CloudUserInstance* handleSubNotify(SIMCAN_Message *userVm);
