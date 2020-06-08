@@ -509,18 +509,38 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
         pUserInstance = userHashMap.at(strUserId);
         if (pUserInstance != nullptr) {
             emit(subscribeFailSignal, pUserInstance->getId());
-            userVM_Rq = pUserInstance->getRequestVmMsg();
-            if (userVM_Rq != nullptr) {
-                bSent = true;
-                userVM_Rq->setIsResponse(false);
-                userVM_Rq->setOperation(SM_VM_Sub);
-                sendRequestMessage(userVM_Rq, toCloudProviderGate);
+            for (unsigned int i = 0; i < userApp->getAppArraySize(); i++) {
+                userVM_Rq = getSingleVMReq(pUserInstance->getRequestVmMsg(), userApp->getApp(i).vmId, strUserId);
+                if (userVM_Rq != nullptr) {
+                    bSent = true;
+                    userVM_Rq->setIsResponse(false);
+                    userVM_Rq->setOperation(SM_VM_Sub);
+                    sendRequestMessage(userVM_Rq, toCloudProviderGate);
+                }
             }
         }
     }
     if (bSent == false) {
         error("Error sending the subscription message");
     }
+}
+
+SM_UserVM* UserGenerator_simple::getSingleVMReq(SM_UserVM *userVM_Orig, std::string vmId, std::string userId) {
+    SM_UserVM *userVM;
+
+
+    for (unsigned int i = 0; i < userVM_Orig->getVmsArraySize(); i++) {
+        VM_Request req = userVM_Orig->getVms(i);
+        if (req.strVmId.compare(vmId) == 0) {
+            userVM = new SM_UserVM();
+            userVM->setUserID(userId.c_str());
+            userVM->addVmRequest(req);
+
+            break;
+        }
+    }
+
+    return userVM;
 }
 
 class cCustomNotification : public cObject, noncopyable

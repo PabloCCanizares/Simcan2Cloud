@@ -211,6 +211,8 @@ private:
      */
     void recoverVmAndsubscribe(SM_UserAPP *userApp);
 
+    SM_UserVM* getSingleVMReq(SM_UserVM *userVM_Orig, std::string vmId, std::string userId);
+
     /**
      *  Prints the final parameters.
      */
