@@ -142,10 +142,10 @@ void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg) {
     //generateShuffledUsers();
 
     for (int i = 0; i < userInstances.size(); i++) {
-        lastTime = getNextTime(m_dInitSim, lastTime);
-
         // Get current user
         pUserInstance = userInstances.at(i);
+
+        lastTime = getNextTime(pUserInstance, lastTime);
         userVm = createVmRequest(pUserInstance);
 
         if (userVm != nullptr) {
@@ -165,17 +165,17 @@ void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg) {
     scheduleNextReqGenMessage();
 }
 
-double UserGenerator_simple::getNextTime(double init, double last) {
+double UserGenerator_simple::getNextTime(CloudUserInstance *pUserInstance, double last) {
     double next;
 
     if (intervalBetweenUsers) {
         if (last > 0)
             next = distribution->doubleValue() + last;
         else
-            next = init;
+            next = m_dInitSim;
     }
     else {
-        next = distribution->doubleValue() + init;
+        next = distribution->doubleValue() + m_dInitSim;
     }
 
     return next;

@@ -96,10 +96,10 @@ protected:
     /**
      * Returns the time the next user will arrive to the cloud
      *
-     * @param init Simulation start time.
+     * @param pUserInstance Pointer to the user instance.
      * @param last Last user arrival time.
      */
-    virtual double getNextTime(double init, double last);
+    virtual double getNextTime(CloudUserInstance *pUserInstance, double last);
 
     /**
      * Processes a self message of type WaitToExecute.
