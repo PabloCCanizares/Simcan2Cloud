@@ -506,9 +506,6 @@ class cCustomNotification : public cObject, noncopyable
     SM_UserVM *userVm;
 };
 
-//TODO: Esto en princpio esta bien y lo dejamos así, más adelante debemos discutir si es preferible así
-// o con encapsulación. La ecapsulación nos prodría traer el problema de que si queremos modificar la clase
-// VmInstance tengamos que modificar todas en cascada. Porque tal vez no. si pasamos el mensaje completo de una a otra.
 void UserGenerator_simple::updateVmUserStatus(SM_UserVM *userVm) {
     CloudUserInstance *pUserInstance;
     VmInstanceCollection *pVmCollection;
@@ -602,8 +599,6 @@ CloudUserInstance* UserGenerator_simple::getNextUser() {
     return pUserInstance;
 }
 
-//TODO: Aquí tenemos el mismo problema de la encapsulación. Aquí tendriamos el mismo problema
-//Aqui no podemos pasar el mensaje. Entonces o se hace una estrucutra que se pase y se encapsula o se queda así
 SM_UserVM* UserGenerator_simple::createVmRequest(
         CloudUserInstance *pUserInstance) {
     int nVmIndex, nCollectionNumber, nInstances;
@@ -682,7 +677,6 @@ SM_UserVM* UserGenerator_simple::createVmRequest(
     return pUserRet;
 }
 
-//TODO: Mismo problema de encapsulación
 SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
     VM_Response *pRes;
     VM_Request vmRq;
@@ -761,8 +755,6 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
     return userApp;
 }
 
-//TODO: Esto tal vez deberiamos cambiarlo por un contador total que se actualize cada vez que acabe un user,
-//así no hay que hacer un bucle cada vez.
 bool UserGenerator_simple::allUsersFinished() {
     bool bRet;
 
