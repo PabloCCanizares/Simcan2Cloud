@@ -740,11 +740,11 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                 for(int i=0;i<userAPP_Rq->getAppArraySize();i++)
                   {
                     //Get the app
-                    userApp =userAPP_Rq->getApp(i);
+                    userApp = userAPP_Rq->getApp(i);
                     strAppType = userApp.strApp;
 
                     //Get the VM
-                    if(i<userVmRequest.getVmsArraySize())
+                    if(i < userVmRequest.getVmsArraySize())
                       {
                         //Getting VM and scheduling renting timeout
                         vmRequest = userVmRequest.getVms(i);
@@ -1043,7 +1043,7 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
                 {
                     //Getting VM and scheduling renting timeout
                     vmRequest.pMsg = new SM_UserVM_Finish();
-                    vmRequest.pMsg->setUserID(strUsername.c_str());
+                    vmRequest.pMsg->setUserID(strUserName.c_str());
                     strVmId = vmRequest.strVmId;
                     vmRequest.pMsg ->setStrVmId(strVmId.c_str());
                     vmRequest.pMsg->setName(EXEC_VM_RENT_TIMEOUT);

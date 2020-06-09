@@ -509,6 +509,7 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
         pUserInstance = userHashMap.at(strUserId);
         if (pUserInstance != nullptr) {
             emit(subscribeFailSignal, pUserInstance->getId());
+            /*
             for (unsigned int i = 0; i < userApp->getAppArraySize(); i++) {
                 userVM_Rq = getSingleVMReq(pUserInstance->getRequestVmMsg(), userApp->getApp(i).vmId, strUserId);
                 if (userVM_Rq != nullptr) {
@@ -518,6 +519,13 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
                     sendRequestMessage(userVM_Rq, toCloudProviderGate);
                 }
             }
+            */
+            pUserInstance->setRequestApp(userApp, userApp->getApp(0).vmId);
+            userVM_Rq = getSingleVMReq(pUserInstance->getRequestVmMsg(), userApp->getApp(0).vmId, strUserId);
+            bSent = true;
+            userVM_Rq->setIsResponse(false);
+            userVM_Rq->setOperation(SM_VM_Sub);
+            sendRequestMessage(userVM_Rq, toCloudProviderGate);
         }
     }
     if (bSent == false) {
@@ -609,16 +617,32 @@ void UserGenerator_simple::submitService(SM_UserVM *userVm) {
 
     strUserName = userVm->getUserID();
     pUserInstance = userHashMap.at(strUserName);
-    pAppRq = pUserInstance->getRequestAppMsg();
 
-    if (pAppRq == nullptr)
-        pAppRq = createAppRequest(userVm);
+    if (userVm->getVmsArraySize() == pUserInstance->getRequestVmMsg()->getVmsArraySize()) // Execute from response or first notify
+      {
+        pAppRq = pUserInstance->getRequestAppMsg();
 
-    if (pAppRq != nullptr) {
+        if (pAppRq == nullptr)
+            pAppRq = createAppRequest(userVm);
+      }
+    else
+      {
+        try
+          {
+            pAppRq = pUserInstance->getRequestAppMsg(userVm->getVms(0).strVmId);
+          }
+        catch (const std::logic_error &e)
+          {
+            EV_FATAL << "LOGIC ERROR: APP MSG NOT FOUND!" << endl;
+          }
+      }
+
+    if (pAppRq != nullptr)
+      {
         pAppRq->setIsResponse(false);
         pAppRq->setOperation(SM_APP_Req);
         sendRequestMessage(pAppRq, toCloudProviderGate);
-    }
+      }
 }
 
 CloudUserInstance* UserGenerator_simple::getNextUser() {

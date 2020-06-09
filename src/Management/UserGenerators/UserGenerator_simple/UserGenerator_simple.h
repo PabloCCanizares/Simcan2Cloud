@@ -211,6 +211,10 @@ private:
      */
     void recoverVmAndsubscribe(SM_UserAPP *userApp);
 
+    /**
+     * Generates a Single VM SM_UserVM
+     * @param userApp
+     */
     SM_UserVM* getSingleVMReq(SM_UserVM *userVM_Orig, std::string vmId, std::string userId);
 
     /**
