@@ -342,7 +342,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message 
         //End of the protocol, exit!!
         pUserInstance = userHashMap.at(userApp->getUserID());
         if (pUserInstance != nullptr)
-            finishUser(pUserInstance, REASON_OK);
+            finishUser(pUserInstance);
 
         emit(okSignal, pUserInstance->getId());
 
@@ -523,6 +523,7 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
     SM_UserVM *userVM_Rq;
     std::string strUserId;
     CloudUserInstance *pUserInstance;
+    std::string strVmId(userApp->getVmId());
 
     strUserId = userApp->getUserID();
 
@@ -533,7 +534,7 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
         pUserInstance = userHashMap.at(strUserId);
         if (pUserInstance != nullptr) {
             emit(subscribeFailSignal, pUserInstance->getId());
-            if (userApp->getVmId()->empty()) {
+            if (strVmId.empty()) {
                 userVM_Rq = pUserInstance->getRequestVmMsg();
                 if(userVM_Rq != nullptr)
                 {
@@ -543,7 +544,7 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
                     sendRequestMessage (userVM_Rq, toCloudProviderGate);
                 }
             } else {
-                userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), userApp->getVmId());
+                userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), strVmId);
                 if (userVM_Rq != nullptr) {
                     bSent = true;
                     sendRequestMessage(userVM_Rq, toCloudProviderGate);
@@ -567,8 +568,8 @@ SM_UserVM* UserGenerator_simple::getSingleVMSubscriptionMessage(SM_UserVM *userV
             userVM = new SM_UserVM();
             userVM->setUserID(userVM_Orig->getUserID());
             userVM->addVmRequest(req);
-            userVM_Rq->setIsResponse(false);
-            userVM_Rq->setOperation(SM_VM_Sub);
+            userVM->setIsResponse(false);
+            userVM->setOperation(SM_VM_Sub);
             break;
         }
     }
