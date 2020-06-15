@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "CloudProviderBase_firstBestFit.h"
 
 //Define_Module(CloudProviderBase_firstBestFit);
@@ -707,9 +708,9 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                 strIp,
                 strAppName;
 
-    int appStartTime,
-        appExecutedTime,
-        nTotalTime;
+    SimTime appStartTime,
+            appExecutedTime,
+            nTotalTime;
 
     Application *appType;
 
@@ -723,104 +724,120 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
     VirtualMachine *vmType;
 
-    EV_INFO << "CloudProviderFirstFit::processRequestMessage - Handle AppRequest"  << endl;
+    std::map<std::string, SM_UserVM>::iterator it;
+
+    EV_INFO << "CloudProviderBase_firstBestFit::handleUserAppRequest - Handle AppRequest"  << endl;
     userAPP_Rq = dynamic_cast<SM_UserAPP *>(sm);
 
     if(userAPP_Rq != nullptr)
       {
-
         //Las aplicaciones estan relacionadas con las VM
         //Hay que relacionar la APP con la VM para asi poder terminar con ella.
-        //Suponemos 1 VM por app, en el momento en que nos quedemos sin VM, le damos el ID de la ultima.
         bHandle = false;
 
         //APPRequest
         userAPP_Rq->printUserAPP();
 
         strUsername = userAPP_Rq->getUserID();
-        if(acceptedUsersRqMap.find(strUsername) != acceptedUsersRqMap.end())
+        it = acceptedUsersRqMap.find(strUsername);
+
+        if(it != acceptedUsersRqMap.end())
           {
-            userVmRequest = acceptedUsersRqMap.at(strUsername);
+            userVmRequest = it->second;
+
             if(handlingAppsRqMap.find(strUsername) == handlingAppsRqMap.end())
               {
                 //Registering the appRq
                 handlingAppsRqMap[strUsername] = userAPP_Rq;
               }
-            EV_INFO << "Executing the VMs corresponding with the user: " << strUsername << " | Total: "<< userVmRequest.getVmsArraySize()<< endl;
+            EV_INFO << "Executing the VMs corresponding with the user: " << strUsername << " | Total: "<< userVmRequest.getVmsArraySize() << endl;
 
             //First step consists in calculating the total units of time spent in executing the application.
-            if(userAPP_Rq->getArrayAppsSize()>0)
+            if(userAPP_Rq->getArrayAppsSize() > 0)
               {
-                for(int i=0;i<userAPP_Rq->getAppArraySize();i++)
+                for(int j = 0; j < userVmRequest.getVmsArraySize(); j++)
                   {
-                    //Get the app
-                    userApp = userAPP_Rq->getApp(i);
+                    //Getting VM and scheduling renting timeout
+                    vmRequest = userVmRequest.getVms(j);
+                    scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUsername, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
-                    //Get the VM
-                    if(i < userVmRequest.getVmsArraySize())
+                    strVmId = vmRequest.strVmId;
+                    vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
+
+                    double totalTimePerCore[vmType->getNumCores()];
+
+                    for (int i = 0; i < vmType->getNumCores(); i++)
+                        totalTimePerCore[i] = 0;
+
+                    for(int i = 0; i < userAPP_Rq->getAppArraySize(); i++)
                       {
-                        //Getting VM and scheduling renting timeout
-                        vmRequest = userVmRequest.getVms(i);
-//                        vmRequest.pMsg = new SM_UserVM_Finish();
-//                        vmRequest.pMsg->setUserID(strUsername.c_str());
-//
-//                        strVmId = vmRequest.strVmId;
-//                        if(strVmId.empty())
-//                            strVmId="emptyVmId";
-//
-//                        if(!strVmId.empty())
-//                            vmRequest.pMsg ->setStrVmId(strVmId.c_str());
-//
-//                        vmRequest.pMsg->setName(EXEC_VM_RENT_TIMEOUT);
-//
-//                        EV_INFO << "Scheduling Msg name " << vmRequest.pMsg << " at "<< simTime().dbl()+vmRequest.nRentTime_t2 <<endl;
-//                        scheduleAt(simTime().dbl()+vmRequest.nRentTime_t2, vmRequest.pMsg);
-                      }
-                    else
-                      {
-                        vmRequest = userVmRequest.getVms(0);
-                      }
+                        //Get the app
+                        userApp = userAPP_Rq->getApp(i);
 
-                    appType = searchAppTypeById(userApp.strApp);
+                        if (userApp.eState != appFinishedOK && userApp.eState != appFinishedError) {
 
-                    if(appType != nullptr)
-                      {
-                        //Get the parameters
-                        nTotalTime = TEMPORAL_calculateTotalTime(appType);
 
-                        strAppName = userApp.strApp;
+                            if(strVmId.compare(userApp.vmId)==0)
+                              {
+                                appType = searchAppTypeById(userApp.strAppType);
 
-                        //Create new Message
-                        pMsgFinish = new SM_UserAPP_Finish();
-                        pMsgFinish->setUserID(strUsername.c_str());
-                        pMsgFinish->setStrApp(strAppName.c_str());
-                        pMsgFinish->setStrVmId(strVmId.c_str());
-                        pMsgFinish->setNTotalTime(nTotalTime);
-                        pMsgFinish->setName(EXEC_APP_END_SINGLE);
+                                if(appType != nullptr)
+                                  {
+                                    //Assing the app to core with less utilization time
+                                    //std::sort(totalTimePerCore, totalTimePerCore+vmType->getNumCores());
+                                    int minIndex = std::min_element(totalTimePerCore, totalTimePerCore+vmType->getNumCores()) - totalTimePerCore;
+                                    nTotalTime = SimTime(TEMPORAL_calculateTotalTime(appType));
+                                    appStartTime = simTime() + SimTime(totalTimePerCore[minIndex]);
 
-                        userApp.pMsgTimeout = pMsgFinish;
-                        //userApp.vmId =  vmRequest.strVmId;
+                                    if (userApp.eState == appFinishedTimeout)
+                                      {
+                                        userAPP_Rq->decreaseFinishedApps();
+                                        appExecutedTime = SimTime(userApp.finishTime - userApp.startTime);
+                                        if (appExecutedTime>0)
+                                          {
+                                            nTotalTime -= appExecutedTime;
+                                            appStartTime -= appExecutedTime;
+                                          }
 
-                        //Change status to running
-                        userAPP_Rq->changeState(strAppName, strVmId, appRunning);
-                        userAPP_Rq->changeStateByIndex(i, strAppName, appRunning);
-                        userAPP_Rq->setVmIdByIndex(i, userApp.strIp, strVmId);
 
-                        EV_INFO << "Scheduling time rental Msg, " << userApp.pMsgTimeout->getName() << endl;
-                        scheduleAt(simTime()+ SimTime(nTotalTime), userApp.pMsgTimeout);
-                        bHandle = true;
+                                      }
+
+
+
+                                    totalTimePerCore[minIndex] = totalTimePerCore[minIndex] + nTotalTime.dbl();
+
+                                    strAppName = userApp.strApp;
+
+                                    //Create new Message
+                                    pMsgFinish = scheduleAppTimeout(EXEC_APP_END_SINGLE, strUsername, strAppName, strVmId, totalTimePerCore[minIndex]);
+
+                                    userAPP_Rq->getApp(i).startTime = appStartTime.dbl();
+                                    userAPP_Rq->getApp(i).pMsgTimeout = pMsgFinish;
+                                    //userApp.vmId =  vmRequest.strVmId;
+
+                                    //Change status to running
+                                    userAPP_Rq->changeState(strAppName, strVmId, appRunning);
+                                    userAPP_Rq->changeStateByIndex(i, strAppName, appRunning);
+                                    userAPP_Rq->setVmIdByIndex(i, userApp.strIp, strVmId);
+
+
+                                    bHandle = true;
+
+                                  }
+                              }
+                          }
                       }
                   }
               }
             else
               {
-                EV_INFO << "WARNING! [CloudProviderFirstFit] The user: " << strUsername << "has the application list empty!"<< endl;
-                throw omnetpp::cRuntimeError("[CloudProviderFirstFit] The list of applications of a the user is empty!!");
+                EV_INFO << "WARNING! [CloudProviderBase_firstBestFit] The user: " << strUsername << "has the application list empty!"<< endl;
+                throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit] The list of applications of a the user is empty!!");
               }
           }
         else
           {
-            EV_INFO << "WARNING! [CloudProviderFirstFit] The user: " << strUsername << "has not previously registered!!"<< endl;
+            EV_INFO << "WARNING! [CloudProviderBase_firstBestFit] The user: " << strUsername << "has not previously registered!!"<< endl;
           }
 
         if(!bHandle)
@@ -834,6 +851,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
         throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit] Wrong userAPP_Rq. Nullpointer!!");
       }
 }
+
 Application* CloudProviderBase_firstBestFit::searchAppTypeById(std::string strAppType)
 {
     Application* appTypeRet;
@@ -965,7 +983,7 @@ void CloudProviderBase_firstBestFit::storeVmSubscribe(SM_UserVM* userVM_Rq)
         dMaxSubscribeTime = userVM_Rq->getMaxSubscribetime(0);
         EV_INFO << "Subscribing the VM request from user:" << strUserName << " | max sub time: " << dMaxSubscribeTime<<endl;
 
-        pMsg = scheduleVmFinish(USER_SUBSCRIPTION_TIMEOUT, userVM_Rq->getUserID(), "", dMaxSubscribeTime);
+        pMsg = scheduleRentingTimeout(USER_SUBSCRIPTION_TIMEOUT, userVM_Rq->getUserID(), "", dMaxSubscribeTime);
 
         //Store the VM subscription until there exist the Vms necessaries
         userVM_Rq->setDStartSubscriptionTime(simTime().dbl());
@@ -995,7 +1013,7 @@ NodeResourceRequest* CloudProviderBase_firstBestFit::generateNode(std::string st
     return pNode;
 }
 
-SM_UserVM_Finish* CloudProviderBase_firstBestFit::scheduleVmFinish (std::string name, std::string strUserName, std::string strVmId, double rentTime)
+SM_UserVM_Finish* CloudProviderBase_firstBestFit::scheduleRentingTimeout (std::string name, std::string strUserName, std::string strVmId, double rentTime)
 {
     SM_UserVM_Finish *pMsg = new SM_UserVM_Finish();
 
@@ -1009,6 +1027,25 @@ SM_UserVM_Finish* CloudProviderBase_firstBestFit::scheduleVmFinish (std::string 
     scheduleAt(simTime() + SimTime(rentTime), pMsg);
 
     return pMsg;
+}
+
+SM_UserAPP_Finish* CloudProviderBase_firstBestFit::scheduleAppTimeout (std::string name, std::string strUserName, std::string strAppName, std::string strVmId, double totalTime)
+{
+    SM_UserAPP_Finish *pMsgFinish = new SM_UserAPP_Finish();
+
+    pMsgFinish->setUserID(strUserName.c_str());
+    pMsgFinish->setStrApp(strAppName.c_str());
+
+    if(!strVmId.empty())
+        pMsgFinish ->setStrVmId(strVmId.c_str());
+
+    pMsgFinish->setNTotalTime(totalTime);
+    pMsgFinish->setName(name.c_str());
+
+    EV_INFO << "Scheduling time rental Msg, " << strAppName << " at " << simTime().dbl() + totalTime << "s" << endl;
+    scheduleAt(simTime() + SimTime(totalTime), pMsgFinish);
+
+    return pMsgFinish;
 }
 
 void CloudProviderBase_firstBestFit::clearVMReq (SM_UserVM*& userVM_Rq, int lastId)
@@ -1086,7 +1123,7 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
                 else
                   {
                     //Getting VM and scheduling renting timeout
-                    vmRequest.pMsg = scheduleVmFinish(EXEC_VM_RENT_TIMEOUT, strUserName, vmRequest.strVmId, vmRequest.nRentTime_t2);
+                    vmRequest.pMsg = scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUserName, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
                     //Update value
                     nAvailableCores = datacenterCollection->getTotalAvailableCores();

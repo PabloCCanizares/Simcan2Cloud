@@ -632,6 +632,7 @@ void CloudProvider_firstBestFit::initialize(){
 //                if(acceptedUsersRqMap.find(strUsername) != acceptedUsersRqMap.end())
 //                {
 //                    SM_UserVM& userVmRequest = acceptedUsersRqMap.at(strUsername);
+//
 //                    if(handlingAppsRqMap.find(strUsername) == handlingAppsRqMap.end())
 //                    {
 //                        //Registering the appRq
