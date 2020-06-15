@@ -32,7 +32,7 @@ class UserGeneratorCost : public UserGenerator_simple
         double offerAcceptanceRate;
         double offerCostIncrease;
 
-    virtual void initialize();
+    virtual void initialize() override;
 
     virtual void initializeHashMaps();
 

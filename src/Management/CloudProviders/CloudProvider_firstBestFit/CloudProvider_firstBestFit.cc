@@ -583,6 +583,26 @@ void CloudProvider_firstBestFit::initialize(){
 //
 //void CloudProvider_firstBestFit::handleUserAppRequest(SM_UserAPP* userAPP_Rq)
 //{
+//    //Get the user name, and recover the info about the VmRequests;
+//    bool bHandle;
+//
+//    std::string strUsername,
+//                strVmId,
+//                strIp,
+//                strAppName;
+//
+//    int appStartTime,
+//        appExecutedTime,
+//        nTotalTime;
+//
+//    Application *appType;
+//
+//    SM_UserAPP_Finish *pMsgFinish;
+//
+//    APP_Request userApp;
+//
+//    VirtualMachine *vmType;
+//
 //    if(userAPP_Rq != nullptr)
 //    {
 //        EV_INFO << "CloudProvider_firstBestFit::handleUserAppRequest - Handle AppRequest"  << endl;
@@ -598,17 +618,6 @@ void CloudProvider_firstBestFit::initialize(){
 //        }
 //        else if (userAPP_Rq->getOperation() == SM_APP_Req)
 //        {
-//            //Get the user name, and recover the info about the VmRequests;
-//            bool bHandle;
-//            int nIndexVmFound, appStartTime, appExecutedTime;
-//            std::string strUsername, strVmId, strIp, strAppName;
-//            Application* appType;
-//            SM_UserAPP_Finish* pMsgFinish;
-//            APP_Request userApp;
-//            VirtualMachine* vmType;
-//
-//            int nTotalTime;
-//
 //            //Las aplicaciones estan relacionadas con las VM
 //            //Hay que relacionar la APP con la VM para asi poder terminar con ella.
 //            bHandle = false;
@@ -643,7 +652,7 @@ void CloudProvider_firstBestFit::initialize(){
 //                            vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
 //
 //                            int totalTimePerCore[vmType->getNumCores()];
-//                            for (int i=0; i<vmType->getNumCores();i++)
+//                            for (int i=0; i<vmType->getNumCores(); i++)
 //                                totalTimePerCore[i]=0;
 //                            //int totalTimePerCore[1] = { 0 };
 //

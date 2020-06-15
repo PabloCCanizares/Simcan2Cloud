@@ -61,7 +61,7 @@ protected:
     /**
      * Initialize method. Invokes the parsing process to allocate the existing cloud users in the corresponding data structures.
      */
-    virtual void initialize();
+    virtual void initialize() override;
 
     /**
      * Initializes the signals.
@@ -89,7 +89,7 @@ protected:
      *
      * @param msg Received (self) message.
      */
-    virtual void processSelfMessage(cMessage *msg);
+    virtual void processSelfMessage(cMessage *msg) override;
 
     /**
      * Returns the time the next user will arrive to the cloud
@@ -123,14 +123,14 @@ protected:
      *
      * @param sm Incoming message.
      */
-    virtual void processRequestMessage(SIMCAN_Message *sm);
+    virtual void processRequestMessage(SIMCAN_Message *sm) override;
 
     /**
      * Processes a response message from an external module.
      *
      * @param sm Incoming message.
      */
-    virtual void processResponseMessage(SIMCAN_Message *sm);
+    virtual void processResponseMessage(SIMCAN_Message *sm) override;
 
     //###############################################
     //API

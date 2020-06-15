@@ -588,7 +588,7 @@ void UserGeneratorCost::updateVmUserStatus(SM_UserVM* userVm) {
     {
         UserGenerator_simple::updateVmUserStatus(userVm);
 
-        if (userVmCost = dynamic_cast<SM_UserVM_Cost*>(userVm)){
+        if ((userVmCost = dynamic_cast<SM_UserVM_Cost*>(userVm))){
             strUserId = userVmCost->getUserID();
 
             if(userVmCost->getBPriorized())

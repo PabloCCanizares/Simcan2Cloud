@@ -119,30 +119,32 @@ void SM_UserVM::createResponse(int nIndex, bool bResOk, int nTime, std::string s
     VM_Response vmRes;
     int nResponses;
 
-    if(nIndex<getVmsArraySize())
-    {
+    if(nIndex < getVmsArraySize())
+      {
         if(bResOk)
-        {
+          {
             vmRes.nOperationResult = 1;
             vmRes.strIp = strIp;
-            vmRes.startTime=nTime;
+            vmRes.startTime = nTime;
             vmRes.nPrice = nPrice;
             EV_INFO << "    ~+RSP(" << nIndex << ")[ Ip:  " << vmRes.strIp << " | RentStart: " << vmRes.startTime << " | Price:" << vmRes.nPrice << "]" <<endl;
-        }
+          }
         else
-        {
+          {
             vmRes.nOperationResult = 0;
-        }
+          }
 
         //Introduce a new response
-        nResponses=getVms(nIndex).responseList.size();
-        //getVms(nIndex).responseList.resize(nResponses+1);
+        // nResponses=getVms(nIndex).responseList.size();
+        // getVms(nIndex).responseList.resize(nResponses+1);
         getVms(nIndex).responseList.push_back(vmRes);
 
-    }else
-    {
-        //TODO: Error!!
-    }
+      }
+    else
+      {
+        // TODO: Error!
+        EV_FATAL << "    ~+RSP(" << nIndex << ") out of bounds! Max: " << getVmsArraySize() << endl;
+      }
 }
 std::string SM_UserVM::getVmRequestType(int nIndex)
 {

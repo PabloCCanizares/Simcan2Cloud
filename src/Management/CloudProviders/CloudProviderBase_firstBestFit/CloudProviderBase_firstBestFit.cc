@@ -625,21 +625,21 @@ void CloudProviderBase_firstBestFit::handleVmRequestFits(SIMCAN_Message *sm)
 {
     SM_UserVM *userVM_Rq;
 
-    userVM_Rq = dynamic_cast<SM_UserVM *>(sm);
-    EV_INFO << "CloudProviderFirstFit::processRequestMessage - Handle VMrequest"  << endl;
+    userVM_Rq = dynamic_cast<SM_UserVM*>(sm);
+    EV_INFO << "CloudProviderBase_firstBestFit::handleVmRequestFits - Handle VM_Request"  << endl;
 
     if(userVM_Rq != nullptr)
       {
         userVM_Rq->printUserVM();
         //Check if is a VmRequest or a subscribe
         if (checkVmUserFit(userVM_Rq))
-          {
             acceptVmRequest(userVM_Rq);
-          }
         else
-          {
             rejectVmRequest(userVM_Rq);
-          }
+      }
+    else
+      {
+        throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit::handleVmRequestFits] Wrong userVM_Rq. Null pointer or bad operation code!");
       }
 }
 
@@ -647,24 +647,24 @@ void CloudProviderBase_firstBestFit::handleVmSubscription(SIMCAN_Message *sm)
 {
     SM_UserVM *userVM_Rq;
 
-    userVM_Rq = dynamic_cast<SM_UserVM *>(sm);
-    EV_INFO << "CloudProviderFirstFit::processRequestMessage - Received Subscribe operation"  << endl;
+    userVM_Rq = dynamic_cast<SM_UserVM*>(sm);
+    EV_INFO << "CloudProviderBase_firstBestFit::handleVmRequestFits - Received Subscribe operation"  << endl;
 
     if(userVM_Rq != nullptr)
       {
         if (checkVmUserFit(userVM_Rq))
-          {
             notifySubscription(userVM_Rq);
-          }
         else
-          {
-            //Store the vmRequest
-            storeVmSubscribe(userVM_Rq);
-          }
+            storeVmSubscribe(userVM_Rq); //Store the vmRequest
+      }
+    else
+      {
+        throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit::handleVmSubscription] Wrong userVM_Rq. Null pointer or bad operation code!");
       }
 }
 
-void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm){
+void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
+{
     SM_CloudProvider_Control* userControl;
     std::map<int, std::function<void(SIMCAN_Message*)>>::iterator it;
 
@@ -698,16 +698,30 @@ void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm){
 void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 {
     //Get the user name, and recover the info about the VmRequests;
+    SM_UserAPP *userAPP_Rq;
+
     bool bHandle;
-    std::string strUsername, strAppType, strVmId, strIp, strAppName;
-    Application* appType;
+
+    std::string strUsername,
+                strVmId,
+                strIp,
+                strAppName;
+
+    int appStartTime,
+        appExecutedTime,
+        nTotalTime;
+
+    Application *appType;
+
     SM_UserVM userVmRequest;
-    SM_UserAPP_Finish* pMsgFinish;
+
+    SM_UserAPP_Finish *pMsgFinish;
+
     VM_Request vmRequest;
+
     APP_Request userApp;
 
-    int nTotalTime;
-    SM_UserAPP *userAPP_Rq;
+    VirtualMachine *vmType;
 
     EV_INFO << "CloudProviderFirstFit::processRequestMessage - Handle AppRequest"  << endl;
     userAPP_Rq = dynamic_cast<SM_UserAPP *>(sm);
@@ -741,7 +755,6 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                   {
                     //Get the app
                     userApp = userAPP_Rq->getApp(i);
-                    strAppType = userApp.strApp;
 
                     //Get the VM
                     if(i < userVmRequest.getVmsArraySize())
@@ -768,37 +781,34 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                         vmRequest = userVmRequest.getVms(0);
                       }
 
-                    appType = searchAppTypeById(strAppType);
+                    appType = searchAppTypeById(userApp.strApp);
 
                     if(appType != nullptr)
                       {
                         //Get the parameters
-                        if(strAppType.compare(appType->getAppName())==0)
-                          {
-                            nTotalTime = TEMPORAL_calculateTotalTime(appType);
+                        nTotalTime = TEMPORAL_calculateTotalTime(appType);
 
-                            strAppName = userApp.strApp;
+                        strAppName = userApp.strApp;
 
-                            //Create new Message
-                            pMsgFinish = new SM_UserAPP_Finish();
-                            pMsgFinish->setUserID(strUsername.c_str());
-                            pMsgFinish->setStrApp(strAppName.c_str());
-                            pMsgFinish->setStrVmId(strVmId.c_str());
-                            pMsgFinish->setNTotalTime(nTotalTime);
-                            pMsgFinish->setName(EXEC_APP_END_SINGLE);
+                        //Create new Message
+                        pMsgFinish = new SM_UserAPP_Finish();
+                        pMsgFinish->setUserID(strUsername.c_str());
+                        pMsgFinish->setStrApp(strAppName.c_str());
+                        pMsgFinish->setStrVmId(strVmId.c_str());
+                        pMsgFinish->setNTotalTime(nTotalTime);
+                        pMsgFinish->setName(EXEC_APP_END_SINGLE);
 
-                            userApp.pMsgTimeout = pMsgFinish;
-                            //userApp.vmId =  vmRequest.strVmId;
+                        userApp.pMsgTimeout = pMsgFinish;
+                        //userApp.vmId =  vmRequest.strVmId;
 
-                            //Change status to running
-                            userAPP_Rq->changeState(strAppName, strVmId, appRunning);
-                            userAPP_Rq->changeStateByIndex(i, strAppName, appRunning);
-                            userAPP_Rq->setVmIdByIndex(i, userApp.strIp, strVmId);
+                        //Change status to running
+                        userAPP_Rq->changeState(strAppName, strVmId, appRunning);
+                        userAPP_Rq->changeStateByIndex(i, strAppName, appRunning);
+                        userAPP_Rq->setVmIdByIndex(i, userApp.strIp, strVmId);
 
-                            EV_INFO << "Scheduling time rental Msg, " << userApp.pMsgTimeout->getName() << endl;
-                            scheduleAt(simTime().dbl()+nTotalTime, userApp.pMsgTimeout);
-                            bHandle = true;
-                          }
+                        EV_INFO << "Scheduling time rental Msg, " << userApp.pMsgTimeout->getName() << endl;
+                        scheduleAt(simTime()+ SimTime(nTotalTime), userApp.pMsgTimeout);
+                        bHandle = true;
                       }
                   }
               }
@@ -821,7 +831,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
       }
     else
       {
-        throw omnetpp::cRuntimeError("[CloudProviderFirstFit] Wrong userAPP_Rq. Nullpointer!!");
+        throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit] Wrong userAPP_Rq. Nullpointer!!");
       }
 }
 Application* CloudProviderBase_firstBestFit::searchAppTypeById(std::string strAppType)
@@ -836,18 +846,16 @@ Application* CloudProviderBase_firstBestFit::searchAppTypeById(std::string strAp
 
     EV_DEBUG << "searchAppTypeById - Init" << endl;
 
-    while(!bFound && nIndex<appTypes.size())
-    {
+    while(!bFound && nIndex < appTypes.size())
+      {
         appTypeRet = appTypes.at(nIndex);
-        if(strAppType.compare(appTypeRet->getAppName())==0)
-        {
+        if(strAppType.compare(appTypeRet->getAppName()) == 0)
             bFound = true;
-        }
 
         EV_DEBUG << "searchAppTypeById - " << strAppType << " vs " << appTypeRet->getAppName() << " Found="<< bFound << endl;
 
         nIndex++;
-    }
+      }
 
     if(!bFound)
         appTypeRet = nullptr;
@@ -948,25 +956,23 @@ void CloudProviderBase_firstBestFit::timeoutSubscription(SM_UserVM* userVM_Rq)
 void CloudProviderBase_firstBestFit::storeVmSubscribe(SM_UserVM* userVM_Rq)
 {
     double dMaxSubscribeTime;
-    SM_UserVM_Finish* pMsg;
+    SM_UserVM_Finish *pMsg;
     std::string strUserName;
 
     if(userVM_Rq != nullptr)
     {
         strUserName = userVM_Rq->getUserID();
         dMaxSubscribeTime = userVM_Rq->getMaxSubscribetime(0);
-        EV_INFO << "Subscribing the VM request from user:" << strUserName << " | max sub time: "<<dMaxSubscribeTime<<endl;
+        EV_INFO << "Subscribing the VM request from user:" << strUserName << " | max sub time: " << dMaxSubscribeTime<<endl;
 
-        pMsg = new SM_UserVM_Finish();
-        pMsg->setName(USER_SUBSCRIPTION_TIMEOUT);
-        pMsg->setUserID(userVM_Rq->getUserID());
+        pMsg = scheduleVmFinish(USER_SUBSCRIPTION_TIMEOUT, userVM_Rq->getUserID(), "", dMaxSubscribeTime);
 
         //Store the VM subscription until there exist the Vms necessaries
         userVM_Rq->setDStartSubscriptionTime(simTime().dbl());
         userVM_Rq->setTimeoutSubscribeMsg(pMsg);
         subscribeQueue.push_back(userVM_Rq);
 
-        scheduleAt(simTime().dbl()+dMaxSubscribeTime, pMsg);
+        scheduleAt(simTime() + SimTime(dMaxSubscribeTime), pMsg);
     }
 }
 
@@ -974,19 +980,70 @@ void CloudProviderBase_firstBestFit::processResponseMessage (SIMCAN_Message *sm)
 
 }
 
+NodeResourceRequest* CloudProviderBase_firstBestFit::generateNode(std::string strUserName, VM_Request vmRequest)
+{
+    NodeResourceRequest *pNode = new NodeResourceRequest();
+
+    pNode->setUserName(strUserName);
+    pNode->setMaxStartTimeT1(vmRequest.maxStartTime_t1);
+    pNode->setRentTimeT2(vmRequest.nRentTime_t2);
+    pNode->setMaxSubTimeT3(vmRequest.maxSubTime_t3);
+    pNode->setMaxSubscriptionTimeT4(vmRequest.maxSubscriptionTime_t4);
+    pNode->setVmId(vmRequest.strVmId);
+    fillVmFeatures(vmRequest.strVmType, pNode);
+
+    return pNode;
+}
+
+SM_UserVM_Finish* CloudProviderBase_firstBestFit::scheduleVmFinish (std::string name, std::string strUserName, std::string strVmId, double rentTime)
+{
+    SM_UserVM_Finish *pMsg = new SM_UserVM_Finish();
+
+    pMsg->setUserID(strUserName.c_str());
+    pMsg->setName(name.c_str());
+
+    if(!strVmId.empty())
+        pMsg ->setStrVmId(strVmId.c_str());
+
+    EV_INFO << "Scheduling Msg name " << pMsg << " at "<< simTime().dbl() + rentTime << endl;
+    scheduleAt(simTime() + SimTime(rentTime), pMsg);
+
+    return pMsg;
+}
+
+void CloudProviderBase_firstBestFit::clearVMReq (SM_UserVM*& userVM_Rq, int lastId)
+{
+    VM_Request vmRequest;
+
+    for(int i = 0; i < lastId ; i++)
+      {
+        vmRequest = userVM_Rq->getVms(i);
+        cancelAndDelete(vmRequest.pMsg);
+        datacenterCollection->freeVmRequest(vmRequest.strVmId);
+      }
+}
+
 bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
 {
-    bool bRet, bAccepted;
+    bool bRet,
+         bAccepted;
 
-    int nTotalRequestedCores;
-    int nRequestedVms, nPrice, nAvailableCores, nTotalCores;
-    std::string nodeIp, strUserName, strVmId;
+    int nTotalRequestedCores,
+        nRequestedVms,
+        nPrice,
+        nAvailableCores,
+        nTotalCores;
+
+    std::string nodeIp,
+                strUserName,
+                strVmId;
+
     VM_Request vmRequest;
 
 
     bAccepted = bRet = true;
     if(userVM_Rq != nullptr)
-    {
+      {
         nPrice = 10;
         nRequestedVms = userVM_Rq->getTotalVmsRequests();
 
@@ -996,30 +1053,23 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
         //Before starting the process, it is neccesary to check if the
         nTotalRequestedCores = calculateTotalCoresRequested(userVM_Rq);
         nAvailableCores = datacenterCollection->getTotalAvailableCores();
-        nTotalCores = datacenterCollection->getTotalCores();
 
         if(nTotalRequestedCores<=nAvailableCores)
-        {
+          {
+            nTotalCores = datacenterCollection->getTotalCores();
             EV_DEBUG << "checkVmUserFit - There is available space: [" << userVM_Rq->getUserID() << nTotalRequestedCores<< " vs Available ["<< nAvailableCores << "/" <<nTotalCores << "]"<<endl;
 
+            strUserName = userVM_Rq->getUserID();
             //Process all the VMs
             for(int i=0;i<nRequestedVms && bRet;i++)
-            {
+              {
                 EV_DEBUG << endl <<"checkVmUserFit - Trying to handle the VM: " << i << endl;
 
                 //Get the VM request
                 vmRequest = userVM_Rq->getVms(i);
-                strUserName = userVM_Rq->getUserID();
 
                 //Create and fill the noderesource  with the VMrequest
-                NodeResourceRequest* pNode = new NodeResourceRequest();
-                pNode->setUserName(strUserName);
-                pNode->setMaxStartTimeT1(vmRequest.maxStartTime_t1);
-                pNode->setRentTimeT2(vmRequest.nRentTime_t2);
-                pNode->setMaxSubTimeT3(vmRequest.maxSubTime_t3);
-                pNode->setMaxSubscriptionTimeT4(vmRequest.maxSubscriptionTime_t4);
-                pNode->setVmId(vmRequest.strVmId);
-                fillVmFeatures(vmRequest.strVmType, pNode);
+                NodeResourceRequest *pNode = generateNode(strUserName, vmRequest);
 
                 //Send the request to the DC
                 bAccepted = datacenterCollection->handleVmRequest(pNode);
@@ -1029,64 +1079,48 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
                 bRet &= bAccepted;
 
                 if(!bRet)
-                {
-                    for(int j=0;j<i;j++)
-                    {
-                        vmRequest = userVM_Rq->getVms(j);
-                        strVmId = vmRequest.strVmId;
-                        cancelAndDelete(vmRequest.pMsg);
-                        datacenterCollection->freeVmRequest(strVmId);
-                    }
-                    EV_DEBUG << "checkVmUserFit - The VM: " << i << "has not been handled, not enough space, all the request of the user "<< strUserName <<"have been deleted"<< endl;
-                }
+                  {
+                    clearVMReq (userVM_Rq, i);
+                    EV_DEBUG << "checkVmUserFit - The VM: " << i << "has not been handled, not enough space, all the request of the user " << strUserName << "have been deleted" << endl;
+                  }
                 else
-                {
+                  {
                     //Getting VM and scheduling renting timeout
-                    vmRequest.pMsg = new SM_UserVM_Finish();
-                    vmRequest.pMsg->setUserID(strUserName.c_str());
-                    strVmId = vmRequest.strVmId;
-                    vmRequest.pMsg ->setStrVmId(strVmId.c_str());
-                    vmRequest.pMsg->setName(EXEC_VM_RENT_TIMEOUT);
-
-                    EV_INFO << "Scheduling Msg name " << vmRequest.pMsg << " at "<< simTime().dbl()+vmRequest.nRentTime_t2 <<endl;
-                    scheduleAt(simTime()+SimTime(vmRequest.nRentTime_t2), vmRequest.pMsg);
+                    vmRequest.pMsg = scheduleVmFinish(EXEC_VM_RENT_TIMEOUT, strUserName, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
                     //Update value
                     nAvailableCores = datacenterCollection->getTotalAvailableCores();
                     EV_DEBUG << "checkVmUserFit - The VM: " << i << " has been handled and stored sucessfully, available cores: "<< nAvailableCores << endl;
-                }
-            }
-        }
-        else
-        {
-            EV_DEBUG << "checkVmUserFit - There isnt enough space: [" << userVM_Rq->getUserID() << nTotalRequestedCores<< " vs "<< nAvailableCores <<endl;
-            bRet = false;
-        }
+                  }
+              }
+            //Update the data
+            nAvailableCores = datacenterCollection->getTotalAvailableCores();
+            nTotalCores = datacenterCollection->getTotalCores();
 
-        //Update the data
-        nTotalRequestedCores = calculateTotalCoresRequested(userVM_Rq);
-        nAvailableCores = datacenterCollection->getTotalAvailableCores();
-        nTotalCores = datacenterCollection->getTotalCores();
+            EV_DEBUG << "checkVmUserFit - Updated space#: [" << userVM_Rq->getUserID() << "Requested: "<< nTotalRequestedCores << " vs Available [" << nAvailableCores << "/" << nTotalCores << "]" << endl;
+          }
+        else
+          {
+            EV_DEBUG << "checkVmUserFit - There isnt enough space: [" << userVM_Rq->getUserID() << nTotalRequestedCores << " vs Available [" << nAvailableCores << "/" << nTotalCores << "]" << endl;
+            bRet = false;
+          }
 
         if(bRet)
-        {
             EV_DEBUG << "checkVmUserFit - Reserved space for: " << userVM_Rq->getUserID() << endl;
-        }
         else
             EV_DEBUG << "checkVmUserFit - Unable to reserve space for: " << userVM_Rq->getUserID() << endl;
-
-        EV_DEBUG << "checkVmUserFit - Updated space#: [" << userVM_Rq->getUserID() << "Requested: "<<nTotalRequestedCores<< " vs Available ["<< nAvailableCores << "/" <<nTotalCores << "]"<<endl;
-    }
+      }
     else
-    {
+      {
         EV_ERROR << "checkVmUserFit - WARNING!! nullpointer detected" <<endl;
         bRet = false;
-    }
+      }
 
     EV_DEBUG << "checkVmUserFit- End" << endl;
 
     return bRet;
 }
+
 int CloudProviderBase_firstBestFit::getPriceByVmType(std::string strPrice)
 {
     int nRet;

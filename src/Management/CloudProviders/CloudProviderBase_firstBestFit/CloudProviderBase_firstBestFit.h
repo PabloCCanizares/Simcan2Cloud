@@ -96,6 +96,9 @@ protected:
      * @param userVM_Rq User request.
      */
     virtual bool checkVmUserFit(SM_UserVM *&userVM_Rq);
+    NodeResourceRequest* generateNode(std::string strUserName, VM_Request vmRequest);
+    SM_UserVM_Finish* scheduleVmFinish (std::string name, std::string strUserName, std::string strVmId, double rentTime);
+    void clearVMReq (SM_UserVM*& userVM_Rq, int lastId);
 
     /**
      * Update the subscription queue. Analyse the queue in order to find timeouts, and accepting the enqueued VM requests.
