@@ -79,9 +79,9 @@ void UserGenerator_simple::initializeResponseHandlers() {
 
     responseHandlers[SM_VM_Res_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseAccept(msg); };
     responseHandlers[SM_VM_Res_Reject] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseReject(msg); };
-    responseHandlers[SM_APP_Res_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleAppOk(msg); };
-    responseHandlers[SM_APP_Res_Reject] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleAppTimeout(msg); };
-    responseHandlers[SM_APP_Res_Timeout] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleAppTimeout(msg); };
+    responseHandlers[SM_APP_Res_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseAppAccept(msg); };
+    responseHandlers[SM_APP_Res_Reject] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseAppReject(msg); };
+    responseHandlers[SM_APP_Res_Timeout] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseAppTimeout(msg); };
     responseHandlers[SM_APP_Sub_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleSubNotify(msg); };
     responseHandlers[SM_APP_Sub_Timeout] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleSubTimeout(msg); };
 }
@@ -92,6 +92,7 @@ void UserGenerator_simple::initializeResponseHandlers() {
 void UserGenerator_simple::generateShuffledUsers() {
     int nRandom, nSize;
 
+    srand((int)33); //TODO: semilla. Comprobar si con las semillas del .ini se puede omitir esta. Así se controla mejor la aletoriedad solo desde el fichero .ini.
     EV_INFO << "UserGenerator::generateShuffledUsers - Init" << endl;
 
     nSize = userInstances.size();
@@ -138,8 +139,9 @@ void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg) {
     m_dInitSim = simTime().dbl();
     lastTime = 0;
 
-    // srand((int)33); // TODO
-    //generateShuffledUsers();
+    if (shuffleUsers) {
+        generateShuffledUsers();
+    }
 
     for (int i = 0; i < userInstances.size(); i++) {
         // Get current user
@@ -253,35 +255,13 @@ void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *
     submitService(userVm);
 }
 
-void UserGenerator_simple::trySubscribe(CloudUserInstance *pUserInstance, SM_UserAPP *userApp) {
-    if (hasToSubscribeVm(userApp)) {
-        recoverVmAndsubscribe(userApp);
-    }
-    else {
-        //End of the protocol, exit!!
-        finishUser(pUserInstance, REASON_APP_TIMEOUT);
-
-        cancelAndDeleteMessages(pUserInstance);
-    }
-}
-
-void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance, int reason) {
+void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance) {
     pUserInstance->setEndTime(simTime().dbl());
     pUserInstance->setFinished(true);
-
-    switch (reason) {
-        case REASON_APP_TIMEOUT:
-            pUserInstance->setTimeoutMaxRentTime();
-            break;
-        case REASON_OK:
-            break;
-        case REASON_SUB_TIMEOUT:
-            pUserInstance->setTimeoutMaxSubscribed();
-            break;
-    }
-
     nUserInstancesFinished++;
 }
+
+
 
 CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *userVm_RAW) {
     CloudUserInstance *pUserInstance;
@@ -349,9 +329,9 @@ CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *us
     return pUserInstance;
 }
 
-CloudUserInstance* UserGenerator_simple::handleAppOk(SIMCAN_Message *userApp_RAW) {
+CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message *msg) {
     CloudUserInstance *pUserInstance;
-    SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(userApp_RAW);
+    SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
 
     if (userApp != nullptr) {
         //Print a debug trace ...
@@ -377,15 +357,15 @@ CloudUserInstance* UserGenerator_simple::handleAppOk(SIMCAN_Message *userApp_RAW
     return pUserInstance;
 }
 
-CloudUserInstance* UserGenerator_simple::handleAppTimeout(SIMCAN_Message *userApp_RAW) {
+CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message *msg) {
     CloudUserInstance *pUserInstance;
-    SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(userApp_RAW);
+    SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
 
     if (userApp != nullptr) {
         //Print a debug trace ...
         userApp->printUserAPP();
 
-        EV_INFO << "handleAppTimeout - Init" << endl;
+        EV_INFO << "handleResponseAppReject - Init" << endl;
 
         //The next step is to send a subscription to the cloudprovider
         //Recover the user instance, and get the VmRequest
@@ -393,14 +373,57 @@ CloudUserInstance* UserGenerator_simple::handleAppTimeout(SIMCAN_Message *userAp
         if (pUserInstance != nullptr) {
             emit(failSignal, pUserInstance->getId());
 
-            trySubscribe(pUserInstance, userApp);
+            if (hasToSubscribeVm(userApp)) {
+                recoverVmAndsubscribe(userApp);
+            }
+            else {
+                //End of the protocol, exit!!
+                finishUser(pUserInstance);
+                pUserInstance->setTimeoutMaxRentTime();
+
+                cancelAndDeleteMessages(pUserInstance);
+            }
         }
 
-        EV_INFO << "handleAppTimeout - End" << endl;
+        EV_INFO << "handleResponseAppReject - End" << endl;
     }
     else {
         error("Could not cast SIMCAN_Message to SM_UserAPP (wrong operation code?)");
     }
+
+    return pUserInstance;
+}
+
+CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message *msg) {
+    CloudUserInstance *pUserInstance = nullptr;
+    SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
+
+    if (userApp != nullptr) {
+        //Print a debug trace ...
+        userApp->printUserAPP();
+
+        EV_INFO << "handleResponseAppTimeout - Init" << endl;
+
+        //The next step is to send a subscription to the cloudprovider
+        //Recover the user instance, and get the VmRequest
+        pUserInstance = userHashMap.at(userApp->getUserID());
+        if (pUserInstance != nullptr) {
+            emit(failSignal, pUserInstance->getId());
+
+            if (hasToSubscribeVm(userApp)) {
+                recoverVmAndsubscribe(userApp);
+            }
+
+        }
+
+        EV_INFO << "handleResponseAppTimeout - End" << endl;
+    }
+    else {
+        error("Could not cast SIMCAN_Message to SM_UserAPP (wrong operation code?)");
+    }
+
+    //Delete ephemeral message
+    delete msg;
 
     return pUserInstance;
 }
@@ -451,7 +474,8 @@ CloudUserInstance* UserGenerator_simple::handleSubTimeout(SIMCAN_Message *userVm
         if (pUserInstance != nullptr) {
             emit(timeOutSignal, pUserInstance->getId());
             EV_INFO << "Set itself finished" << endl;
-            finishUser(pUserInstance, REASON_SUB_TIMEOUT);
+            finishUser(pUserInstance);
+            pUserInstance->setTimeoutMaxSubscribed();
 
             cancelAndDeleteMessages(pUserInstance);
         }
@@ -509,23 +533,24 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
         pUserInstance = userHashMap.at(strUserId);
         if (pUserInstance != nullptr) {
             emit(subscribeFailSignal, pUserInstance->getId());
-            /*
-            for (unsigned int i = 0; i < userApp->getAppArraySize(); i++) {
-                userVM_Rq = getSingleVMReq(pUserInstance->getRequestVmMsg(), userApp->getApp(i).vmId, strUserId);
-                if (userVM_Rq != nullptr) {
-                    bSent = true;
+            if (userApp->getVmId()->empty()) {
+                userVM_Rq = pUserInstance->getRequestVmMsg();
+                if(userVM_Rq != nullptr)
+                {
+                    bSent=true;
                     userVM_Rq->setIsResponse(false);
                     userVM_Rq->setOperation(SM_VM_Sub);
+                    sendRequestMessage (userVM_Rq, toCloudProviderGate);
+                }
+            } else {
+                userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), userApp->getVmId());
+                if (userVM_Rq != nullptr) {
+                    bSent = true;
                     sendRequestMessage(userVM_Rq, toCloudProviderGate);
                 }
             }
-            */
-            pUserInstance->setRequestApp(userApp, userApp->getApp(0).vmId);
-            userVM_Rq = getSingleVMReq(pUserInstance->getRequestVmMsg(), userApp->getApp(0).vmId, strUserId);
-            bSent = true;
-            userVM_Rq->setIsResponse(false);
-            userVM_Rq->setOperation(SM_VM_Sub);
-            sendRequestMessage(userVM_Rq, toCloudProviderGate);
+
+
         }
     }
     if (bSent == false) {
@@ -533,17 +558,17 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
     }
 }
 
-SM_UserVM* UserGenerator_simple::getSingleVMReq(SM_UserVM *userVM_Orig, std::string vmId, std::string userId) {
-    SM_UserVM *userVM;
-
+SM_UserVM* UserGenerator_simple::getSingleVMSubscriptionMessage(SM_UserVM *userVM_Orig, std::string vmId) {
+    SM_UserVM *userVM = nullptr;
 
     for (unsigned int i = 0; i < userVM_Orig->getVmsArraySize(); i++) {
         VM_Request req = userVM_Orig->getVms(i);
         if (req.strVmId.compare(vmId) == 0) {
             userVM = new SM_UserVM();
-            userVM->setUserID(userId.c_str());
+            userVM->setUserID(userVM_Orig->getUserID());
             userVM->addVmRequest(req);
-
+            userVM_Rq->setIsResponse(false);
+            userVM_Rq->setOperation(SM_VM_Sub);
             break;
         }
     }

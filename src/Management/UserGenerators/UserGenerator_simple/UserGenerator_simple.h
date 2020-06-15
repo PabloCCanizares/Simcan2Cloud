@@ -46,12 +46,6 @@ protected:
     simsignal_t notifySignal;
     simsignal_t timeOutSignal;
 
-    // Consts
-    static const int REASON_OK=0;
-    static const int REASON_APP_TIMEOUT=1;
-    static const int REASON_SUB_TIMEOUT=2;
-
-
     /** Iterators */
     /**
      * Destructor
@@ -79,8 +73,6 @@ protected:
     virtual void initializeResponseHandlers();
 
     virtual void execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm);
-
-    virtual void trySubscribe(CloudUserInstance *pUserInstance, SM_UserAPP *userApp);
 
     virtual void finishUser(CloudUserInstance *pUserInstance, int reason);
 
@@ -158,12 +150,13 @@ protected:
      * Handles the VM response received from the CloudProvider
      * @param userVm incoming message
      */
-    virtual CloudUserInstance* handleResponseAccept(SIMCAN_Message *userVm);
-    virtual CloudUserInstance* handleResponseReject(SIMCAN_Message *userVm);
-    virtual CloudUserInstance* handleAppOk(SIMCAN_Message *userVm);
-    virtual CloudUserInstance* handleAppTimeout(SIMCAN_Message *userVm);
-    virtual CloudUserInstance* handleSubNotify(SIMCAN_Message *userVm);
-    virtual CloudUserInstance* handleSubTimeout(SIMCAN_Message *userVm);
+    virtual CloudUserInstance* handleResponseAccept(SIMCAN_Message *msg);
+    virtual CloudUserInstance* handleResponseReject(SIMCAN_Message *msg);
+    virtual CloudUserInstance* handleResponseAppAccept(SIMCAN_Message *msg);
+    virtual CloudUserInstance* handleResponseAppReject(SIMCAN_Message *msg);
+    virtual CloudUserInstance* handleResponseAppTimeout(SIMCAN_Message *msg);
+    virtual CloudUserInstance* handleSubNotify(SIMCAN_Message *msg);
+    virtual CloudUserInstance* handleSubTimeout(SIMCAN_Message *msg);
 
     /**
      * Handles the App response sent from the CloudProvider
