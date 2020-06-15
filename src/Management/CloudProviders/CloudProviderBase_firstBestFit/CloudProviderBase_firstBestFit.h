@@ -97,7 +97,8 @@ protected:
      */
     virtual bool checkVmUserFit(SM_UserVM *&userVM_Rq);
     NodeResourceRequest* generateNode(std::string strUserName, VM_Request vmRequest);
-    SM_UserVM_Finish* scheduleVmFinish (std::string name, std::string strUserName, std::string strVmId, double rentTime);
+    SM_UserVM_Finish* scheduleRentingTimeout (std::string name, std::string strUserName, std::string strVmId, double rentTime);
+    SM_UserAPP_Finish* scheduleAppTimeout (std::string name, std::string strUserName, std::string strAppName, std::string strVmId, double totalTime);
     void clearVMReq (SM_UserVM*& userVM_Rq, int lastId);
 
     /**
