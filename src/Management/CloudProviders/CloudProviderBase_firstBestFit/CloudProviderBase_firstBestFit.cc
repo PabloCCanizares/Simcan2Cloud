@@ -29,6 +29,19 @@ void CloudProviderBase_firstBestFit::initialize(){
 }
 
 /**
+ * This method initializes the self message handlers
+ */
+void CloudProviderBase_firstBestFit::initializeSelfHandlers() {
+    // ADAA
+    selfHandlers[INITIAL_STAGE] = [this](cMessage *msg) -> void { return handleInitialStage(msg); };
+    selfHandlers[EXEC_VM_RENT_TIMEOUT] = [this](cMessage *msg) -> void { return handleExecVmRentTimeout(msg); };
+    selfHandlers[EXEC_APP_END] = [this](cMessage *msg) -> void { return handleAppExecEnd(msg); };
+    selfHandlers[EXEC_APP_END_SINGLE] = [this](cMessage *msg) -> void { return handleAppExecEndSingle(msg); };
+    selfHandlers[USER_SUBSCRIPTION_TIMEOUT] = [this](cMessage *msg) -> void { return manageSubscriptionTimeout(msg); };
+    selfHandlers[MANAGE_SUBSCRIBTIONS] = [this](cMessage *msg) -> void { return handleManageSubscriptions(msg); };
+}
+
+/**
  * This method initializes the request handlers
  */
 void CloudProviderBase_firstBestFit::initializeRequestHandlers() {
@@ -140,7 +153,13 @@ void CloudProviderBase_firstBestFit::abortAllApps(SM_UserAPP* userApp, std::stri
     }
 }
 
-void CloudProviderBase_firstBestFit::handleManageSubscriptions(cMessage* msg) {
+void CloudProviderBase_firstBestFit::handleInitialStage(cMessage* msg) { // ADAA
+    EV_INFO << "CloudProviderBase_firstBestFit::handleInitialStage - INITIAL_STAGE" << endl;
+    scheduleAt(simTime() + SimTime(1), new cMessage(MANAGE_SUBSCRIBTIONS));
+}
+
+void CloudProviderBase_firstBestFit::handleManageSubscriptions(cMessage* msg)
+{
     SM_UserVM* userVmSub;
     std::string strUsername;
     bool bFreeSpace;
@@ -148,22 +167,26 @@ void CloudProviderBase_firstBestFit::handleManageSubscriptions(cMessage* msg) {
 
 
     bFreeSpace = false;
-    if (subscribeQueue.size() > 0) {
+    if (subscribeQueue.size() > 0)
+      {
         EV_TRACE << "The queue of subscription: " << subscribeQueue.size()
                                 << endl;
 
         //First of all, check the subscriptions timeouts
-        for (int i = 0; i < subscribeQueue.size(); i++) {
+        for (int i = 0; i < subscribeQueue.size(); i++)
+          {
             userVmSub = subscribeQueue.at(i);
 
-            if (userVmSub != nullptr) {
+            if (userVmSub != nullptr)
+              {
                 strUsername = userVmSub->getUserID();
 
                 dWaitingSub = (simTime().dbl())
                                 - (userVmSub->getDStartSubscriptionTime());
                 dMaxSubtime = userVmSub->getMaxSubscribetime(0);
 
-                if (dWaitingSub > dMaxSubtime) {
+                if (dWaitingSub > dMaxSubtime)
+                  {
                     EV_INFO << "The subscription of the user:  " << strUsername
                             << " has expired, TIMEOUT! SimTime()"
                             << simTime().dbl() << " - "
@@ -179,7 +202,9 @@ void CloudProviderBase_firstBestFit::handleManageSubscriptions(cMessage* msg) {
 
                     //send the Timeout
                     timeoutSubscription(userVmSub);
-                } else {
+                  }
+                else
+                  {
                     EV_TRACE << "The subscription of the user:  " << strUsername
                             << " has time to wait!" << simTime().dbl()
                             << " - "
@@ -187,242 +212,249 @@ void CloudProviderBase_firstBestFit::handleManageSubscriptions(cMessage* msg) {
                             << " = | " << dWaitingSub << " vs "
                             << dMaxSubtime << " || "
                             << dWaitingSub - dMaxSubtime << endl;
-                }
-            }
-        }
+                  }
+              }
+          }
         //Check the subscription queue
         updateSubsQueue();
-    } else
+      }
+    else
+      {
         EV_TRACE << "The subscription queue is empty" << endl;
-
+      }
 }
 
-void CloudProviderBase_firstBestFit::handleAppExecEndSingle(SM_UserAPP_Finish* pUserAppFinish) {
+void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
+    SM_UserAPP_Finish *pUserAppFinish;
+    SM_UserAPP *userApp;
+    std::string strUsername,
+                strVmId,
+                strAppName,
+                strIp;
+    std::map<std::string, SM_UserAPP*>::iterator it;
 
-    SM_UserAPP* userApp;
-    std::string strUsername, strVmId, strAppName, strIp;
+    EV_INFO << "CloudProviderBase_firstBestFit::handleAppExecEndSingle - EXEC_APP_END_SINGLE" << endl;
+    if ((pUserAppFinish = dynamic_cast<SM_UserAPP_Finish *>(msg)))
+      {
+        strUsername = pUserAppFinish->getUserID();
+        strVmId = pUserAppFinish->getStrVmId();
+        strAppName = pUserAppFinish->getStrApp();
+        EV_INFO << "The execution of the App [" << pUserAppFinish->getStrApp()
+                               << " / " << pUserAppFinish->getStrVmId()
+                               << "] launched by the user " << strUsername
+                               << " has finished" << endl;
+        //Used only for notify the user.
+        it = handlingAppsRqMap.find(strUsername);
+        if (it != handlingAppsRqMap.end())
+          {
+            userApp = it->second;
 
-    strUsername = pUserAppFinish->getUserID();
-    strVmId = pUserAppFinish->getStrVmId();
-    strAppName = pUserAppFinish->getStrApp();
-    EV_INFO << "The execution of the App [" << pUserAppFinish->getStrApp()
-                           << " / " << pUserAppFinish->getStrVmId()
-                           << "] launched by the user " << strUsername
-                           << " has finished" << endl;
-    //Used only for notify the user.
-    if (handlingAppsRqMap.find(strUsername) != handlingAppsRqMap.end()) {
-        handlingAppsRqMap.at(strUsername)->increaseFinishedApps();
-        userApp = handlingAppsRqMap.at(strUsername);
-
-        if (userApp != nullptr) {
-            //Check for a possible timeout
-            if (!userApp->isFinishedKO(strAppName, strVmId)) {
-                EV_INFO
-                << "processSelfMessage - Changing status of the application [ app: "
-                << strAppName << " | vmId: " << strVmId << endl;
-                userApp->printUserAPP();
-
-                userApp->changeState(strAppName, strVmId, appFinishedOK);
-                userApp->setEndTime(strAppName, strVmId, simTime().dbl());
-            }
-            //if(userApp->getNFinishedApps() >= userApp->getAppArraySize())
-
-            if (userApp->allAppsFinished()) {
-                if (userApp->allAppsFinishedOK()) {
+            if (userApp != nullptr)
+              {
+                userApp->increaseFinishedApps();
+                //Check for a possible timeout
+                if (!userApp->isFinishedKO(strAppName, strVmId))
+                  {
                     EV_INFO
-                    << "processSelfMessage - All the apps corresponding with the user "
-                    << strUsername
-                    << " have finished successfully" << endl;
-
+                    << "processSelfMessage - Changing status of the application [ app: "
+                    << strAppName << " | vmId: " << strVmId << endl;
                     userApp->printUserAPP();
 
-                    //Notify the user the end of the execution
-                    acceptAppRequest(userApp);
-                } else {
-                    EV_INFO
-                    << "processSelfMessage - All the apps corresponding with the user "
-                    << strUsername
-                    << " have finished with some errors" << endl;
+                    userApp->changeState(strAppName, strVmId, appFinishedOK);
+                    userApp->setEndTime(strAppName, strVmId, simTime().dbl());
+                  }
+                //if(userApp->getNFinishedApps() >= userApp->getAppArraySize())
 
-                    //Check the subscription queue
-                    //updateSubsQueue();
+                if (userApp->allAppsFinished())
+                  {
+                    if (userApp->allAppsFinishedOK())
+                      {
+                        EV_INFO
+                        << "processSelfMessage - All the apps corresponding with the user "
+                        << strUsername
+                        << " have finished successfully" << endl;
 
-                    if (!userApp->getFinished()) {
+                        userApp->printUserAPP();
+
                         //Notify the user the end of the execution
-                        timeoutAppRequest(userApp);
-                    }
-                }
+                        acceptAppRequest(userApp);
+                      }
+                    else
+                      {
+                        EV_INFO
+                        << "processSelfMessage - All the apps corresponding with the user "
+                        << strUsername
+                        << " have finished with some errors" << endl;
 
-                //Delete the application on the hashmap
-                handlingAppsRqMap.erase(strUsername);
-            } else {
-                EV_INFO << "processSelfMessage - Total apps finished: "
-                        << userApp->getNFinishedApps() << " of "
-                        << userApp->getAppArraySize() << endl;
-            }
-        } else {
+                        //Check the subscription queue
+                        //updateSubsQueue();
+
+                        if (!userApp->getFinished())
+                            timeoutAppRequest(userApp);  //Notify the user the end of the execution
+                      }
+
+                    //Delete the application on the hashmap
+                    handlingAppsRqMap.erase(strUsername);
+                  }
+                else
+                  {
+                    EV_INFO << "processSelfMessage - Total apps finished: "
+                            << userApp->getNFinishedApps() << " of "
+                            << userApp->getAppArraySize() << endl;
+                  }
+              }
+            else
+              {
+                EV_INFO
+                << "processSelfMessage - WARNING! I cant found the apps corresponding with the user "
+                << strUsername << endl;
+              }
+          }
+        else
+          {
             EV_INFO
             << "processSelfMessage - WARNING! I cant found the apps corresponding with the user "
             << strUsername << endl;
-        }
-    } else {
-        EV_INFO
-        << "processSelfMessage - WARNING! I cant found the apps corresponding with the user "
-        << strUsername << endl;
-    }
+          }
+      }
+    else
+      {
+        error ("CloudProviderBase_firstBestFit::handleAppExecEndSingle - Unable to cast msg to SM_UserAPP_Finish*. Wrong msg name [%s]?", msg->getName());
+      }
 }
 
 //TODO: asignar la vm que hace el timout al mensaje de la app. Duplicarlo y enviarlo.
-void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(SM_UserVM_Finish* pUserVmFinish) {
+void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
     SM_UserAPP *userApp;
     std::string strUsername, strVmId, strAppName, strIp;
     bool bAlreadyFinished;
-    EV_INFO << "processSelfMessage - INIT" << endl;
-    bAlreadyFinished = false;
-    strUsername = pUserVmFinish->getUserID();
-    strVmId = pUserVmFinish->getStrVmId();
-    EV_INFO << "The rent of the VM [" << pUserVmFinish->getStrVmId()
-                           << "] launched by the user " << strUsername
-                           << " has finished" << endl;
-    //Check the Application status
-    if (handlingAppsRqMap.find(strUsername) != handlingAppsRqMap.end()) {
-        userApp = handlingAppsRqMap.at(strUsername);
+    SM_UserVM_Finish *pUserVmFinish;
+    std::map<std::string, SM_UserAPP*>::iterator it;
 
-        //Check the application status
-        if (userApp != nullptr) {
+    if ((pUserVmFinish = dynamic_cast<SM_UserVM_Finish*>(msg)))
+      {
+        EV_INFO << "processSelfMessage - INIT" << endl;
+        bAlreadyFinished = false;
+        strUsername = pUserVmFinish->getUserID();
+        strVmId = pUserVmFinish->getStrVmId();
+        EV_INFO << "The rent of the VM [" << pUserVmFinish->getStrVmId()
+                               << "] launched by the user " << strUsername
+                               << " has finished" << endl;
+        //Check the Application status
+        it = handlingAppsRqMap.find(strUsername);
+        if (it != handlingAppsRqMap.end())
+          {
+            userApp = it->second;
 
-            EV_INFO << "Last id gate: " << userApp->getLastGateId() << endl;
-            EV_INFO
-            << "Checking the status of the applications which are running over this VM"
-            << endl;
+            //Check the application status
+            if (userApp != nullptr)
+              {
 
-            //Abort the running applications
-            if (!userApp->allAppsFinished(strVmId)) {
-                EV_INFO << "Aborting running applications" << endl;
-                abortAllApps(userApp, strVmId);
-            } else {
-                EV_INFO << "All the applications have already finished" << endl;
-                bAlreadyFinished = true;
-            }
+                EV_INFO << "Last id gate: " << userApp->getLastGateId() << endl;
+                EV_INFO
+                << "Checking the status of the applications which are running over this VM"
+                << endl;
 
-            EV_INFO << "Freeing resources..." << endl;
+                //Abort the running applications
+                if (!userApp->allAppsFinished(strVmId))
+                  {
+                    EV_INFO << "Aborting running applications" << endl;
+                    abortAllApps(userApp, strVmId);
+                  }
+                else
+                  {
+                    EV_INFO << "All the applications have already finished" << endl;
+                    bAlreadyFinished = true;
+                  }
 
-            //Check if all the applications of the user have finished
-            if (userApp->allAppsFinished() && !userApp->getFinished()
-                    && !bAlreadyFinished) {
-                //Notify the user the end of the execution
-                EV_INFO << "processSelfMessage - EXEC_VM_RENT_TIMEOUT Init"
-                        << endl;
+                EV_INFO << "Freeing resources..." << endl;
 
-                //if so, notify this.
-                timeoutAppRequest(userApp);
-            }
+                //Check if all the applications of the user have finished
+                if (userApp->allAppsFinished() && !userApp->getFinished() && !bAlreadyFinished)
+                  {
+                    //Notify the user the end of the execution
+                    EV_INFO << "processSelfMessage - EXEC_VM_RENT_TIMEOUT Init"
+                            << endl;
 
-        }
-    }
-    //Free the VM resources
-    freeVm(strVmId);
+                    //if so, notify this.
+                    timeoutAppRequest(userApp);
+                  }
+              }
+          }
+        //Free the VM resources
+        freeVm(strVmId);
 
-    //Check the subscription queue
-    updateSubsQueue();
+        //Check the subscription queue
+        updateSubsQueue();
+      }
+    else
+      {
+        error ("CloudProviderBase_firstBestFit::handleExecVmRentTimeout - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", msg->getName());
+      }
 }
 
-void CloudProviderBase_firstBestFit::handleAppExecEnd(SM_UserAPP* userAPP_Rq) {
+void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
     std::string strUsername;
+    SM_UserAPP *userAPP_Rq;
 
-    strUsername = userAPP_Rq->getUserID();
-    EV_INFO << "The execution of all the Apps launched by the user " << strUsername
-                   << " have finished" << endl;
-    //Check the subscription queue
-    updateSubsQueue();
-    //Notify the user the end of the execution
-    acceptAppRequest(userAPP_Rq);
+    EV_INFO << "CloudProviderBase_firstBestFit::handleAppExecEnd - EXEC_APP_END" << endl;
+    if ((userAPP_Rq = dynamic_cast<SM_UserAPP*>(msg)))
+      {
+        strUsername = userAPP_Rq->getUserID();
+        EV_INFO << "The execution of all the Apps launched by the user " << strUsername
+                       << " have finished" << endl;
+        //Check the subscription queue
+        updateSubsQueue();
+        //Notify the user the end of the execution
+        acceptAppRequest(userAPP_Rq);
+      }
+    else
+      {
+        error ("CloudProviderBase_firstBestFit::handleAppExecEnd - Unable to cast msg to SM_UserAPP*. Wrong msg name [%s]?", msg->getName());
+      }
 }
 
 void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
+    std::map<std::string, std::function<void(cMessage*)>>::iterator it;
 
-    std::string strUsername, strVmId, strAppName, strIp;
-    SM_UserAPP* userAPP_Rq;
-    SM_UserAPP_Finish* pUserAppFinish;
-    SM_UserVM_Finish* pUserVmFinish;
-    SM_UserVM userVmRequest;
+    EV_INFO << "CloudProviderBase_firstBestFit::processSelfMessage - Received Request Message" << endl;
 
-    EV_TRACE << "processSelfMessage - Init" << endl;
+    it = selfHandlers.find(msg->getName());
 
-    // Start execution?
-    if(!strcmp(msg->getName(), INITIAL_STAGE))
-    {
-        EV_INFO << "processSelfMessage - INITIAL_STAGE" << endl;
-        scheduleAt(simTime().dbl()+1, new cMessage(MANAGE_SUBSCRIBTIONS));
-        delete (msg);
-    }
-    else if(!strcmp(msg->getName(), EXEC_VM_RENT_TIMEOUT))
-    {
-        //Timeout of a VM
-        pUserVmFinish = dynamic_cast<SM_UserVM_Finish *>(msg);
-        if(pUserVmFinish != nullptr)
-        {
-            handleExecVmRentTimeout(pUserVmFinish);
-            cancelAndDelete(pUserVmFinish);
-        }
-    }
-    else if (!strcmp(msg->getName(), EXEC_APP_END)){
-
-        EV_INFO << "processSelfMessage - EXEC_APP_END" << endl;
-        userAPP_Rq = dynamic_cast<SM_UserAPP *>(msg);
-        if(userAPP_Rq != nullptr)
-        {
-            handleAppExecEnd(userAPP_Rq);
-        }
-    }
-    else if (!strcmp(msg->getName(), EXEC_APP_END_SINGLE)){
-
-        EV_INFO << "processSelfMessage - EXEC_APP_END_SINGLE" << endl;
-        pUserAppFinish = dynamic_cast<SM_UserAPP_Finish *>(msg);
-        if(pUserAppFinish != nullptr)
-        {
-            handleAppExecEndSingle(pUserAppFinish);
-            cancelAndDelete(pUserAppFinish);
-        }
-    }
-    else if(!strcmp(msg->getName(), USER_SUBSCRIPTION_TIMEOUT))
-    {
-        EV_INFO << "processSelfMessage - RECEIVED TIMEOUT " << endl;
-        manageSubscriptionTimeout(msg);
-        cancelAndDelete(msg);
-    }
-    else if(!strcmp(msg->getName(), MANAGE_SUBSCRIBTIONS))
-    {
-        handleManageSubscriptions(msg);
-        delete (msg);
-    }
+    if (it != selfHandlers.end())
+        it->second(msg);  //Perform the operations...
     else
         error ("Unknown self message [%s]", msg->getName());
 
-    EV_TRACE << "processSelfMessage - End" << endl;
+    if (strcmp(msg->getName(), EXEC_APP_END) != 0) { // We mustn't delete the SM_UserAPP message
+        cancelAndDelete(msg);
+    }
+
+    EV_TRACE << "CloudProviderBase_firstBestFit::processSelfMessage - End" << endl;
 }
+
 void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
 {
     int nIndex;
     double dWaitingSub, dMaxSubTime;
-    SM_UserVM_Finish* pUserSubFinish;
-    SM_UserVM* userVmSub;
+    SM_UserVM_Finish *pUserSubFinish;
+    SM_UserVM *userVmSub;
     std::string strUsername;
 
+    EV_INFO << "CloudProviderBase_firstBestFit::manageSubscriptionTimeout - RECEIVED TIMEOUT " << endl;
     EV_TRACE << "manageSubscriptionTimeout - Init" << endl;
 
     nIndex = 0;
     dWaitingSub = dMaxSubTime = 0;
     userVmSub = nullptr;
 
-    pUserSubFinish = dynamic_cast<SM_UserVM_Finish *>(msg);
-    if(pUserSubFinish != nullptr)
-    {
+    if((pUserSubFinish = dynamic_cast<SM_UserVM_Finish*>(msg)))
+      {
         strUsername = pUserSubFinish->getUserID();
 
         nIndex = searchUserInSubQueue(strUsername);
         if(nIndex != -1)
-        {
+          {
             EV_TRACE << "manageSubscriptionTimeout - User found at position:" << nIndex << endl;
             freeUserVms(strUsername);
             userVmSub = subscribeQueue.at(nIndex);
@@ -431,35 +463,42 @@ void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
             dMaxSubTime = userVmSub->getMaxSubscribetime(0);
 
             if(userVmSub != nullptr)
-            {
+              {
                 subscribeQueue.erase(subscribeQueue.begin()+nIndex);
 
                 if(abs((int)dWaitingSub - (int)dMaxSubTime)<=1)
-                {
+                  {
                     EV_INFO << "The subscription of the user:  " << strUsername << " has expired, TIMEOUT! SimTime()" << simTime().dbl()<< " - " <<
                             userVmSub->getDStartSubscriptionTime() << " = | " << dWaitingSub << " vs " << dMaxSubTime  << endl;
 
                     userVmSub->setDEndSubscriptionTime(simTime().dbl());
                     freeUserVms(strUsername);
                     timeoutSubscription(userVmSub);
-                }
+                  }
                 else
+                  {
                     EV_TRACE << "The subscription of the user:  " << strUsername << " has time waiting!"
                     << simTime().dbl()<< " - " <<
                     userVmSub->getDStartSubscriptionTime() << " = | " << dWaitingSub << " vs " << dMaxSubTime  << endl;
+                  }
                 //send the Timeout
-            }
-        }
+              }
+          }
         else
-        {
+          {
             EV_TRACE << "manageSubscriptionTimeout - User " << strUsername << " not found in queue list" << endl;
 
-        }
+          }
         //Check the subscription queue
         updateSubsQueue();
-    }
+      }
+    else
+      {
+        error ("CloudProviderBase_firstBestFit::manageSubscriptionTimeout - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", msg->getName());
+      }
     EV_TRACE << "processSelfMessage - USER_SUBSCRIPTION_TIMEOUT End" << endl;
 }
+
 int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername)
 {
     int nRet, nIndex;
@@ -526,49 +565,48 @@ void CloudProviderBase_firstBestFit::updateSubsQueue()
         }
     }
 }
+
 void CloudProviderBase_firstBestFit::freeUserVms(std::string strUsername)
 {
     std::string strVmId;
     SM_UserVM pVmRequest;
-
+    std::map<std::string, SM_UserVM>::iterator it;
     VM_Request vmRequest;
 
     EV_TRACE << "CloudProviderFirstFit::freeUserVms - Init" << endl;
 
     //Mark the user VMs as free
-    if(acceptedUsersRqMap.find(strUsername) != acceptedUsersRqMap.end())
-    {
-        pVmRequest = acceptedUsersRqMap.at(strUsername);
+    it = acceptedUsersRqMap.find(strUsername);
+    if(it != acceptedUsersRqMap.end())
+      {
+        pVmRequest = it->second;
 
         for(int i=0;i<pVmRequest.getVmsArraySize();i++)
-        {
+          {
             vmRequest = pVmRequest.getVms(i);
             strVmId = vmRequest.strVmId;
             freeVm(strVmId);
-        }
+          }
+
         acceptedUsersRqMap.erase(strUsername);
-    }
+      }
 
     EV_TRACE << "CloudProviderFirstFit::freeUserVms - End" << endl;
 }
+
 void CloudProviderBase_firstBestFit::freeVm(std::string strVmId)
 {
     EV_TRACE << "CloudProviderFirstFit::freeVm - Init" << endl;
     EV_TRACE << "CloudProviderFirstFit::freeVm - Releasing the Vm:  "<< strVmId << endl;
 
     if(datacenterCollection->freeVmRequest(strVmId))
-    {
-        //
         EV_DEBUG << "the Vm has been released sucessfully: "<< strVmId << endl;
-    }
-    else
-    {
-        //Error freeing the VM
+    else //Error freeing the VM
         EV_INFO << "Error releasing the VM: "<< strVmId << endl;
-    }
 
     EV_TRACE << "CloudProviderFirstFit::freeVm - End" << endl;
 }
+
 void CloudProviderBase_firstBestFit::insertRack(int nIndex, int nRack, RackInfo* pRackInfo)
 {
     NodeInfo* pNodeInfo;

@@ -47,6 +47,7 @@ protected:
     bool bFinished;
 
     /** Handler maps */
+    std::map<std::string, std::function<void(cMessage*)>> selfHandlers;
     std::map<int, std::function<void(SIMCAN_Message*)>> requestHandlers;
 
     /** Destructor*/
@@ -54,6 +55,11 @@ protected:
 
     /** Initialize the cloud provider*/
     virtual void initialize()=0;
+
+    /**
+     * Initializes the self message handlers.
+     */
+    virtual void initializeSelfHandlers();
 
     /**
      * Initializes the request handlers.
@@ -132,6 +138,12 @@ protected:
     virtual void freeUserVms(std::string strUsername);
 
     /**
+     * Handles the initial stage of the Cloud Provider
+     * @param msg
+     */
+    virtual void handleInitialStage(cMessage* msg);
+
+    /**
      * Handles the subscriptions and manage the requests queue, selecting the next request to be processed,
      * taking into account the requests timeouts, requirements etc.
      * @param msg
@@ -142,13 +154,13 @@ protected:
      * Handles the finalisation of a single application execution.
      * @param pUserAppFinish Finished application message.
      */
-    virtual void handleAppExecEndSingle(SM_UserAPP_Finish *pUserAppFinish);
+    virtual void handleAppExecEndSingle(cMessage *msg);
 
     /**
      * Handles the timeout execution of a VM rent.
      * @param pUserVmFinish Finished VM message.
      */
-    virtual void handleExecVmRentTimeout(SM_UserVM_Finish *pUserVmFinish);
+    virtual void handleExecVmRentTimeout(cMessage *msg);
 
     /**
      * Handles if a VM request fits in the datacenter.
@@ -166,7 +178,7 @@ protected:
      * Handles the finalisation of an application.
      * @param userAPP_Rq User application request.
      */
-    virtual void handleAppExecEnd(SM_UserAPP *userAPP_Rq);
+    virtual void handleAppExecEnd(cMessage *msg);
 
     //END - API
     //################################################################
