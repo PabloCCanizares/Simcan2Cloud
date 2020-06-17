@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <string.h>
 #include "CloudProviderBase_firstBestFit.h"
 
 //Define_Module(CloudProviderBase_firstBestFit);
@@ -25,7 +26,7 @@ void CloudProviderBase_firstBestFit::initialize(){
 
     bFinished = false;
     scheduleAt(SimTime(), new cMessage(INITIAL_STAGE));
-    EV_INFO << "CloudProviderFirstFit::initialize - End" << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
 /**
@@ -57,7 +58,7 @@ void CloudProviderBase_firstBestFit::loadNodes()
     RackInfo* pRackInfo;
     int nComputingRacks, nTotalNodes, nDataCenter, nIndex;
 
-    EV_INFO << "CloudProviderFirstFit::loadNodes - Init" << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - Init" << endl;
     //Initialize
     nComputingRacks =  nTotalNodes = nDataCenter = nIndex=0;
 
@@ -66,15 +67,15 @@ void CloudProviderBase_firstBestFit::loadNodes()
     //Go over the datacenter object: all racks
     if(nDataCenter>0)
     {
-        EV_INFO << "CloudProviderFirstFit::loadNodes - handling the DC: " <<  dataCentersToString() << endl;
+        EV_INFO << prettyFunc(__FILE__, __func__) << " - handling the DC: " <<  dataCentersToString() << endl;
         for(int nIndex=0;nIndex<nDataCenter;nIndex++)
         {
-            EV_TRACE << "CloudProviderFirstFit::loadNodes - loading dataCenter: " << nIndex << endl;
+            EV_TRACE << prettyFunc(__FILE__, __func__) << " - loading dataCenter: " << nIndex << endl;
             pDataCenter = dataCentersBase.at(nIndex);
             if(pDataCenter != nullptr)
             {
                 nComputingRacks = pDataCenter->getNumRacks(false);
-                EV_TRACE << "CloudProviderFirstFit::loadNodes - Number of computing racks: "<< nComputingRacks << endl;
+                EV_TRACE << prettyFunc(__FILE__, __func__) << " - Number of computing racks: "<< nComputingRacks << endl;
                 for(int i=0;i<nComputingRacks; i++)
                 {
                     EV_DEBUG << "Getting computing rack: "<< i << endl;
@@ -105,7 +106,7 @@ void CloudProviderBase_firstBestFit::loadNodes()
     //Print the content of the loaded DC
     datacenterCollection->printDCSizes();
 
-    EV_INFO << "CloudProviderFirstFit::loadNodes - Ende" << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - Ende" << endl;
 }
 void CloudProviderBase_firstBestFit::initDataCenterStructures(){
 
@@ -169,7 +170,7 @@ void CloudProviderBase_firstBestFit::cancelAndDeleteAppFinishMsgs(SM_UserAPP* us
 }
 
 void CloudProviderBase_firstBestFit::handleInitialStage(cMessage* msg) { // ADAA
-    EV_INFO << "CloudProviderBase_firstBestFit::handleInitialStage - INITIAL_STAGE" << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - INITIAL_STAGE" << endl;
     scheduleAt(simTime() + SimTime(1), new cMessage(MANAGE_SUBSCRIBTIONS));
 }
 
@@ -248,7 +249,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                 strIp;
     std::map<std::string, SM_UserAPP*>::iterator it;
 
-    EV_INFO << "CloudProviderBase_firstBestFit::handleAppExecEndSingle - EXEC_APP_END_SINGLE" << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_APP_END_SINGLE" << endl;
     if ((pUserAppFinish = dynamic_cast<SM_UserAPP_Finish *>(msg)))
       {
         strUsername = pUserAppFinish->getUserID();
@@ -270,8 +271,8 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                 //Check for a possible timeout
                 if (!userApp->isFinishedKO(strAppName, strVmId))
                   {
-                    EV_INFO
-                    << "processSelfMessage - Changing status of the application [ app: "
+                    EV_INFO << prettyFunc(__FILE__, __func__)
+                    << " - Changing status of the application [ app: "
                     << strAppName << " | vmId: " << strVmId << endl;
                     userApp->printUserAPP();
 
@@ -284,8 +285,8 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                   {
                     if (userApp->allAppsFinishedOK())
                       {
-                        EV_INFO
-                        << "processSelfMessage - All the apps corresponding with the user "
+                        EV_INFO << prettyFunc(__FILE__, __func__)
+                        << " - All the apps corresponding with the user "
                         << strUsername
                         << " have finished successfully" << endl;
 
@@ -296,8 +297,8 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                       }
                     else
                       {
-                        EV_INFO
-                        << "processSelfMessage - All the apps corresponding with the user "
+                        EV_INFO << prettyFunc(__FILE__, __func__)
+                        << " - All the apps corresponding with the user "
                         << strUsername
                         << " have finished with some errors" << endl;
 
@@ -313,28 +314,29 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                   }
                 else
                   {
-                    EV_INFO << "processSelfMessage - Total apps finished: "
+                    EV_INFO << prettyFunc(__FILE__, __func__)
+                            << " - Total apps finished: "
                             << userApp->getNFinishedApps() << " of "
                             << userApp->getAppArraySize() << endl;
                   }
               }
             else
               {
-                EV_INFO
-                << "processSelfMessage - WARNING! I cant found the apps corresponding with the user "
+                EV_INFO << prettyFunc(__FILE__, __func__)
+                << " - WARNING! I cant found the apps corresponding with the user "
                 << strUsername << endl;
               }
           }
         else
           {
-            EV_INFO
-            << "processSelfMessage - WARNING! I cant found the apps corresponding with the user "
+            EV_INFO << prettyFunc(__FILE__, __func__)
+            << " - WARNING! I cant found the apps corresponding with the user "
             << strUsername << endl;
           }
       }
     else
       {
-        error ("CloudProviderBase_firstBestFit::handleAppExecEndSingle - Unable to cast msg to SM_UserAPP_Finish*. Wrong msg name [%s]?", msg->getName());
+        error ("%s - Unable to cast msg to SM_UserAPP_Finish*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
 }
 
@@ -356,7 +358,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
 
     if ((pUserVmFinish = dynamic_cast<SM_UserVM_Finish*>(msg)))
       {
-        EV_INFO << "processSelfMessage - INIT" << endl;
+        EV_INFO << prettyFunc(__FILE__, __func__) << " - INIT" << endl;
         bAlreadyFinished = false;
         strUsername = pUserVmFinish->getUserID();
         strVmId = pUserVmFinish->getStrVmId();
@@ -396,8 +398,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
                 if (userApp->allAppsFinished() && !userApp->getFinished() && !bAlreadyFinished)
                   {
                     //Notify the user the end of the execution
-                    EV_INFO << "processSelfMessage - EXEC_VM_RENT_TIMEOUT Init"
-                            << endl;
+                    EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_VM_RENT_TIMEOUT Init" << endl;
 
                     //if so, notify this.
                     timeoutAppRequest(userApp);
@@ -412,15 +413,44 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
       }
     else
       {
-        error ("CloudProviderBase_firstBestFit::handleExecVmRentTimeout - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", msg->getName());
+        error ("%s - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
+}
+
+std::string CloudProviderBase_firstBestFit::prettyFunc(const char *fileName, const char *funcName)
+{
+    const char *lastBar;
+
+    char *className;
+
+    int startPos,
+        length;
+
+    lastBar = strrchr(fileName, '/');
+    if (lastBar == nullptr)
+        lastBar = strrchr(fileName, '\\');
+
+    startPos = lastBar - fileName + 1;
+    length = strrchr(fileName, '.') - fileName - startPos;
+
+    className = (char*) malloc ((length + strlen(funcName) + 2) * sizeof(char));
+    strncpy(className, lastBar + 1, length);
+    className[length] = ':';
+    className[length + 1] = ':';
+    strcpy(className + (length + 2), funcName);
+    //className[length + strlen(funcName) + 2] = '\0';
+
+    std::string prettyName(className);
+    free (className);
+
+    return prettyName;
 }
 
 void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
     std::string strUsername;
     SM_UserAPP *userAPP_Rq;
 
-    EV_INFO << "CloudProviderBase_firstBestFit::handleAppExecEnd - EXEC_APP_END" << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_APP_END" << endl;
     if ((userAPP_Rq = dynamic_cast<SM_UserAPP*>(msg)))
       {
         strUsername = userAPP_Rq->getUserID();
@@ -433,15 +463,14 @@ void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
       }
     else
       {
-        error ("CloudProviderBase_firstBestFit::handleAppExecEnd - Unable to cast msg to SM_UserAPP*. Wrong msg name [%s]?", msg->getName());
+        error ("%s - Unable to cast msg to SM_UserAPP*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
 }
 
 void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
-    std::cout << "SMS Lambda " << msg;
     std::map<std::string, std::function<void(cMessage*)>>::iterator it;
 
-    EV_INFO << "CloudProviderBase_firstBestFit::processSelfMessage - Received Request Message" << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - Received Request Message" << endl;
 
     it = selfHandlers.find(msg->getName());
 
@@ -452,8 +481,7 @@ void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
 
     cancelAndDelete(msg);
 
-    EV_TRACE << "CloudProviderBase_firstBestFit::processSelfMessage - End" << endl;
-    std::cout << " lambda" << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
 void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
@@ -464,7 +492,7 @@ void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
     SM_UserVM *userVmSub;
     std::string strUsername;
 
-    EV_INFO << "CloudProviderBase_firstBestFit::manageSubscriptionTimeout - RECEIVED TIMEOUT " << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - RECEIVED TIMEOUT " << endl;
     EV_TRACE << "manageSubscriptionTimeout - Init" << endl;
 
     nIndex = 0;
@@ -517,9 +545,9 @@ void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
       }
     else
       {
-        error ("CloudProviderBase_firstBestFit::manageSubscriptionTimeout - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", msg->getName());
+        error ("%s - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
-    EV_TRACE << "processSelfMessage - USER_SUBSCRIPTION_TIMEOUT End" << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - USER_SUBSCRIPTION_TIMEOUT End" << endl;
 }
 
 int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername)
@@ -528,15 +556,15 @@ int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername
     SM_UserVM* pUserVM;
     bool bFound;
 
-    EV_TRACE << "searchUserInSubQueue - Init" << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - Init" << endl;
     nRet = -1;
     bFound= false;
     nIndex=0;
 
-    EV_TRACE << "searchUserInSubQueue - Searching for user: " << strUsername << endl;
+    EV_TRACE << __func__ << " - Searching for user: " << strUsername << endl;
     if(strUsername.size()>0)
     {
-        EV_TRACE << "searchUserInSubQueue - Queue size: " << subscribeQueue.size() << endl;
+        EV_TRACE << __func__ << " - Queue size: " << subscribeQueue.size() << endl;
         while(!bFound && nIndex < subscribeQueue.size())
         {
             pUserVM = subscribeQueue.at(nIndex);
@@ -549,13 +577,13 @@ int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername
                 }
                 else
                 {
-                    EV_TRACE << "searchUserInSubQueue - [nIndex: " << nIndex << " " << strUsername << " vs " <<pUserVM->getUserID()<<" ]" << endl;
+                    EV_TRACE << __func__ << " - [nIndex: " << nIndex << " " << strUsername << " vs " <<pUserVM->getUserID()<<" ]" << endl;
                     nIndex++;
                 }
             }
             else
             {
-                EV_INFO << "searchUserInSubQueue - WARNING! null pointer at position[nIndex: " << nIndex << " ]" << endl;
+                EV_INFO << __func__ << " - WARNING! null pointer at position[nIndex: " << nIndex << " ]" << endl;
                 nIndex++;
             }
         }
@@ -563,7 +591,7 @@ int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername
     if(bFound)
         nRet = nIndex;
 
-    EV_TRACE << "CloudProviderFirstFit::searchUserInSubQueue - End" << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
 
     return nRet;
 }
@@ -596,7 +624,7 @@ void CloudProviderBase_firstBestFit::freeUserVms(std::string strUsername)
     std::map<std::string, SM_UserVM>::iterator it;
     VM_Request vmRequest;
 
-    EV_TRACE << "CloudProviderFirstFit::freeUserVms - Init" << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - Init" << endl;
 
     //Mark the user VMs as free
     it = acceptedUsersRqMap.find(strUsername);
@@ -614,20 +642,20 @@ void CloudProviderBase_firstBestFit::freeUserVms(std::string strUsername)
         acceptedUsersRqMap.erase(strUsername);
       }
 
-    EV_TRACE << "CloudProviderFirstFit::freeUserVms - End" << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
 void CloudProviderBase_firstBestFit::freeVm(std::string strVmId)
 {
-    EV_TRACE << "CloudProviderFirstFit::freeVm - Init" << endl;
-    EV_TRACE << "CloudProviderFirstFit::freeVm - Releasing the Vm:  "<< strVmId << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - Init" << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - Releasing the Vm:  "<< strVmId << endl;
 
     if(datacenterCollection->freeVmRequest(strVmId))
         EV_DEBUG << "the Vm has been released sucessfully: "<< strVmId << endl;
     else //Error freeing the VM
         EV_INFO << "Error releasing the VM: "<< strVmId << endl;
 
-    EV_TRACE << "CloudProviderFirstFit::freeVm - End" << endl;
+    EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
 void CloudProviderBase_firstBestFit::insertRack(int nIndex, int nRack, RackInfo* pRackInfo)
@@ -641,7 +669,7 @@ void CloudProviderBase_firstBestFit::insertRack(int nIndex, int nRack, RackInfo*
     storage= false;
     nTotalCpus = nTotalMemory = cpuSpeed = nTotalNodes = 0;
 
-    EV_INFO << "CloudProviderFirstFit::insertRack - Init "<< endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - Init "<< endl;
 
     if(pRackInfo != NULL)
     {
@@ -673,14 +701,14 @@ void CloudProviderBase_firstBestFit::insertRack(int nIndex, int nRack, RackInfo*
                 pNodeResInfo->setIp("dc:"+std::to_string(nIndex)+"_rack:"+std::to_string(nRack)+"_node:"+std::to_string(j));
                 pNodeResInfo->setDataCenter(nIndex);
 
-                EV_TRACE << "CloudProviderFirstFit::insertRack - Inserting node "<< j << " at datacenter: " << nIndex << endl;
+                EV_TRACE << prettyFunc(__FILE__, __func__) << " - Inserting node "<< j << " at datacenter: " << nIndex << endl;
                 //Insert the node info into the corresponding DC
                 datacenterCollection->insertNode(nIndex, pNodeResInfo);
             }
         }
     }
 
-    EV_INFO << "CloudProviderFirstFit::insertRack - End "<< endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - End "<< endl;
 }
 
 void CloudProviderBase_firstBestFit::handleVmRequestFits(SIMCAN_Message *sm)
@@ -688,7 +716,7 @@ void CloudProviderBase_firstBestFit::handleVmRequestFits(SIMCAN_Message *sm)
     SM_UserVM *userVM_Rq;
 
     userVM_Rq = dynamic_cast<SM_UserVM*>(sm);
-    EV_INFO << "CloudProviderBase_firstBestFit::handleVmRequestFits - Handle VM_Request"  << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - Handle VM_Request"  << endl;
 
     if(userVM_Rq != nullptr)
       {
@@ -701,7 +729,7 @@ void CloudProviderBase_firstBestFit::handleVmRequestFits(SIMCAN_Message *sm)
       }
     else
       {
-        throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit::handleVmRequestFits] Wrong userVM_Rq. Null pointer or bad operation code!");
+        throw omnetpp::cRuntimeError(("[" + prettyFunc(__FILE__, __func__) + "] Wrong userVM_Rq. Null pointer or bad operation code!").c_str());
       }
 }
 
@@ -710,7 +738,7 @@ void CloudProviderBase_firstBestFit::handleVmSubscription(SIMCAN_Message *sm)
     SM_UserVM *userVM_Rq;
 
     userVM_Rq = dynamic_cast<SM_UserVM*>(sm);
-    EV_INFO << "CloudProviderBase_firstBestFit::handleVmRequestFits - Received Subscribe operation"  << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - Received Subscribe operation"  << endl;
 
     if(userVM_Rq != nullptr)
       {
@@ -721,7 +749,7 @@ void CloudProviderBase_firstBestFit::handleVmSubscription(SIMCAN_Message *sm)
       }
     else
       {
-        throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit::handleVmSubscription] Wrong userVM_Rq. Null pointer or bad operation code!");
+        throw omnetpp::cRuntimeError(("[" + prettyFunc(__FILE__, __func__) + "] Wrong userVM_Rq. Null pointer or bad operation code!").c_str());
       }
 }
 
@@ -730,9 +758,7 @@ void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
     SM_CloudProvider_Control* userControl;
     std::map<int, std::function<void(SIMCAN_Message*)>>::iterator it;
 
-    std::cout << "SMR Lambda " << sm;
-
-    EV_INFO << "processResponseMessage - Received Request Message" << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - Received Request Message" << endl;
 
     it = requestHandlers.find(sm->getOperation());
 
@@ -742,7 +768,7 @@ void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
 
         if(userControl != nullptr)
           {
-            EV_INFO << "CloudProviderFirstFit::processRequestMessage - Received end of party"  << endl;
+            EV_INFO << prettyFunc(__FILE__, __func__) << " - Received end of party"  << endl;
             //Stop the checking process.
             bFinished = true;
             cancelAndDelete(userControl);
@@ -757,7 +783,6 @@ void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
         //Perform the operations...
         it->second(sm);
       }
-    std::cout << " lambda " << endl;
 }
 
 void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
@@ -790,7 +815,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
     std::map<std::string, SM_UserVM>::iterator it;
 
-    EV_INFO << "CloudProviderBase_firstBestFit::handleUserAppRequest - Handle AppRequest"  << endl;
+    EV_INFO << prettyFunc(__FILE__, __func__) << " - Handle AppRequest"  << endl;
     userAPP_Rq = dynamic_cast<SM_UserAPP *>(sm);
 
     if(userAPP_Rq != nullptr)
@@ -894,13 +919,13 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
               }
             else
               {
-                EV_INFO << "WARNING! [CloudProviderBase_firstBestFit] The user: " << strUsername << "has the application list empty!"<< endl;
-                throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit] The list of applications of a the user is empty!!");
+                EV_INFO << "WARNING! [" << prettyFunc(__FILE__, __func__) << "] The user: " << strUsername << "has the application list empty!"<< endl;
+                throw omnetpp::cRuntimeError(("[" + prettyFunc(__FILE__, __func__) + "] The list of applications of a the user is empty!!").c_str());
               }
           }
         else
           {
-            EV_INFO << "WARNING! [CloudProviderBase_firstBestFit] The user: " << strUsername << "has not previously registered!!"<< endl;
+            EV_INFO << "WARNING! [" << prettyFunc(__FILE__, __func__) << "] The user: " << strUsername << "has not previously registered!!"<< endl;
           }
 
         if(!bHandle)
@@ -911,7 +936,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
       }
     else
       {
-        throw omnetpp::cRuntimeError("[CloudProviderBase_firstBestFit] Wrong userAPP_Rq. Nullpointer!!");
+        throw omnetpp::cRuntimeError(("[" + prettyFunc(__FILE__, __func__) + "] Wrong userAPP_Rq. Nullpointer!!").c_str());
       }
 }
 
@@ -1292,6 +1317,13 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
 {
     EV_INFO << "Sending timeout to the user:" << userAPP_Rq->getUserID() << endl;
     EV_INFO << "Last id gate: " << userAPP_Rq->getLastGateId() << endl;
+<<<<<<< HEAD
+=======
+    if (userAPP_Rq->getLastGateId() < 0)
+      {
+        EV_FATAL << "WARNING: " << userAPP_Rq << endl;
+      }
+>>>>>>> branch 'github-supercomputing' of https://github.com/AdrianBernal/simcan2cloud.git
 
     userAPP_Rq->setFinished(true);
 
