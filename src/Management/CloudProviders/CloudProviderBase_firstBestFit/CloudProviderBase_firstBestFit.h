@@ -50,11 +50,14 @@ protected:
     std::map<std::string, std::function<void(cMessage*)>> selfHandlers;
     std::map<int, std::function<void(SIMCAN_Message*)>> requestHandlers;
 
-    /** Destructor*/
+    /** Destructor */
     ~CloudProviderBase_firstBestFit();
 
     /** Initialize the cloud provider*/
     virtual void initialize()=0;
+
+    /** Log message */
+    virtual std::string prettyFunc(const char *fileName, const char *funcName);
 
     /**
      * Initializes the self message handlers.

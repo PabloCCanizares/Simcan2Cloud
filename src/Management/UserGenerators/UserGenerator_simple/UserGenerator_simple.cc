@@ -110,7 +110,6 @@ void UserGenerator_simple::generateShuffledUsers()
  */
 void UserGenerator_simple::processSelfMessage(cMessage *msg)
 {
-    std::cout << "UGS Lambda " << msg;
     std::map<std::string, std::function<void(cMessage*)>>::iterator it;
 
     it = selfMessageHandlers.find(msg->getName());
@@ -121,7 +120,6 @@ void UserGenerator_simple::processSelfMessage(cMessage *msg)
         it->second(msg);
 
     delete (msg);
-    std::cout << " lambda" << endl;
 }
 
 void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg)
@@ -203,8 +201,7 @@ void UserGenerator_simple::handleUserReqGenMessage(cMessage *msg)
 
         //TODO: ¿Dejamos este mensaje o lo quitamos?
         EV_FATAL << "#___ini#" << m_nUsersSent << " "
-                        << (simTime().dbl() - m_dInitSim) / 3600 << "   \n"
-                        << endl;
+                        << (simTime().dbl() - m_dInitSim) / 3600 << endl;
       }
     m_nUsersSent++;
 
@@ -240,7 +237,6 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm)
 {
     CloudUserInstance *pUserInstance;
     std::map<int, std::function<CloudUserInstance*(SIMCAN_Message*)>>::iterator it;
-    std::cout << "UGR Lambda " << sm;
 
     EV_INFO << "processResponseMessage - Received Response Message" << endl;
 
@@ -255,7 +251,6 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm)
     if (pUserInstance != nullptr && pUserInstance->isFinished() && allUsersFinished()) {
         sendRequestMessage(new SM_CloudProvider_Control(), toCloudProviderGate);
     }
-    std::cout << " lambda " << endl;
 }
 
 void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm)
