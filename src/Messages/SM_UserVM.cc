@@ -19,6 +19,7 @@ SM_UserVM::SM_UserVM(const char *name, short kind) : ::SM_UserVM_Base(name,kind)
 {
     this->pMsgTimeoutSub = nullptr;
 }
+
 SM_UserVM* SM_UserVM::dup() const
 {
     SM_UserVM* pRet;
@@ -52,6 +53,56 @@ SM_UserVM* SM_UserVM::dup() const
 
     return pRet;
 }
+
+SM_UserVM* SM_UserVM::dup(std::string strVmId) const
+{
+    SM_UserVM* pRet;
+    bool found;
+
+    found = false;
+    pRet = new SM_UserVM();
+
+    pRet->setDEndSubscriptionTime(getDEndSubscriptionTime());
+    pRet->setDStartSubscriptionTime(getDStartSubscriptionTime());
+    pRet->setUserID(getUserID());
+    pRet->setStrVmId(strVmId.c_str());
+
+    for(int i=0;i<this->getVmsArraySize();i++)
+      {
+        VM_Request vmReq = getVms(i);
+        if (vmReq.strVmId.compare(strVmId) == 0)
+          {
+            found = true;
+            pRet->createNewVmRequest(vmReq.strVmType, vmReq.strVmId, vmReq.maxStartTime_t1, vmReq.nRentTime_t2, vmReq.maxSubTime_t3, vmReq.maxSubscriptionTime_t4);
+            for(int j=0;j<vmReq.responseList.size();j++)
+              {
+                VM_Response vmRes = vmReq.responseList.at(j);
+                pRet->createResponse(j,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
+              }
+            break;
+          }
+      }
+
+    if (found)
+      {
+        //TODO: pMsgTimeoutSub pasando de momento
+
+        // Reserve memory to trace!
+        pRet->setTraceArraySize (getTraceArraySize());
+
+        // Copy trace!
+        for (int i=0; i<trace.size(); i++)
+            pRet->addNodeTrace (trace[i].first, trace[i].second);
+      }
+    else
+      {
+        delete (pRet);
+        pRet = nullptr;
+      }
+
+    return pRet;
+}
+
 int SM_UserVM::createNewVmRequest(std::string strType, std::string instanceId, int maxStartTime_t1, int nRentTime_t2, int maxSubTime_t3, int maxSubscriptionTime_t4)
 {
     VM_Request vmReq;

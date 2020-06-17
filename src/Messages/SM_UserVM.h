@@ -40,7 +40,8 @@ public:
      int getMaxSubscribetime(int nIndex);
      void clearResponses();
 
-     virtual SM_UserVM *dup() const;
+     virtual SM_UserVM* dup() const;
+     virtual SM_UserVM* dup(std::string strVmId) const;
 
      SM_UserVM_Finish* getTimeoutSubscribeMsg();
      void setTimeoutSubscribeMsg(SM_UserVM_Finish* pMsg);

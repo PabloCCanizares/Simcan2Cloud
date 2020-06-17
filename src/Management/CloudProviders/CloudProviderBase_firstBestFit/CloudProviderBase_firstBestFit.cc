@@ -12,7 +12,6 @@ CloudProviderBase_firstBestFit::~CloudProviderBase_firstBestFit(){
 
 
 void CloudProviderBase_firstBestFit::initialize(){
-
     EV_INFO << "CloudProviderFirstFit::initialize - Init" << endl;
 
     // Init super-class
@@ -327,10 +326,18 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
 //TODO: asignar la vm que hace el timout al mensaje de la app. Duplicarlo y enviarlo.
 void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
     SM_UserAPP *userApp;
-    std::string strUsername, strVmId, strAppName, strIp;
+
+    std::string strUsername,
+                strVmId,
+                strAppName,
+                strIp;
+
     bool bAlreadyFinished;
+
     SM_UserVM_Finish *pUserVmFinish;
+
     std::map<std::string, SM_UserAPP*>::iterator it;
+
 
     if ((pUserVmFinish = dynamic_cast<SM_UserVM_Finish*>(msg)))
       {
@@ -416,6 +423,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
 }
 
 void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
+    std::cout << "SMS Lambda " << msg;
     std::map<std::string, std::function<void(cMessage*)>>::iterator it;
 
     EV_INFO << "CloudProviderBase_firstBestFit::processSelfMessage - Received Request Message" << endl;
@@ -432,6 +440,7 @@ void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
     }
 
     EV_TRACE << "CloudProviderBase_firstBestFit::processSelfMessage - End" << endl;
+    std::cout << " lambda" << endl;
 }
 
 void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
@@ -708,6 +717,8 @@ void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
     SM_CloudProvider_Control* userControl;
     std::map<int, std::function<void(SIMCAN_Message*)>>::iterator it;
 
+    std::cout << "SMR Lambda " << sm;
+
     EV_INFO << "processResponseMessage - Received Request Message" << endl;
 
     it = requestHandlers.find(sm->getOperation());
@@ -733,6 +744,7 @@ void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
         //Perform the operations...
         it->second(sm);
       }
+    std::cout << " lambda " << endl;
 }
 
 void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
@@ -979,7 +991,7 @@ void CloudProviderBase_firstBestFit::notifySubscription(SM_UserVM* userVM_Rq)
 {
     SM_UserVM_Finish* pMsgTimeout;
     EV_INFO << "Notifying request from user: " << userVM_Rq->getUserID() << endl;
-    EV_INFO << "Last id gate: " <<userVM_Rq->getLastGateId()<< endl;
+    EV_INFO << "Last id gate: " << userVM_Rq->getLastGateId() << endl;
 
     //Fill the message
     userVM_Rq->setIsResponse(true);
@@ -1268,6 +1280,8 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
 {
     EV_INFO << "Sending timeout to the user:" << userAPP_Rq->getUserID() << endl;
     EV_INFO << "Last id gate: " << userAPP_Rq->getLastGateId() << endl;
+    if (userAPP_Rq->getLastGateId() < 0)
+        EV_FATAL << "WARNING: " << userAPP_Rq << endl;
 
     userAPP_Rq->setFinished(true);
 

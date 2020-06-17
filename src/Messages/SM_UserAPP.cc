@@ -123,6 +123,7 @@ int SM_UserAPP::createNewAppRequest(std::string strService,std::string strAppTyp
 
     return addAppRequest(appRQ);
 }
+
 SM_UserAPP* SM_UserAPP::dup() const
 {
     SM_UserAPP* pRet;
@@ -133,22 +134,22 @@ SM_UserAPP* SM_UserAPP::dup() const
     pRet->setFinished(getFinished());
     pRet->setNFinishedApps(getNFinishedApps());
 
-    for(int i=0;i<getAppArraySize();i++)
-    {
-        APP_Request appReq = getApp(i);
-        pRet->createNewAppRequestFull(appReq.strApp,appReq.strIp,appReq.vmId, appReq.startTime, appReq.finishTime, appReq.eState,appReq.pMsgTimeout);
-    }
+    for(int i=0 ; i < getAppArraySize (); i++)
+      {
+        APP_Request appReq = getApp (i);
+        pRet->createNewAppRequestFull (appReq.strApp,appReq.strIp,appReq.vmId, appReq.startTime, appReq.finishTime, appReq.eState,appReq.pMsgTimeout);
+      }
 
     // Reserve memory to trace!
     pRet->setTraceArraySize (getTraceArraySize());
 
     // Copy trace!
-    for (int i=0; i<trace.size(); i++){
+    for (int i=0; i<trace.size(); i++)
         pRet->addNodeTrace (trace[i].first, trace[i].second);
-    }
 
     return pRet;
 }
+
 int SM_UserAPP::findRequestIndex(std::string strService,std::string strVmId)
 {
     APP_Request appRq;

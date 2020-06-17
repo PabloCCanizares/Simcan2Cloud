@@ -12,7 +12,6 @@ UserGenerator_simple::~UserGenerator_simple() {
  * This method initializes the structures and methods
  */
 void UserGenerator_simple::initialize() {
-
     // Init super-class
     UserGeneratorBase::initialize();
 
@@ -30,12 +29,9 @@ void UserGenerator_simple::initialize() {
     EV_INFO << "UserGenerator::initialize - Base initialized" << endl;
 
     m_nUsersSent = 0;
-    //numUsersFinished = 0;
 
     initializeSelfHandlers();
     initializeResponseHandlers();
-    //initializeAppResultHandlers();
-    //initializeVMResultHandlers();
 
     EV_INFO << "UserGenerator::initialize - End" << endl;
 }
@@ -44,26 +40,26 @@ void UserGenerator_simple::initialize() {
 /**
  * This method initializes the signals
  */
-void UserGenerator_simple::initializeSignals() {
-    requestSignal   = registerSignal("request");
-    responseSignal  = registerSignal("response");
-    executeIpSignal   = registerSignal("executeIp");
-    executeNotSignal   = registerSignal("executeNot");
-    okSignal        = registerSignal("ok");
-    failSignal      = registerSignal("fail");
+void UserGenerator_simple::initializeSignals ()
+{
+    requestSignal       = registerSignal("request");
+    responseSignal      = registerSignal("response");
+    executeIpSignal     = registerSignal("executeIp");
+    executeNotSignal    = registerSignal("executeNot");
+    okSignal            = registerSignal("ok");
+    failSignal          = registerSignal("fail");
     subscribeNoipSignal = registerSignal("subscribeNoip");
     subscribeFailSignal = registerSignal("subscribeFail");
-    notifySignal    = registerSignal("notify");
-    timeOutSignal   = registerSignal("timeOut");
+    notifySignal        = registerSignal("notify");
+    timeOutSignal       = registerSignal("timeOut");
 }
 
 
 /**
  * This method initializes the self message handlers
  */
-void UserGenerator_simple::initializeSelfHandlers() {
-    //selfMessageHandlers[Timer_WaitToExecute] = std::bind(&UserGenerator_simple::processWaitToExecuteMessage, this, std::placeholders::_1);
-    //selfMessageHandlers[USER_REQ_GEN_MSG] = std::bind(&UserGenerator_simple::processUserReqGenMessage, this, std::placeholders::_1);
+void UserGenerator_simple::initializeSelfHandlers ()
+{
     selfMessageHandlers[Timer_WaitToExecute] = [this](cMessage *msg) { handleWaitToExecuteMessage(msg); };
     selfMessageHandlers[USER_REQ_GEN_MSG] = [this](cMessage *msg) { handleUserReqGenMessage(msg); };
 }
@@ -72,11 +68,8 @@ void UserGenerator_simple::initializeSelfHandlers() {
 /**
  * This method initializes the response handlers
  */
-void UserGenerator_simple::initializeResponseHandlers() {
-    //responseHandlers[SM_VM_Req_Rsp] = std::bind(&UserGenerator_simple::processUserVmResponse, this, std::placeholders::_1);;
-    //responseHandlers[SM_VM_Notify] = std::bind(&UserGenerator_simple::processUserVmResponse, this, std::placeholders::_1);;
-    //responseHandlers[SM_APP_Rsp] = std::bind(&UserGenerator_simple::processUserAppResponse, this, std::placeholders::_1);
-
+void UserGenerator_simple::initializeResponseHandlers ()
+{
     responseHandlers[SM_VM_Res_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseAccept(msg); };
     responseHandlers[SM_VM_Res_Reject] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseReject(msg); };
     responseHandlers[SM_APP_Res_Accept] = [this](SIMCAN_Message *msg) -> CloudUserInstance* { return handleResponseAppAccept(msg); };
@@ -89,7 +82,8 @@ void UserGenerator_simple::initializeResponseHandlers() {
 /**
  * Shuffle the list of users in order to reproduce the behaviour of the users in a real cloud environment.
  */
-void UserGenerator_simple::generateShuffledUsers() {
+void UserGenerator_simple::generateShuffledUsers()
+{
     int nRandom, nSize;
 
     srand((int)33); //TODO: semilla. Comprobar si con las semillas del .ini se puede omitir esta. Así se controla mejor la aletoriedad solo desde el fichero .ini.
@@ -100,11 +94,12 @@ void UserGenerator_simple::generateShuffledUsers() {
     EV_INFO << "UserGenerator::generateShuffledUsers - instances size: "
                    << userInstances.size() << endl;
     //
-    for (int i = 0; i < nSize; i++) {
+    for (int i = 0; i < nSize; i++)
+      {
         nRandom = rand() % nSize;
         std::iter_swap(userInstances.begin() + i,
                 userInstances.begin() + nRandom);
-    }
+      }
 
     EV_INFO << "UserGenerator::generateShuffledUsers - End" << endl;
 }
@@ -113,21 +108,24 @@ void UserGenerator_simple::generateShuffledUsers() {
  * This method processes the self messages
  * @param msg
  */
-void UserGenerator_simple::processSelfMessage(cMessage *msg) {
+void UserGenerator_simple::processSelfMessage(cMessage *msg)
+{
+    std::cout << "UGS Lambda " << msg;
     std::map<std::string, std::function<void(cMessage*)>>::iterator it;
 
     it = selfMessageHandlers.find(msg->getName());
 
-    if (it == selfMessageHandlers.end()) {
+    if (it == selfMessageHandlers.end())
         error("Unknown self message [%s]", msg->getName());
-    } else {
+    else
         it->second(msg);
-    }
 
     delete (msg);
+    std::cout << " lambda" << endl;
 }
 
-void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg) {
+void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg)
+{
     SM_UserVM *userVm;
     CloudUserInstance *pUserInstance;
     double lastTime;
@@ -139,24 +137,25 @@ void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg) {
     m_dInitSim = simTime().dbl();
     lastTime = 0;
 
-    if (shuffleUsers) {
+    if (shuffleUsers)
         generateShuffledUsers();
-    }
 
-    for (int i = 0; i < userInstances.size(); i++) {
+    for (int i = 0; i < userInstances.size(); i++)
+      {
         // Get current user
         pUserInstance = userInstances.at(i);
 
         lastTime = getNextTime(pUserInstance, lastTime);
         userVm = createVmRequest(pUserInstance);
 
-        if (userVm != nullptr) {
+        if (userVm != nullptr)
+          {
             pUserInstance->setRequestVmMsg(userVm);
             // Set init and arrival time!
             pUserInstance->setInitTime(lastTime);
             pUserInstance->setArrival2Cloud(lastTime);
-        }
-    }
+          }
+      }
 
     if (!intervalBetweenUsers) {
         std::sort(userInstances.begin(), userInstances.end(), [](CloudUserInstance* cloudUser1, CloudUserInstance* cloudUser2){return *cloudUser1<*cloudUser2;});
@@ -167,23 +166,27 @@ void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg) {
     scheduleNextReqGenMessage();
 }
 
-double UserGenerator_simple::getNextTime(CloudUserInstance *pUserInstance, double last) {
+double UserGenerator_simple::getNextTime(CloudUserInstance *pUserInstance, double last)
+{
     double next;
 
-    if (intervalBetweenUsers) {
+    if (intervalBetweenUsers)
+      {
         if (last > 0)
             next = distribution->doubleValue() + last;
         else
             next = m_dInitSim;
-    }
-    else {
+      }
+    else
+      {
         next = distribution->doubleValue() + m_dInitSim;
-    }
+      }
 
     return next;
 }
 
-void UserGenerator_simple::handleUserReqGenMessage(cMessage *msg) {
+void UserGenerator_simple::handleUserReqGenMessage(cMessage *msg)
+{
     SM_UserVM *userVm;
     CloudUserInstance *pUserInstance;
 
@@ -192,7 +195,8 @@ void UserGenerator_simple::handleUserReqGenMessage(cMessage *msg) {
     pUserInstance = userInstances.at(m_nUsersSent);
     userVm = pUserInstance->getRequestVmMsg();
 
-    if (userVm != nullptr) {
+    if (userVm != nullptr)
+      {
         // Send user to cloud provider
         emit(requestSignal, pUserInstance->getId());
         sendRequestMessage(userVm, toCloudProviderGate);
@@ -201,18 +205,20 @@ void UserGenerator_simple::handleUserReqGenMessage(cMessage *msg) {
         EV_FATAL << "#___ini#" << m_nUsersSent << " "
                         << (simTime().dbl() - m_dInitSim) / 3600 << "   \n"
                         << endl;
-    }
+      }
     m_nUsersSent++;
 
     scheduleNextReqGenMessage();
 }
 
-void UserGenerator_simple::scheduleNextReqGenMessage() {
+void UserGenerator_simple::scheduleNextReqGenMessage()
+{
     CloudUserInstance *pUserInstance;
     simtime_t nextArrivalTime;
 
     //Check if there are more users
-    if (m_nUsersSent < userInstances.size()) {
+    if (m_nUsersSent < userInstances.size())
+      {
         pUserInstance = userInstances.at(m_nUsersSent);
 
         //Check if next arrival time is in the future
@@ -221,17 +227,20 @@ void UserGenerator_simple::scheduleNextReqGenMessage() {
             error("Vector of user instances is not sorted by arrival time");
 
         scheduleAt(SimTime(nextArrivalTime), new cMessage(USER_REQ_GEN_MSG));
-    }
+      }
 }
 
-void UserGenerator_simple::processRequestMessage(SIMCAN_Message *sm) {
+void UserGenerator_simple::processRequestMessage(SIMCAN_Message *sm)
+{
     error("This module cannot process request messages:%s",
             sm->contentsToString(true, false).c_str());
 }
 
-void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
+void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm)
+{
     CloudUserInstance *pUserInstance;
     std::map<int, std::function<CloudUserInstance*(SIMCAN_Message*)>>::iterator it;
+    std::cout << "UGR Lambda " << sm;
 
     EV_INFO << "processResponseMessage - Received Response Message" << endl;
 
@@ -246,16 +255,19 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm) {
     if (pUserInstance != nullptr && pUserInstance->isFinished() && allUsersFinished()) {
         sendRequestMessage(new SM_CloudProvider_Control(), toCloudProviderGate);
     }
+    std::cout << " lambda " << endl;
 }
 
-void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm) {
+void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm)
+{
     emit(notifySignal, pUserInstance->getId());
     emit(executeNotSignal, pUserInstance->getId());
     pUserInstance->setInitExecTime(simTime().dbl());
     submitService(userVm);
 }
 
-void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance) {
+void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance)
+{
     pUserInstance->setEndTime(simTime().dbl());
     pUserInstance->setFinished(true);
     nUserInstancesFinished++;
@@ -263,7 +275,8 @@ void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance) {
 
 
 
-CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *userVm_RAW) {
+CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *userVm_RAW)
+{
     CloudUserInstance *pUserInstance;
     SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
 
@@ -518,7 +531,8 @@ void UserGenerator_simple::cancelAndDeleteMessages(CloudUserInstance *pUserInsta
 
 }
 
-void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
+void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp)
+{
     bool bSent = false;
     SM_UserVM *userVM_Rq;
     std::string strUserId;
@@ -527,52 +541,52 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp) {
 
     strUserId = userApp->getUserID();
 
-    if (strUserId.size() > 0) {
+    if (strUserId.size() > 0)
+      {
         EV_INFO
                        << "recoverVmAndsubscribe - Subscribing to the cluster with user: "
                        << strUserId << endl;
         pUserInstance = userHashMap.at(strUserId);
-        if (pUserInstance != nullptr) {
+        if (pUserInstance != nullptr)
+          {
             emit(subscribeFailSignal, pUserInstance->getId());
-            if (strVmId.empty()) {
+            if (strVmId.empty())
+              {
                 userVM_Rq = pUserInstance->getRequestVmMsg();
                 if(userVM_Rq != nullptr)
-                {
+                  {
                     bSent=true;
                     userVM_Rq->setIsResponse(false);
                     userVM_Rq->setOperation(SM_VM_Sub);
                     sendRequestMessage (userVM_Rq, toCloudProviderGate);
-                }
-            } else {
+                  }
+              }
+            else
+              {
                 userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), strVmId);
-                if (userVM_Rq != nullptr) {
+                if (userVM_Rq != nullptr)
+                  {
                     bSent = true;
                     sendRequestMessage(userVM_Rq, toCloudProviderGate);
-                }
-            }
+                  }
+              }
+          }
+      }
 
-
-        }
-    }
-    if (bSent == false) {
+    if (bSent == false)
         error("Error sending the subscription message");
-    }
 }
 
 SM_UserVM* UserGenerator_simple::getSingleVMSubscriptionMessage(SM_UserVM *userVM_Orig, std::string vmId) {
-    SM_UserVM *userVM = nullptr;
+    SM_UserVM *userVM;
 
-    for (unsigned int i = 0; i < userVM_Orig->getVmsArraySize(); i++) {
-        VM_Request req = userVM_Orig->getVms(i);
-        if (req.strVmId.compare(vmId) == 0) {
-            userVM = new SM_UserVM();
-            userVM->setUserID(userVM_Orig->getUserID());
-            userVM->addVmRequest(req);
-            userVM->setIsResponse(false);
-            userVM->setOperation(SM_VM_Sub);
-            break;
-        }
-    }
+    userVM = userVM_Orig->dup(vmId);
+
+    if (userVM != nullptr)
+      {
+        userVM->setIsResponse(false);
+        userVM->setOperation(SM_VM_Sub);
+      }
 
     return userVM;
 }
