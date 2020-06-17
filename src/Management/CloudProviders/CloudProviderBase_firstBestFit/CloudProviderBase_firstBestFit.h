@@ -106,6 +106,7 @@ protected:
     SM_UserVM_Finish* scheduleRentingTimeout (std::string name, std::string strUserName, std::string strVmId, double rentTime);
     SM_UserAPP_Finish* scheduleAppTimeout (std::string name, std::string strUserName, std::string strAppName, std::string strVmId, double totalTime);
     void clearVMReq (SM_UserVM*& userVM_Rq, int lastId);
+    void cancelAndDeleteAppFinishMsgs(SM_UserAPP* userApp, std::string strVmId);
 
     /**
      * Update the subscription queue. Analyse the queue in order to find timeouts, and accepting the enqueued VM requests.

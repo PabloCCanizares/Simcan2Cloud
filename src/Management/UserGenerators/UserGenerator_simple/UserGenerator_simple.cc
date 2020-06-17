@@ -226,7 +226,7 @@ void UserGenerator_simple::scheduleNextReqGenMessage()
         if (nextArrivalTime < simTime())
             error("Vector of user instances is not sorted by arrival time");
 
-        scheduleAt(SimTime(nextArrivalTime), new cMessage(USER_REQ_GEN_MSG));
+        scheduleAt(nextArrivalTime, new cMessage(USER_REQ_GEN_MSG));
       }
 }
 

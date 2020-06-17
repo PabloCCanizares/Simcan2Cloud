@@ -149,7 +149,22 @@ void CloudProviderBase_firstBestFit::abortAllApps(SM_UserAPP* userApp, std::stri
     {
         userApp->abortAllApps(strVmId);
 
-        // Terminar este método, para cancelar el resto de eventos si se requiere.
+        cancelAndDeleteAppFinishMsgs(userApp, strVmId);
+    }
+}
+
+////Todo: tiene una nota interna. Supongo que se refiere a eliminar el mensaje de otras apps que esten en otro estado.
+void CloudProviderBase_firstBestFit::cancelAndDeleteAppFinishMsgs(SM_UserAPP* userApp, std::string strVmId)
+{
+    // Terminar este método, para cancelar el resto de eventos si se requiere.
+    for (unsigned int nIndex=0; nIndex<userApp->getAppArraySize(); nIndex++)
+    {
+        APP_Request& userAppReq = userApp->getApp(nIndex);
+        if (userAppReq.vmId.compare(strVmId)==0 && userAppReq.eState == appFinishedTimeout && userAppReq.pMsgTimeout!=nullptr)
+        {
+            cancelAndDelete(userAppReq.pMsgTimeout);
+            userAppReq.pMsgTimeout = nullptr;
+        }
     }
 }
 
@@ -435,9 +450,7 @@ void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
     else
         error ("Unknown self message [%s]", msg->getName());
 
-    if (strcmp(msg->getName(), EXEC_APP_END) != 0) { // We mustn't delete the SM_UserAPP message
-        cancelAndDelete(msg);
-    }
+    cancelAndDelete(msg);
 
     EV_TRACE << "CloudProviderBase_firstBestFit::processSelfMessage - End" << endl;
     std::cout << " lambda" << endl;
@@ -810,7 +823,6 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                   {
                     //Getting VM and scheduling renting timeout
                     vmRequest = userVmRequest.getVms(j);
-                    scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUsername, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
                     strVmId = vmRequest.strVmId;
                     vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
@@ -1280,8 +1292,6 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
 {
     EV_INFO << "Sending timeout to the user:" << userAPP_Rq->getUserID() << endl;
     EV_INFO << "Last id gate: " << userAPP_Rq->getLastGateId() << endl;
-    if (userAPP_Rq->getLastGateId() < 0)
-        EV_FATAL << "WARNING: " << userAPP_Rq << endl;
 
     userAPP_Rq->setFinished(true);
 

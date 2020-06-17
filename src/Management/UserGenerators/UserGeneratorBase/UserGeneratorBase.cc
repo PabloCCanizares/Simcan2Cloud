@@ -36,14 +36,14 @@ void UserGeneratorBase::initialize(){
 
     // Show generated users instances
     if (showUserInstances){
-        //EV_DEBUG << usersIstancesToString ();
+        EV_DEBUG << usersIstancesToString ();
     }
 
     EV_INFO << "UserGeneratorBase::initialize - Scheduling a message" << endl;
 
     // Start execution!
     cMessage *waitToExecuteMsg = new cMessage (Timer_WaitToExecute.c_str());
-    scheduleAt (simTime().dbl()+startDelay, waitToExecuteMsg);
+    scheduleAt (simTime()+SimTime(startDelay), waitToExecuteMsg);
 
     EV_INFO << "UserGeneratorBase::initialize - End" << endl;
 }
