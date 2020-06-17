@@ -21,10 +21,11 @@ void CloudProviderBase_firstBestFit::initialize(){
     // Init data-center structures
     //Fill the meta-structures created to improve the performance of the cloudprovider
     loadNodes();
+    initializeSelfHandlers();
     initializeRequestHandlers();
 
     bFinished = false;
-    scheduleAt(simTime().dbl()+1, new cMessage(INITIAL_STAGE));
+    scheduleAt(SimTime(), new cMessage(INITIAL_STAGE));
     EV_INFO << "CloudProviderFirstFit::initialize - End" << endl;
 }
 
@@ -1028,7 +1029,7 @@ void CloudProviderBase_firstBestFit::storeVmSubscribe(SM_UserVM* userVM_Rq)
         userVM_Rq->setTimeoutSubscribeMsg(pMsg);
         subscribeQueue.push_back(userVM_Rq);
 
-        scheduleAt(simTime() + SimTime(dMaxSubscribeTime), pMsg);
+        //scheduleAt(simTime() + SimTime(dMaxSubscribeTime), pMsg);
     }
 }
 
