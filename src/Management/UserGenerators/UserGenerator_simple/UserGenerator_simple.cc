@@ -420,7 +420,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
 
             if (hasToSubscribeVm(userApp)) {
                 recoverVmAndsubscribe(userApp);
-            }
+            } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
 
         }
 
@@ -429,7 +429,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
     else {
         error("Could not cast SIMCAN_Message to SM_UserAPP (wrong operation code?)");
     }
-
+    //TODO: Mirar cuando eliminar.  delete pUserInstance->getRequestAppMsg();
     //Delete ephemeral message
     delete msg;
 

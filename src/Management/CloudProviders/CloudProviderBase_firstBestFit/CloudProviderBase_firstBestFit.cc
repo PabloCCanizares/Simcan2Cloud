@@ -384,12 +384,13 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
                   {
                     EV_INFO << "Aborting running applications" << endl;
                     abortAllApps(userApp, strVmId);
+                    timeoutAppRequest(userApp, strVmId);
                   }
-                else
-                  {
-                    EV_INFO << "All the applications have already finished" << endl;
-                    bAlreadyFinished = true;
-                  }
+//                else
+//                  {
+//                    EV_INFO << "All the applications have already finished" << endl;
+//                    bAlreadyFinished = true;
+//                  }
 
                 EV_INFO << "Freeing resources..." << endl;
 
@@ -400,7 +401,9 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
                     EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_VM_RENT_TIMEOUT Init" << endl;
 
                     //if so, notify this.
-                    timeoutAppRequest(userApp);
+                    //timeoutAppRequest(userApp);
+                    //if so. Delete the application on the hashmap
+                    handlingAppsRqMap.erase(strUsername);
                   }
               }
           }
@@ -1317,10 +1320,6 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
 {
     EV_INFO << "Sending timeout to the user:" << userAPP_Rq->getUserID() << endl;
     EV_INFO << "Last id gate: " << userAPP_Rq->getLastGateId() << endl;
-    if (userAPP_Rq->getLastGateId() < 0)
-      {
-        EV_FATAL << "WARNING: " << userAPP_Rq << endl;
-      }
 
     userAPP_Rq->setFinished(true);
 
@@ -1328,6 +1327,25 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
     userAPP_Rq->setIsResponse(true);
     userAPP_Rq->setOperation(SM_APP_Rsp);
     userAPP_Rq->setResult(SM_APP_Res_Timeout);
+
+    //Send the values
+    sendResponseMessage(userAPP_Rq);
+
+}
+void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq, std::string strVmId)
+{
+    EV_INFO << "Sending timeout to the user:" << userAPP_Rq->getUserID() << endl;
+    EV_INFO << "Last id gate: " << userAPP_Rq->getLastGateId() << endl;
+
+    SM_UserAPP* userAPP_Res = userAPP_Rq->dup();
+
+    userAPP_Res->setVmId(strVmId)
+    userAPP_Res->setFinished(true);
+
+    //Fill the message
+    userAPP_Res->setIsResponse(true);
+    userAPP_Res->setOperation(SM_APP_Rsp);
+    userAPP_Res->setResult(SM_APP_Res_Timeout);
 
     //Send the values
     sendResponseMessage(userAPP_Rq);

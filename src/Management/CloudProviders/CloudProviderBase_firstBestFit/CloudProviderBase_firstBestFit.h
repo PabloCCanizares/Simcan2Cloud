@@ -263,6 +263,7 @@ protected:
      * @param userAPP_Rq apps User submission.
      */
     void timeoutAppRequest(SM_UserAPP *userAPP_Rq);
+    void timeoutAppRequest(SM_UserAPP *userAPP_Rq, std::string strVmId);
 
     /**
      * Rejects the user request.
