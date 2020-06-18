@@ -1369,7 +1369,7 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq, 
     userAPP_Res->setResult(SM_APP_Res_Timeout);
 
     //Send the values
-    sendResponseMessage(userAPP_Rq);
+    sendResponseMessage(userAPP_Res);
 
 }
 void  CloudProviderBase_firstBestFit::rejectVmRequest(SM_UserVM* userVM_Rq)
