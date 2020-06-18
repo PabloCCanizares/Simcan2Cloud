@@ -450,22 +450,17 @@ std::string CloudProviderBase_firstBestFit::prettyFunc(const char *fileName, con
     int startPos,
         length;
 
+    std::string strFile,
+                prettyName;
+
     lastBar = strrchr(fileName, '/');
     if (lastBar == nullptr)
         lastBar = strrchr(fileName, '\\');
 
     startPos = lastBar - fileName + 1;
     length = strrchr(fileName, '.') - fileName - startPos;
-
-    className = (char*) malloc ((length + strlen(funcName) + 2) * sizeof(char));
-    strncpy(className, lastBar + 1, length);
-    className[length] = ':';
-    className[length + 1] = ':';
-    strcpy(className + (length + 2), funcName);
-    //className[length + strlen(funcName) + 2] = '\0';
-
-    std::string prettyName(className);
-    //free (className);
+    strFile = fileName;
+    prettyName = strFile.substr(startPos, length) + "::" + funcName;
 
     return prettyName;
 }
