@@ -405,24 +405,39 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
 CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message *msg) {
     CloudUserInstance *pUserInstance = nullptr;
     SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
+    std::string strVmId;
 
     if (userApp != nullptr) {
         //Print a debug trace ...
+        strVmId = std::string(userApp->getVmId());
         userApp->printUserAPP();
 
         EV_INFO << "handleResponseAppTimeout - Init" << endl;
 
-        //The next step is to send a subscription to the cloudprovider
-        //Recover the user instance, and get the VmRequest
-        pUserInstance = userHashMap.at(userApp->getUserID());
-        if (pUserInstance != nullptr) {
-            emit(failSignal, pUserInstance->getId());
+        if (strVmId.empty()) //Global timeout
+          {
+            pUserInstance = userHashMap.at(userApp->getUserID());
+            if (pUserInstance != nullptr) {
+                emit(failSignal, pUserInstance->getId());
 
-            if (hasToSubscribeVm(userApp)) {
-                recoverVmAndsubscribe(userApp);
-            } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
+                //End of the protocol, exit!!
+                finishUser(pUserInstance);
+                pUserInstance->setTimeoutMaxRentTime();
 
+                cancelAndDeleteMessages(pUserInstance);
+
+            }
+          }
+        else //Individual VM timeout
+        {
+            //The next step is to send a subscription to the cloudprovider
+            //Recover the user instance, and get the VmRequest
+
+                if (hasToSubscribeVm(userApp)) {
+                    recoverVmAndsubscribe(userApp, strVmId);
+                } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
         }
+
 
         EV_INFO << "handleResponseAppTimeout - End" << endl;
     }
@@ -526,6 +541,31 @@ void UserGenerator_simple::cancelAndDeleteMessages(CloudUserInstance *pUserInsta
 
 }
 
+void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp, std::string strVmId)
+{
+    bool bSent = false;
+    SM_UserVM *userVM_Rq;
+    std::string strUserId;
+    CloudUserInstance *pUserInstance;
+
+    strUserId = userApp->getUserID();
+
+    pUserInstance = userHashMap.at(strUserId);
+    if (pUserInstance != nullptr)
+      {
+        userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), strVmId);
+            if (userVM_Rq != nullptr)
+              {
+                bSent = true;
+                sendRequestMessage(userVM_Rq, toCloudProviderGate);
+              }
+      }
+
+    if (bSent == false)
+        error("Error sending the subscription message");
+
+}
+
 void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp)
 {
     bool bSent = false;
@@ -547,23 +587,15 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp)
             emit(subscribeFailSignal, pUserInstance->getId());
             if (strVmId.empty())
               {
-                userVM_Rq = pUserInstance->getRequestVmMsg();
-                if(userVM_Rq != nullptr)
-                  {
-                    bSent=true;
-                    userVM_Rq->setIsResponse(false);
-                    userVM_Rq->setOperation(SM_VM_Sub);
-                    sendRequestMessage (userVM_Rq, toCloudProviderGate);
-                  }
-              }
-            else
-              {
-                userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), strVmId);
-                if (userVM_Rq != nullptr)
-                  {
-                    bSent = true;
-                    sendRequestMessage(userVM_Rq, toCloudProviderGate);
-                  }
+                //Ya no se suscribe si llega el timeout final, ya lo hace individualmente.
+//                userVM_Rq = pUserInstance->getRequestVmMsg();
+//                if(userVM_Rq != nullptr)
+//                  {
+//                    bSent=true;
+//                    userVM_Rq->setIsResponse(false);
+//                    userVM_Rq->setOperation(SM_VM_Sub);
+//                    sendRequestMessage (userVM_Rq, toCloudProviderGate);
+//                  }
               }
           }
       }

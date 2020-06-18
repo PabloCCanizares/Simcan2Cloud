@@ -241,7 +241,7 @@ void CloudProviderBase_firstBestFit::handleManageSubscriptions(cMessage* msg)
 
 void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
     SM_UserAPP_Finish *pUserAppFinish;
-    SM_UserAPP *userApp;
+    SM_UserAPP *pUserApp;
     std::string strUsername,
                 strVmId,
                 strAppName,
@@ -262,62 +262,25 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
         it = handlingAppsRqMap.find(strUsername);
         if (it != handlingAppsRqMap.end())
           {
-            userApp = it->second;
+            pUserApp = it->second;
 
-            if (userApp != nullptr)
+            if (pUserApp != nullptr)
               {
-                userApp->increaseFinishedApps();
+                pUserApp->increaseFinishedApps();
                 //Check for a possible timeout
-                if (!userApp->isFinishedKO(strAppName, strVmId))
+                if (!pUserApp->isFinishedKO(strAppName, strVmId))
                   {
                     EV_INFO << prettyFunc(__FILE__, __func__)
                     << " - Changing status of the application [ app: "
                     << strAppName << " | vmId: " << strVmId << endl;
-                    userApp->printUserAPP();
+                    pUserApp->printUserAPP();
 
-                    userApp->changeState(strAppName, strVmId, appFinishedOK);
-                    userApp->setEndTime(strAppName, strVmId, simTime().dbl());
+                    pUserApp->changeState(strAppName, strVmId, appFinishedOK);
+                    pUserApp->setEndTime(strAppName, strVmId, simTime().dbl());
                   }
                 //if(userApp->getNFinishedApps() >= userApp->getAppArraySize())
+                checkAllAppsFinished(pUserApp);
 
-                if (userApp->allAppsFinished())
-                  {
-                    if (userApp->allAppsFinishedOK())
-                      {
-                        EV_INFO << prettyFunc(__FILE__, __func__)
-                        << " - All the apps corresponding with the user "
-                        << strUsername
-                        << " have finished successfully" << endl;
-
-                        userApp->printUserAPP();
-
-                        //Notify the user the end of the execution
-                        acceptAppRequest(userApp);
-                      }
-                    else
-                      {
-                        EV_INFO << prettyFunc(__FILE__, __func__)
-                        << " - All the apps corresponding with the user "
-                        << strUsername
-                        << " have finished with some errors" << endl;
-
-                        //Check the subscription queue
-                        //updateSubsQueue();
-
-                        if (!userApp->getFinished())
-                            timeoutAppRequest(userApp);  //Notify the user the end of the execution
-                      }
-
-                    //Delete the application on the hashmap
-                    handlingAppsRqMap.erase(strUsername);
-                  }
-                else
-                  {
-                    EV_INFO << prettyFunc(__FILE__, __func__)
-                            << " - Total apps finished: "
-                            << userApp->getNFinishedApps() << " of "
-                            << userApp->getAppArraySize() << endl;
-                  }
               }
             else
               {
@@ -339,9 +302,63 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
       }
 }
 
+void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) {
+    std::string strUsername;
+
+    if (pUserApp != nullptr)
+      {
+        strUsername = pUserApp->getUserID();
+        if (pUserApp->allAppsFinished())
+              {
+                if (pUserApp->allAppsFinishedOK())
+                  {
+                    EV_INFO << prettyFunc(__FILE__, __func__)
+                    << " - All the apps corresponding with the user "
+                    << strUsername
+                    << " have finished successfully" << endl;
+
+                    pUserApp->printUserAPP();
+
+                    //Notify the user the end of the execution
+                    acceptAppRequest(pUserApp);
+                  }
+                else
+                  {
+                    EV_INFO << prettyFunc(__FILE__, __func__)
+                    << " - All the apps corresponding with the user "
+                    << strUsername
+                    << " have finished with some errors" << endl;
+
+                    //Check the subscription queue
+                    //updateSubsQueue();
+
+                    if (!pUserApp->getFinished())
+                        timeoutAppRequest(pUserApp);  //Notify the user the end of the execution
+                  }
+
+                //Delete the application on the hashmap
+                handlingAppsRqMap.erase(strUsername);
+              }
+            else
+              {
+                EV_INFO << prettyFunc(__FILE__, __func__)
+                        << " - Total apps finished: "
+                        << pUserApp->getNFinishedApps() << " of "
+                        << pUserApp->getAppArraySize() << endl;
+              }
+      }
+    else
+    {
+        EV_INFO << prettyFunc(__FILE__, __func__)
+        << " - WARNING! Null pointer parameter "
+        << strUsername << endl;
+    }
+
+}
+
 //TODO: asignar la vm que hace el timout al mensaje de la app. Duplicarlo y enviarlo.
 void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
-    SM_UserAPP *userApp;
+    SM_UserAPP *pUserApp;
 
     std::string strUsername,
                 strVmId,
@@ -368,45 +385,50 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
         it = handlingAppsRqMap.find(strUsername);
         if (it != handlingAppsRqMap.end())
           {
-            userApp = it->second;
+            pUserApp = it->second;
 
             //Check the application status
-            if (userApp != nullptr)
+            if (pUserApp != nullptr)
               {
 
-                EV_INFO << "Last id gate: " << userApp->getLastGateId() << endl;
+                EV_INFO << "Last id gate: " << pUserApp->getLastGateId() << endl;
                 EV_INFO
                 << "Checking the status of the applications which are running over this VM"
                 << endl;
 
                 //Abort the running applications
-                if (!userApp->allAppsFinished(strVmId))
+                if (!pUserApp->allAppsFinished(strVmId))
                   {
                     EV_INFO << "Aborting running applications" << endl;
-                    abortAllApps(userApp, strVmId);
-                    timeoutAppRequest(userApp, strVmId);
+                    abortAllApps(pUserApp, strVmId);
+                    timeoutAppRequest(pUserApp, strVmId);
+                    checkAllAppsFinished(pUserApp);
                   }
+
+
 //                else
 //                  {
 //                    EV_INFO << "All the applications have already finished" << endl;
 //                    bAlreadyFinished = true;
 //                  }
 
-                EV_INFO << "Freeing resources..." << endl;
 
                 //Check if all the applications of the user have finished
-                if (userApp->allAppsFinished() && !userApp->getFinished() && !bAlreadyFinished)
-                  {
-                    //Notify the user the end of the execution
-                    EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_VM_RENT_TIMEOUT Init" << endl;
-
-                    //if so, notify this.
-                    //timeoutAppRequest(userApp);
-                    //if so. Delete the application on the hashmap
-                    handlingAppsRqMap.erase(strUsername);
-                  }
+//                if (pUserApp->allAppsFinished() && !pUserApp->getFinished() && !bAlreadyFinished)
+//                  {
+//                    //Notify the user the end of the execution
+//                    EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_VM_RENT_TIMEOUT Init" << endl;
+//
+//                    //if so, notify this.
+//                    //timeoutAppRequest(pUserApp);
+//                    //if so. Delete the application on the hashmap
+//                    handlingAppsRqMap.erase(strUsername);
+//                  }
               }
           }
+
+        EV_INFO << "Freeing resources..." << endl;
+
         //Free the VM resources
         freeVm(strVmId);
 
@@ -443,7 +465,7 @@ std::string CloudProviderBase_firstBestFit::prettyFunc(const char *fileName, con
     //className[length + strlen(funcName) + 2] = '\0';
 
     std::string prettyName(className);
-    free (className);
+    //free (className);
 
     return prettyName;
 }
@@ -850,7 +872,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                   {
                     //Getting VM and scheduling renting timeout
                     vmRequest = userVmRequest.getVms(j);
-                    scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUsername, vmRequest.strVmId, vmRequest.nRentTime_t2);
+                    //scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUsername, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
                     strVmId = vmRequest.strVmId;
                     vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
@@ -1339,7 +1361,7 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq, 
 
     SM_UserAPP* userAPP_Res = userAPP_Rq->dup();
 
-    userAPP_Res->setVmId(strVmId)
+    userAPP_Res->setVmId(strVmId.c_str());
     userAPP_Res->setFinished(true);
 
     //Fill the message

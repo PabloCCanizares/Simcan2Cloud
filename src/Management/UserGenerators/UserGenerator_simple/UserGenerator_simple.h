@@ -203,6 +203,7 @@ private:
      * @param userApp
      */
     void recoverVmAndsubscribe(SM_UserAPP *userApp);
+    void recoverVmAndsubscribe(SM_UserAPP *userApp, std::string strVmId);
 
     /**
      * Generates a Single VM SM_UserVM
