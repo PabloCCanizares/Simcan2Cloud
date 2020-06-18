@@ -933,6 +933,10 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
                                   }
                               }
+                            else
+                            {
+                                error ("%s - Unable to find App. Wrong AppType [%s]?", prettyFunc(__FILE__, __func__).c_str(), appType);
+                            }
                           }
                       }
                   }
