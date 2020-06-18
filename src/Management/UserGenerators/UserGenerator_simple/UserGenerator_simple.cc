@@ -419,12 +419,14 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
             pUserInstance = userHashMap.at(userApp->getUserID());
             if (pUserInstance != nullptr) {
                 emit(failSignal, pUserInstance->getId());
+                if (!pUserInstance->hasSubscribed()) {
+                    //End of the protocol, exit!!
+                    finishUser(pUserInstance);
+                    pUserInstance->setTimeoutMaxRentTime();
 
-                //End of the protocol, exit!!
-                finishUser(pUserInstance);
-                pUserInstance->setTimeoutMaxRentTime();
+                    cancelAndDeleteMessages(pUserInstance);
+                }
 
-                cancelAndDeleteMessages(pUserInstance);
 
             }
           }
@@ -436,6 +438,9 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
                 if (hasToSubscribeVm(userApp)) {
                     recoverVmAndsubscribe(userApp, strVmId);
                 } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
+
+                //Delete ephemeral message
+                delete msg;
         }
 
 
@@ -445,8 +450,6 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
         error("Could not cast SIMCAN_Message to SM_UserAPP (wrong operation code?)");
     }
     //TODO: Mirar cuando eliminar.  delete pUserInstance->getRequestAppMsg();
-    //Delete ephemeral message
-    delete msg;
 
     return pUserInstance;
 }
@@ -553,6 +556,7 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp, std::strin
     pUserInstance = userHashMap.at(strUserId);
     if (pUserInstance != nullptr)
       {
+        pUserInstance->setSubscribe(true);
         userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), strVmId);
             if (userVM_Rq != nullptr)
               {
@@ -584,18 +588,19 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp)
         pUserInstance = userHashMap.at(strUserId);
         if (pUserInstance != nullptr)
           {
+            pUserInstance->setSubscribe(true);
             emit(subscribeFailSignal, pUserInstance->getId());
             if (strVmId.empty())
               {
                 //Ya no se suscribe si llega el timeout final, ya lo hace individualmente.
-//                userVM_Rq = pUserInstance->getRequestVmMsg();
-//                if(userVM_Rq != nullptr)
-//                  {
-//                    bSent=true;
-//                    userVM_Rq->setIsResponse(false);
-//                    userVM_Rq->setOperation(SM_VM_Sub);
-//                    sendRequestMessage (userVM_Rq, toCloudProviderGate);
-//                  }
+                userVM_Rq = pUserInstance->getRequestVmMsg();
+                if(userVM_Rq != nullptr)
+                  {
+                    bSent=true;
+                    userVM_Rq->setIsResponse(false);
+                    userVM_Rq->setOperation(SM_VM_Sub);
+                    sendRequestMessage (userVM_Rq, toCloudProviderGate);
+                  }
               }
           }
       }
