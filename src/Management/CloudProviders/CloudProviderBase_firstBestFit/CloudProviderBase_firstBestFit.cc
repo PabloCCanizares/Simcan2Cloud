@@ -37,7 +37,7 @@ void CloudProviderBase_firstBestFit::initializeSelfHandlers() {
     selfHandlers[EXEC_VM_RENT_TIMEOUT] = [this](cMessage *msg) -> void { return handleExecVmRentTimeout(msg); };
     selfHandlers[EXEC_APP_END] = [this](cMessage *msg) -> void { return handleAppExecEnd(msg); };
     selfHandlers[EXEC_APP_END_SINGLE] = [this](cMessage *msg) -> void { return handleAppExecEndSingle(msg); };
-    selfHandlers[USER_SUBSCRIPTION_TIMEOUT] = [this](cMessage *msg) -> void { return manageSubscriptionTimeout(msg); };
+    selfHandlers[USER_SUBSCRIPTION_TIMEOUT] = [this](cMessage *msg) -> void { return handleSubscriptionTimeout(msg); };
     selfHandlers[MANAGE_SUBSCRIBTIONS] = [this](cMessage *msg) -> void { return handleManageSubscriptions(msg); };
 }
 
@@ -503,7 +503,7 @@ void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
     EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
-void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
+void CloudProviderBase_firstBestFit::handleSubscriptionTimeout(cMessage *msg)
 {
     int nIndex;
     double dWaitingSub, dMaxSubTime;
@@ -512,7 +512,7 @@ void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
     std::string strUsername;
 
     EV_INFO << prettyFunc(__FILE__, __func__) << " - RECEIVED TIMEOUT " << endl;
-    EV_TRACE << "manageSubscriptionTimeout - Init" << endl;
+    EV_TRACE << __func__ << " - Init" << endl;
 
     nIndex = 0;
     dWaitingSub = dMaxSubTime = 0;
@@ -522,42 +522,38 @@ void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
       {
         strUsername = pUserSubFinish->getUserID();
 
-        nIndex = searchUserInSubQueue(strUsername);
+        nIndex = searchUserInSubQueue(strUsername, pUserSubFinish->getStrVmId());
         if(nIndex != -1)
           {
-            EV_TRACE << "manageSubscriptionTimeout - User found at position:" << nIndex << endl;
+            EV_TRACE << __func__ << " - User found at position:" << nIndex << endl;
             freeUserVms(strUsername);
             userVmSub = subscribeQueue.at(nIndex);
 
             dWaitingSub = (simTime().dbl())-(userVmSub->getDStartSubscriptionTime());
             dMaxSubTime = userVmSub->getMaxSubscribetime(0);
 
-            if(userVmSub != nullptr)
+            subscribeQueue.erase(subscribeQueue.begin()+nIndex);
+
+            if(abs((int)dWaitingSub - (int)dMaxSubTime)<=1)
               {
-                subscribeQueue.erase(subscribeQueue.begin()+nIndex);
+                EV_INFO << "The subscription of the user:  " << strUsername << " has expired, TIMEOUT! SimTime()" << simTime().dbl()<< " - " <<
+                        userVmSub->getDStartSubscriptionTime() << " = | " << dWaitingSub << " vs " << dMaxSubTime  << endl;
 
-                if(abs((int)dWaitingSub - (int)dMaxSubTime)<=1)
-                  {
-                    EV_INFO << "The subscription of the user:  " << strUsername << " has expired, TIMEOUT! SimTime()" << simTime().dbl()<< " - " <<
-                            userVmSub->getDStartSubscriptionTime() << " = | " << dWaitingSub << " vs " << dMaxSubTime  << endl;
-
-                    userVmSub->setDEndSubscriptionTime(simTime().dbl());
-                    freeUserVms(strUsername);
-                    timeoutSubscription(userVmSub);
-                  }
-                else
-                  {
-                    EV_TRACE << "The subscription of the user:  " << strUsername << " has time waiting!"
-                    << simTime().dbl()<< " - " <<
-                    userVmSub->getDStartSubscriptionTime() << " = | " << dWaitingSub << " vs " << dMaxSubTime  << endl;
-                  }
-                //send the Timeout
+                userVmSub->setDEndSubscriptionTime(simTime().dbl());
+                freeUserVms(strUsername);
+                timeoutSubscription(userVmSub);
               }
+            else
+              {
+                EV_TRACE << "The subscription of the user:  " << strUsername << " has time waiting!"
+                << simTime().dbl()<< " - " <<
+                userVmSub->getDStartSubscriptionTime() << " = | " << dWaitingSub << " vs " << dMaxSubTime  << endl;
+              }
+            //send the Timeout
           }
         else
           {
-            EV_TRACE << "manageSubscriptionTimeout - User " << strUsername << " not found in queue list" << endl;
-
+            EV_TRACE << __func__ << " - User " << strUsername << " not found in queue list" << endl;
           }
         //Check the subscription queue
         updateSubsQueue();
@@ -566,10 +562,11 @@ void CloudProviderBase_firstBestFit::manageSubscriptionTimeout(cMessage *msg)
       {
         error ("%s - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
+
     EV_TRACE << prettyFunc(__FILE__, __func__) << " - USER_SUBSCRIPTION_TIMEOUT End" << endl;
 }
 
-int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername)
+int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername, std::string strVmId)
 {
     int nRet, nIndex;
     SM_UserVM* pUserVM;
@@ -582,31 +579,32 @@ int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername
 
     EV_TRACE << __func__ << " - Searching for user: " << strUsername << endl;
     if(strUsername.size()>0)
-    {
+      {
         EV_TRACE << __func__ << " - Queue size: " << subscribeQueue.size() << endl;
         while(!bFound && nIndex < subscribeQueue.size())
-        {
+          {
             pUserVM = subscribeQueue.at(nIndex);
 
             if(pUserVM != nullptr)
-            {
+              {
                 if(strUsername.compare(pUserVM->getUserID()) == 0)
-                {
-                    bFound = true;
-                }
+                  {
+                    bFound = strcmp(pUserVM->getStrVmId(), "") == 0 || strVmId.compare(pUserVM->getStrVmId()) == 0;
+                  }
                 else
-                {
+                  {
                     EV_TRACE << __func__ << " - [nIndex: " << nIndex << " " << strUsername << " vs " <<pUserVM->getUserID()<<" ]" << endl;
                     nIndex++;
-                }
-            }
+                  }
+              }
             else
-            {
+              {
                 EV_INFO << __func__ << " - WARNING! null pointer at position[nIndex: " << nIndex << " ]" << endl;
                 nIndex++;
-            }
-        }
-    }
+              }
+          }
+      }
+
     if(bFound)
         nRet = nIndex;
 

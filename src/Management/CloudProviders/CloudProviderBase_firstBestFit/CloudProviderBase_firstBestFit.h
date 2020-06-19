@@ -301,14 +301,14 @@ protected:
      * Manages a subscription timeout.
      * @param msg Message timeout
      */
-    void manageSubscriptionTimeout(cMessage *msg);
+    void handleSubscriptionTimeout(cMessage *msg);
 
     /**
      * Searches a user in the subscription queue.
      * @param strUsername Username to be searched in the queue.
      * @return The index of the user.
      */
-    int searchUserInSubQueue(std::string strUsername);
+    int searchUserInSubQueue(std::string strUsername, std::string strVmId);
 
     /**
      * Search an application type by using an identifier.
