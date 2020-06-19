@@ -616,6 +616,8 @@ SM_UserVM* UserGenerator_simple::getSingleVMSubscriptionMessage(SM_UserVM *userV
 
     if (userVM != nullptr)
       {
+        //TODO: Mirar si hace falta.
+        userVM->setStrVmId(vmId.c_str());
         userVM->setIsResponse(false);
         userVM->setOperation(SM_VM_Sub);
       }
