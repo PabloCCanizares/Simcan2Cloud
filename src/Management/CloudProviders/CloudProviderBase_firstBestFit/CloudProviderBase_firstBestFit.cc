@@ -526,8 +526,10 @@ void CloudProviderBase_firstBestFit::handleSubscriptionTimeout(cMessage *msg)
         if(nIndex != -1)
           {
             EV_TRACE << __func__ << " - User found at position:" << nIndex << endl;
-            freeUserVms(strUsername);
             userVmSub = subscribeQueue.at(nIndex);
+
+            if (strcmp(userVmSub->getStrVmId(), "") == 0)
+                freeUserVms(strUsername);
 
             dWaitingSub = (simTime().dbl())-(userVmSub->getDStartSubscriptionTime());
             dMaxSubTime = userVmSub->getMaxSubscribetime(0);
@@ -540,7 +542,7 @@ void CloudProviderBase_firstBestFit::handleSubscriptionTimeout(cMessage *msg)
                         userVmSub->getDStartSubscriptionTime() << " = | " << dWaitingSub << " vs " << dMaxSubTime  << endl;
 
                 userVmSub->setDEndSubscriptionTime(simTime().dbl());
-                freeUserVms(strUsername);
+                //freeUserVms(strUsername);
                 timeoutSubscription(userVmSub);
               }
             else
