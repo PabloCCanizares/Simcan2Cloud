@@ -247,10 +247,20 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm)
     else
         pUserInstance = it->second(sm);
 
-    //Check if all the users have ended
-    if (pUserInstance != nullptr && pUserInstance->isFinished() && allUsersFinished()) {
-        sendRequestMessage(new SM_CloudProvider_Control(), toCloudProviderGate);
-    }
+    if (pUserInstance != nullptr)
+      {
+        if (allVmsFinished(pUserInstance->getUserID()))
+          {
+            EV_INFO << "Set itself finished" << endl;
+            finishUser(pUserInstance);
+
+            cancelAndDeleteMessages(pUserInstance);
+          }
+
+        //Check if all the users have ended
+        if (pUserInstance->isFinished() && allUsersFinished())
+            sendRequestMessage(new SM_CloudProvider_Control(), toCloudProviderGate);
+      }
 }
 
 void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm)
@@ -281,7 +291,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *us
         userVm->printUserVM();
 
         //Update the status
-        updateVmUserStatus(userVm);
+        updateVmUserStatus(userVm->getUserID(), userVm->getStrVmId(), vmAccepted);
 
         //Check the response and proceed with the next action
         pUserInstance = userHashMap.at(userVm->getUserID());
@@ -314,7 +324,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *us
         userVm->printUserVM();
 
         //Update the status
-        updateVmUserStatus(userVm);
+        updateVmUserStatus(userVm->getUserID(), userVm->getStrVmId(), vmIdle);
 
         //Check the response and proceed with the next action
         pUserInstance = userHashMap.at(userVm->getUserID());
@@ -347,14 +357,9 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message 
 
         EV_INFO << "handleAppOk - Init" << endl;
 
-        //End of the protocol, exit!!
-        pUserInstance = userHashMap.at(userApp->getUserID());
-        if (pUserInstance != nullptr)
-            finishUser(pUserInstance);
+        updateVmUserStatus(userApp->getUserID(), userApp->getVmId(), vmFinished);
 
         emit(okSignal, pUserInstance->getId());
-
-        cancelAndDeleteMessages(pUserInstance);
 
         EV_INFO << "handleAppOk - End" << endl;
     }
@@ -463,7 +468,7 @@ CloudUserInstance* UserGenerator_simple::handleSubNotify(SIMCAN_Message *userVm_
         userVm->printUserVM();
 
         //Update the status
-        updateVmUserStatus(userVm);
+        updateVmUserStatus(userVm->getUserID(), userVm->getStrVmId(), vmAccepted);
 
         pUserInstance = userHashMap.at(userVm->getUserID());
         EV_INFO << "Subscription accepted ...  " << endl;
@@ -490,21 +495,18 @@ CloudUserInstance* UserGenerator_simple::handleSubTimeout(SIMCAN_Message *userVm
         userVm->printUserVM();
 
         //Update the status
-        updateVmUserStatus(userVm);
+        updateVmUserStatus(userVm->getUserID(), userVm->getStrVmId(), vmFinished);
 
         pUserInstance = userHashMap.at(userVm->getUserID());
 
         // End of the party.
         EV_INFO << "VM timeout ... go home" << endl;
 
-        if (pUserInstance != nullptr) {
-            emit(timeOutSignal, pUserInstance->getId());
-            EV_INFO << "Set itself finished" << endl;
-            finishUser(pUserInstance);
+        if (pUserInstance != nullptr)
+          {
             pUserInstance->setTimeoutMaxSubscribed();
-
-            cancelAndDeleteMessages(pUserInstance);
-        }
+            emit(timeOutSignal, pUserInstance->getId());
+          }
     }
     else {
         error("Could not cast SIMCAN_Message to SM_UserVM (wrong operation code?)");
@@ -631,43 +633,76 @@ class cCustomNotification : public cObject, noncopyable
     SM_UserVM *userVm;
 };
 
-void UserGenerator_simple::updateVmUserStatus(SM_UserVM *userVm) {
+bool UserGenerator_simple::allVmsFinished(std::string strUserId) {
     CloudUserInstance *pUserInstance;
     VmInstanceCollection *pVmCollection;
     VmInstance *pVmInstance;
-    std::string strUserId;
-    int nCollectionNumber, nInstances, nVmRqIndex;
+    int nCollectionNumber,
+        nInstances;
+    bool result = true;
 
-    if (userVm != nullptr) {
-        nVmRqIndex = 0;
-        strUserId = userVm->getUserID();
-        pUserInstance = userHashMap.at(strUserId);
+    pUserInstance = userHashMap.at(strUserId);
 
-        if (pUserInstance != nullptr && userVm != nullptr) {
-            nCollectionNumber = pUserInstance->getNumberVmCollections();
-            for (int i = 0; i < nCollectionNumber; i++) {
-                pVmCollection = pUserInstance->getVmCollection(i);
-                if (pVmCollection != nullptr) {
-                    nInstances = pVmCollection->getNumInstances();
+    if (pUserInstance != nullptr)
+      {
+        nCollectionNumber = pUserInstance->getNumberVmCollections();
+        for (int i = 0; i < nCollectionNumber; i++)
+          {
+            pVmCollection = pUserInstance->getVmCollection(i);
+            if (pVmCollection != nullptr)
+              {
+                nInstances = pVmCollection->getNumInstances();
 
-                    for (int j = 0; j < nInstances; j++) {
-                        pVmInstance = pVmCollection->getVmInstance(j);
-                        if (pVmInstance != nullptr) {
-                            switch (userVm->getResult()) {
-                                case SM_VM_Res_Accept:
-                                    pVmInstance->setState(vmAccepted);
-                                    break;
-                                case SM_VM_Res_Reject:
-                                    break;
-                            }
+                for (int j = 0; j < nInstances; j++)
+                  {
+                    pVmInstance = pVmCollection->getVmInstance(j);
+                    if (pVmInstance != nullptr)
+                      {
+                        if (pVmInstance->getState() != vmFinished)
+                          {
+                            result = false;
+                            break;
+                          }
+                      }
+                  }
+              }
+          }
+      }
 
-                        }
-                        nVmRqIndex++;
-                    }
-                }
-            }
-        }
-    }
+    return result;
+}
+
+void UserGenerator_simple::updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState state) {
+    CloudUserInstance *pUserInstance;
+    VmInstanceCollection *pVmCollection;
+    VmInstance *pVmInstance;
+    int nCollectionNumber,
+        nInstances;
+
+    pUserInstance = userHashMap.at(strUserId);
+
+    if (pUserInstance != nullptr)
+      {
+        nCollectionNumber = pUserInstance->getNumberVmCollections();
+        for (int i = 0; i < nCollectionNumber; i++)
+          {
+            pVmCollection = pUserInstance->getVmCollection(i);
+            if (pVmCollection != nullptr)
+              {
+                nInstances = pVmCollection->getNumInstances();
+
+                for (int j = 0; j < nInstances; j++)
+                  {
+                    pVmInstance = pVmCollection->getVmInstance(j);
+                    if (pVmInstance != nullptr)
+                      {
+                        if (strVmId.compare("") == 0 || strVmId.compare(pVmInstance->getVmInstanceId()) == 0)
+                            pVmInstance->setState(state);
+                      }
+                  }
+              }
+          }
+      }
 }
 
 void UserGenerator_simple::subscribe(SM_UserVM *userVM_Rq) {

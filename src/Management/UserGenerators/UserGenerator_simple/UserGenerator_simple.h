@@ -181,9 +181,14 @@ protected:
     void subscribe(SM_UserVM *userVm);
 
     /**
+     * Checks if all the VMs of a user are in finished state
+     */
+    virtual bool allVmsFinished(std::string strUserId);
+
+    /**
      * Updates the status of a user
      */
-    virtual void updateVmUserStatus(SM_UserVM *userVm);
+    virtual void updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState state);
 
     inline static bool compareArrivalTime(CloudUserInstance *a, CloudUserInstance *b) {
         return a->getArrival2Cloud() < b->getArrival2Cloud();

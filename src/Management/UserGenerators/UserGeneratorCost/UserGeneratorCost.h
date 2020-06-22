@@ -39,7 +39,7 @@ class UserGeneratorCost : public UserGenerator_simple
     /**
      * Updates the status of a user
      */
-    virtual void updateVmUserStatus(SM_UserVM* userVm) override;
+    virtual void updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState state) override;
 
     virtual CloudUser* findUserTypeById (std::string userId);
 

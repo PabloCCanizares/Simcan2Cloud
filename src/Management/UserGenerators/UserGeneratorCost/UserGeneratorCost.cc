@@ -580,19 +580,18 @@ void UserGeneratorCost::calculateStatistics() {
     EV_FATAL << "#___t#" << nPProvided << " " << nPRProvided << " " << nRProvided << " " << nTotalUnprovided << " " << nRUnprovided << " " << nPUnprovided  << " " << dTotalOfferCost << " " << nAcceptOffer << " " << nTotalRentTimeout << " " << dNoWaitUsers << " " <<  dWaitUsers << " " << " " <<  dTotalCost << " \n" << endl;
 }
 
-void UserGeneratorCost::updateVmUserStatus(SM_UserVM* userVm) {
-    std::string strUserId;
+void UserGeneratorCost::updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState state) {
     SM_UserVM_Cost* userVmCost;
 
-    if(userVm != nullptr)
-    {
-        UserGenerator_simple::updateVmUserStatus(userVm);
+    UserGenerator_simple::updateVmUserStatus(strUserId, strVmId, state);
 
-        if ((userVmCost = dynamic_cast<SM_UserVM_Cost*>(userVm))){
-            strUserId = userVmCost->getUserID();
+    /*
+    if ((userVmCost = dynamic_cast<SM_UserVM_Cost*>(userVm)))
+      {
+        strUserId = userVmCost->getUserID();
 
-            if(userVmCost->getBPriorized())
-                priorizedHashMap.at(strUserId)=true;
-        }
-    }
+        if(userVmCost->getBPriorized())
+            priorizedHashMap.at(strUserId)=true;
+      }
+      */
 }
