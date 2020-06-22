@@ -692,7 +692,7 @@ void UserGenerator_simple::submitService(SM_UserVM *userVm) {
     strUserName = userVm->getUserID();
     pUserInstance = userHashMap.at(strUserName);
 
-    if (userVm->getVmsArraySize() == pUserInstance->getRequestVmMsg()->getVmsArraySize()) // Execute from response or first notify
+    if (strcmp(userVm->getStrVmId(), "") == 0) // Execute from response or first notify
       {
         pAppRq = pUserInstance->getRequestAppMsg();
 
@@ -703,7 +703,7 @@ void UserGenerator_simple::submitService(SM_UserVM *userVm) {
       {
         try
           {
-            pAppRq = pUserInstance->getRequestAppMsg(userVm->getVms(0).strVmId);
+            pAppRq = pUserInstance->getRequestAppMsg(userVm->getStrVmId());
           }
         catch (const std::logic_error &e)
           {
