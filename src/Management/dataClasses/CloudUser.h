@@ -11,7 +11,7 @@
  * Class that represents a user in cloud environments.
  *
  */
-class CloudUser{
+class CloudUser {
 
     protected:
 
@@ -49,7 +49,7 @@ class CloudUser{
          * @param numInstances Number of instances of the new virtual machine.
          * @param nRentTime Rental time of instances of the new virtual machine.
          */
-        void insertVirtualMachine(VirtualMachine* vmPtr, int numInstances, int nRentTime);
+        void insertVirtualMachine(VirtualMachine *vmPtr, int numInstances, int nRentTime);
 
         /**
          * Gets the virtual machine at index position in the <b>virtualMachines</b> vector.
@@ -87,7 +87,7 @@ class CloudUser{
          * @param appPtr Pointer to the new application assigned to this user.
          * @param numInstances Number of instances of the new application.
          */
-        void insertApplication(Application* appPtr, int numInstances);
+        void insertApplication(Application *appPtr, int numInstances);
 
         /**
          * Gets the application at index position in the <b>applications</b> vector.

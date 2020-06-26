@@ -24,6 +24,14 @@ const std::string& AppInstance::getAppInstanceId() const {
     return appInstanceID;
 }
 
+const std::string& AppInstance::getVmInstanceId() const {
+    return vmInstanceID;
+}
+
+void AppInstance::setVmInstanceId(std::string vmInstanceID) {
+    this->vmInstanceID = vmInstanceID;
+}
+
 const std::string& AppInstance::getAppName() const {
     return appName;
 }

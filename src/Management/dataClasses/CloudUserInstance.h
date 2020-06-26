@@ -15,7 +15,7 @@
  *  - A collection of applications to be executed.
  *  - A collection of VMs where these applications must be executed.
  */
-class CloudUserInstance: public UserInstance{
+class CloudUserInstance: public UserInstance {
 
     private:
 
@@ -154,7 +154,11 @@ class CloudUserInstance: public UserInstance{
         */
        void processApplicationCollection();
 
-
+       /**
+        * Gets the nth vm in the virtualmachine list of collections flattened.
+        * @param index Index of the required vm.
+        */
+       VmInstance* getNthVm(int index);
 };
 
 #endif /* USERINSTANCE_H_ */

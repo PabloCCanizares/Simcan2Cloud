@@ -6,24 +6,24 @@ UserInstance::UserInstance(CloudUser *ptrUser, unsigned int userNumber, int curr
     UserAppReference* appReference;
     int currentApp;
 
-        // Init main attributes
-        this->type = ptrUser->getType();
-        this->userNumber = userNumber;
-        this->instanceNumber = currentInstanceIndex;
+    // Init main attributes
+    this->type = ptrUser->getType();
+    this->userNumber = userNumber;
+    this->instanceNumber = currentInstanceIndex;
 
-        // Generate userID
-        osStream << "(" << userNumber << ")" << this->type << "[" << (currentInstanceIndex+1) << "/" << totalUserInstances << "]";
-        userID = osStream.str();
+    // Generate userID
+    osStream << "(" << userNumber << ")" << this->type << "[" << (currentInstanceIndex+1) << "/" << totalUserInstances << "]";
+    userID = osStream.str();
 
-        // Include app instances
-        for (currentApp = 0; currentApp < ptrUser->getNumApplications(); currentApp++){
+    // Include app instances
+    for (currentApp = 0; currentApp < ptrUser->getNumApplications(); currentApp++){
 
-            // Get current application
-            appReference = ptrUser->getApplication(currentApp);
+        // Get current application
+        appReference = ptrUser->getApplication(currentApp);
 
-            // Insert a new collection of application instances
-            insertNewApplicationInstances (appReference->getAppBase(), appReference->getNumInstances());
-        }
+        // Insert a new collection of application instances
+        insertNewApplicationInstances (appReference->getAppBase(), appReference->getNumInstances());
+    }
 }
 
 
@@ -56,8 +56,8 @@ void UserInstance::insertNewApplicationInstances (Application* appPtr, int numIn
 
     AppInstanceCollection* newAppCollection;
 
-        newAppCollection = new AppInstanceCollection (appPtr, this->userID, numInstances);
-        applications.push_back(newAppCollection);
+    newAppCollection = new AppInstanceCollection (appPtr, this->userID, numInstances);
+    applications.push_back(newAppCollection);
 }
 
 std::string UserInstance::toString (bool includeAppsParameters){

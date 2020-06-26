@@ -1,21 +1,26 @@
 #include "CloudUserInstance.h"
 
 
-CloudUserInstance::CloudUserInstance(CloudUser *ptrUser, unsigned int totalUserInstance, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances)
-                  : UserInstance((CloudUser*) ptrUser, userNumber, currentInstanceIndex, totalUserInstances){
+CloudUserInstance::CloudUserInstance (CloudUser    *ptrUser,
+                                      unsigned int  totalUserInstance,
+                                      unsigned int  userNumber,
+                                      int           currentInstanceIndex,
+                                      int           totalUserInstances)
+                  : UserInstance((CloudUser*) ptrUser, userNumber, currentInstanceIndex, totalUserInstances)
+{
 
     UserVmReference* vmReference;
     int currentVm;
 
-        // Include VM instances
-        for (currentVm = 0; currentVm < ptrUser->getNumVirtualMachines(); currentVm++){
+    // Include VM instances
+    for (currentVm = 0; currentVm < ptrUser->getNumVirtualMachines(); currentVm++)
+      {
+        // Get current application
+        vmReference = ptrUser->getVirtualMachine(currentVm);
 
-            // Get current application
-            vmReference = ptrUser->getVirtualMachine(currentVm);
-
-            // Insert a new collection of application instances
-            insertNewVirtualMachineInstances (vmReference->getVmBase(), vmReference->getNumInstances(), vmReference->getRentTime());
-        }
+        // Insert a new collection of application instances
+        insertNewVirtualMachineInstances (vmReference->getVmBase(), vmReference->getNumInstances(), vmReference->getRentTime());
+      }
 
     processApplicationCollection();
 
@@ -40,8 +45,8 @@ void CloudUserInstance::insertNewVirtualMachineInstances (VirtualMachine* vmPtr,
 
     VmInstanceCollection* newVmCollection;
 
-        newVmCollection = new VmInstanceCollection(vmPtr, this->userID, numInstances,nRentTime);
-        virtualMachines.push_back(newVmCollection);
+    newVmCollection = new VmInstanceCollection(vmPtr, this->userID, numInstances,nRentTime);
+    virtualMachines.push_back(newVmCollection);
 }
 
 
@@ -77,19 +82,17 @@ AppInstance* CloudUserInstance::getAppInstance(int nIndex)
 
     return pAppRet;
 }
+
 VmInstanceCollection* CloudUserInstance::getVmCollection(int nCollection)
 {
-    VmInstanceCollection* pVmCollection;
+    VmInstanceCollection *pVmCollection = nullptr;
 
-    pVmCollection = nullptr;
-
-    if(nCollection<virtualMachines.size())
-    {
+    if(nCollection < virtualMachines.size())
         pVmCollection = virtualMachines.at(nCollection);
-    }
 
     return pVmCollection;
 }
+
 void CloudUserInstance::setRentTimes(int maxStartTime_t1, int nRentTime_t2, int maxSubTime_t3, int maxSubscriptionTime_t4)
 {
     this->maxStartTime_t1 = maxStartTime_t1;
@@ -106,22 +109,53 @@ void CloudUserInstance::setId(int id) {
     nId = id;
 }
 
+VmInstance* CloudUserInstance::getNthVm(int index) {
+    VmInstance *vm = nullptr;
+    int offset = 0;
+
+    for (std::vector<VmInstanceCollection*>::iterator colIt = virtualMachines.begin(); colIt != virtualMachines.end(); ++colIt)
+      {
+        VmInstanceCollection* pCol = *colIt;
+        for (int i = 0; i < pCol->getNumInstances(); i++)
+          {
+            if (offset + i == index)
+              {
+                vm = pCol->getVmInstance(i);
+                break;
+              }
+          }
+        offset += pCol->getNumInstances();
+      }
+
+    return vm;
+}
+
 void CloudUserInstance::processApplicationCollection()
 {
-    AppInstanceCollection* pCol;
-    AppInstance* pApp;
+    int vm_size = virtualMachines.size();
 
-    for(int i=0;i<applications.size();i++)
-    {
-        pCol = applications.at(i);
-        for(int j=0;j<pCol->getNumInstances();j++)
-        {
-            pApp = pCol->getInstance(j);
-            appInstances.push_back(pApp);
-        }
+    for(int i = 0; i < applications.size(); i++)
+      {
+        AppInstanceCollection *pCol = applications.at(i);
 
-    }
+        for(int j = 0; j < pCol->getNumInstances(); j++)
+          {
+            AppInstance *pApp = pCol->getInstance(j);
+            VmInstance *pVm = getNthVm(i);
+            if (pVm != nullptr)
+              {
+                pApp->setVmInstanceId(pVm->getVmInstanceId());
+                appInstances.push_back(pApp);
+              }
+            else
+              {
+                EV_ERROR << "Error while setting vmId to appInstance. The number of App collections must match the number of VMs";
+              }
+          }
+
+      }
 }
+
 double CloudUserInstance::getEndTime() const
 {
    return dEndTime;

@@ -38,6 +38,11 @@ class AppInstance{
          */
         tApplicationState state;
 
+        /**
+         * Name that unequivocally identifies the VM in which the app has to be run.
+         */
+        std::string vmInstanceID;
+
 
     public:
 
@@ -64,6 +69,20 @@ class AppInstance{
          * @return ID that unequivocally identifies this application instance.
          */
         const std::string& getAppInstanceId() const;
+
+        /**
+         * Gets the ID that unequivocally identifies the VM in which the app has to be run.
+         *
+         * @return ID that unequivocally identifies the VM in which the app has to be run.
+         */
+        const std::string& getVmInstanceId() const;
+
+        /**
+         * Sets the ID that unequivocally identifies the VM in which the app has to be run.
+         *
+         * @param vmInstanceID ID that unequivocally identifies the VM in which the app has to be run.
+         */
+        void setVmInstanceId(std::string vmInstanceID);
 
         /**
          * Gets the name of this application.

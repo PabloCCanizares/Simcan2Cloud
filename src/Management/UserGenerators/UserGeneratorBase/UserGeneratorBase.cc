@@ -91,7 +91,7 @@ void UserGeneratorBase::generateUsersBeforeSimulationStarts (){
 
         EV_DEBUG << "UserGeneratorBase::generateUsersBeforeSimulationStarts - 1" << endl;
         // Generate the corresponding instances of the current user type
-        for (currentUserInstance = 0; currentUserInstance<(*userTypeIterator)->getNumInstances(); currentUserInstance++){
+        for (currentUserInstance = 0; currentUserInstance < (*userTypeIterator)->getNumInstances(); currentUserInstance++){
 
             EV_DEBUG << "UserGeneratorBase::generateUsersBeforeSimulationStarts - 2" << endl;
             // Create a new user instance

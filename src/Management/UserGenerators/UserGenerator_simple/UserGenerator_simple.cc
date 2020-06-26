@@ -899,7 +899,8 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
                     strIp = pRes->strIp;
                     nStartRentTime = pRes->startTime;
                     nPrice = pRes->nPrice;
-                    strVmId = vmRq.strVmId;
+                    //strVmId = vmRq.strVmId;
+                    strVmId = pAppInstance->getVmInstanceId();
 
                     //TODO: YA funciona esto, adaptar!!
                     if (bMaxStartTime_t1_active) {

@@ -33,224 +33,238 @@ int UserListParser::parse() {
         cStringTokenizer tokenizer(parseString);
 
         // First token, number of users
-        if (tokenizer.hasMoreTokens()){
+        if (tokenizer.hasMoreTokens())
+          {
             const char *numUsersChr = tokenizer.nextToken();
             numUsers = atoi(numUsersChr);
-        }
-        else{
+          }
+        else
+          {
             EV_ERROR << "Cannot read the first token (number of users)" << endl;
             result = SC_ERROR;
-        }
-
+          }
 
         // For each user in the list...
-        while ((tokenizer.hasMoreTokens()) && (currentUser < numUsers) && (result==SC_OK)){
-
+        while ((tokenizer.hasMoreTokens()) && (currentUser < numUsers) && (result == SC_OK))
+          {
             // Get the user type
-            if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
+            if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+              {
                 const char *userTypeChr = tokenizer.nextToken();
                 userTypeStr = userTypeChr;
-            }
-            else{
+              }
+            else
+              {
                 EV_ERROR << "Cannot read the user name for user:" << currentUser << endl;
                 result = SC_ERROR;
-            }
+              }
 
             // Get the number of user instances
-            if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
+            if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+              {
                const char *numUserInstancesChr = tokenizer.nextToken();
                numUserInstances = atoi(numUserInstancesChr);
-            }
-            else{
+              }
+            else
+              {
                EV_ERROR << "Cannot read the number of user instances for user:" << userTypeStr << endl;
                result = SC_ERROR;
-            }
+              }
 
             // Get the number of apps for the current user
-            if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
+            if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+              {
                 const char *numAppsChr = tokenizer.nextToken();
                 numApps = atoi(numAppsChr);
-            }
-            else{
+              }
+            else
+              {
                 EV_ERROR << "Cannot read the number of applications for user:" << userTypeStr << endl;
                 result = SC_ERROR;
-            }
+              }
 
 
-                // Parsing applications for current user...
-                if (result == SC_OK){
+            // Parsing applications for current user...
+            if (result == SC_OK)
+              {
+                // Init...
+                currentApp = 0;
 
-                    // Init...
-                    currentApp = 0;
+                // Create current user instance
+                currentUserObject = new CloudUser(userTypeStr, numUserInstances);
 
-                    // Create current user instance
-                    currentUserObject = new CloudUser(userTypeStr, numUserInstances);
+                // Include each application
+                while ((currentApp < numApps) && (result == SC_OK))
+                  {
+                    // Get the app name
+                    if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+                      {
+                        const char *appNameChr = tokenizer.nextToken();
+                        appNameStr = appNameChr;
+                      }
+                    else
+                      {
+                        EV_ERROR << "Cannot read the app name[" << currentApp << "] for user:" << userTypeStr << endl;
+                        result = SC_ERROR;
+                      }
 
-                    // Include each application
-                    while ((currentApp<numApps) && (result==SC_OK)){
+                    // Get the number of app instances
+                    if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+                      {
+                        const char *numAppInstancesChr = tokenizer.nextToken();
+                        numAppInstances = atoi(numAppInstancesChr);
+                      }
+                    else
+                      {
+                        EV_ERROR << "Cannot read the number of instances for app [" << currentApp << "] in user:" << userTypeStr << endl;
+                        result = SC_ERROR;
+                      }
 
-                        // Get the app name
-                        if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
-                            const char *appNameChr = tokenizer.nextToken();
-                            appNameStr = appNameChr;
-                        }
-                        else{
-                            EV_ERROR << "Cannot read the app name[" << currentApp << "] for user:" << userTypeStr << endl;
-                            result = SC_ERROR;
-                        }
+                    // Locate the AppInstance in the vector
+                    appPtr = findApplication (appNameStr);
 
-                        // Get the number of app instances
-                        if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
-                            const char *numAppInstancesChr = tokenizer.nextToken();
-                            numAppInstances = atoi(numAppInstancesChr);
-                        }
-                        else{
-                            EV_ERROR << "Cannot read the number of instances for app [" << currentApp << "] in user:" << userTypeStr << endl;
-                            result = SC_ERROR;
-                        }
+                    // App found!
+                    if (appPtr != nullptr)
+                      {
+                        currentUserObject->insertApplication(appPtr, numAppInstances);
+                      }
+                    else
+                      {
+                        EV_ERROR << "Application not found [" << appNameStr << "] in user:" << userTypeStr << endl;
+                        result = SC_ERROR;
+                      }
 
-                        // Locate the AppInstance in the vector
-                        appPtr = findApplication (appNameStr);
+                    // Next app
+                    currentApp++;
+                  }
+              }
 
-                            // App found!
-                            if (appPtr != nullptr){
-                                currentUserObject->insertApplication(appPtr, numAppInstances);
-                            }
-                            else{
-                                EV_ERROR << "Application not found [" << appNameStr << "] in user:" << userTypeStr << endl;
-                                result = SC_ERROR;
-                            }
-
-                        // Next app
-                        currentApp++;
-                    }
-                }
-
-
-                // Get the number of VMs for the current user
-                if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
-                    const char *numVMsChr = tokenizer.nextToken();
-                    numVMs = atoi(numVMsChr);
-                }
-                else{
-                    EV_ERROR << "Cannot read the number of VMs for user:" << userTypeStr << endl;
-                    result = SC_ERROR;
-                }
+            // Get the number of VMs for the current user
+            if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+              {
+                const char *numVMsChr = tokenizer.nextToken();
+                numVMs = atoi(numVMsChr);
+              }
+            else
+              {
+                EV_ERROR << "Cannot read the number of VMs for user:" << userTypeStr << endl;
+                result = SC_ERROR;
+              }
 
 
-                // Parsing VMs for current user...
-                if (result == SC_OK){
+            // Parsing VMs for current user...
+            if (result == SC_OK)
+              {
+                // Init...
+                currentVM = 0;
 
-                    // Init...
-                    currentVM = 0;
+                // Include each VMs
+                while ((currentVM < numVMs) && (result == SC_OK))
+                  {
 
-                    // Include each VMs
-                    while ((currentVM<numVMs) && (result==SC_OK)){
+                    // Get the VM name
+                    if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+                      {
+                        const char *vmNameChr = tokenizer.nextToken();
+                        vmNameStr = vmNameChr;
+                      }
+                    else
+                      {
+                        EV_ERROR << "Cannot read the VM name[" << currentVM << "] for user:" << userTypeStr << endl;
+                        result = SC_ERROR;
+                      }
 
-                        // Get the VM name
-                        if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
-                            const char *vmNameChr = tokenizer.nextToken();
-                            vmNameStr = vmNameChr;
-                        }
-                        else{
-                            EV_ERROR << "Cannot read the VM name[" << currentVM << "] for user:" << userTypeStr << endl;
-                            result = SC_ERROR;
-                        }
+                    // Get the number of VMs instances
+                    if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+                      {
+                        const char *numVmInstancesChr = tokenizer.nextToken();
+                        numVmInstances = atoi(numVmInstancesChr);
+                      }
+                    else
+                      {
+                        EV_ERROR << "Cannot read the number of instances for VM [" << currentVM << "] in user:" << userTypeStr << endl;
+                        result = SC_ERROR;
+                      }
 
-                        // Get the number of VMs instances
-                        if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
-                            const char *numVmInstancesChr = tokenizer.nextToken();
-                            numVmInstances = atoi(numVmInstancesChr);
-                        }
-                        else{
-                            EV_ERROR << "Cannot read the number of instances for VM [" << currentVM << "] in user:" << userTypeStr << endl;
-                            result = SC_ERROR;
-                        }
+                    // Get the rental of VMs instances
+                    if ((tokenizer.hasMoreTokens()) && (result == SC_OK))
+                      {
+                        const char *nRentTimeChr = tokenizer.nextToken();
+                        nRentTime = atoi(nRentTimeChr);
+                      }
+                    else
+                      {
+                        EV_ERROR << "Cannot read the rental time of instances for VM [" << currentVM << "] in user:" << userTypeStr << endl;
+                        result = SC_ERROR;
+                      }
 
-                        // Get the rental of VMs instances
-                        if ((tokenizer.hasMoreTokens()) && (result==SC_OK)){
-                            const char *nRentTimeChr = tokenizer.nextToken();
-                            nRentTime = atoi(nRentTimeChr);
-                        }
-                        else{
-                            EV_ERROR << "Cannot read the rental time of instances for VM [" << currentVM << "] in user:" << userTypeStr << endl;
-                            result = SC_ERROR;
-                        }
+                    // Locate the VM in the vector
+                    vmPtr = findVirtualMachine (vmNameStr);
 
-                        // Locate the VM in the vector
-                        vmPtr = findVirtualMachine (vmNameStr);
+                    // VMType found!
+                    if (vmPtr != nullptr)
+                      {
+                        currentUserObject->insertVirtualMachine(vmPtr, numVmInstances, nRentTime);
+                      }
+                    else
+                      {
+                        EV_ERROR << "Virtual Machine not found [" << vmNameStr << "] in user:" << userTypeStr << endl;
+                        result = SC_ERROR;
+                      }
 
-                            // App found!
-                            if (vmPtr != nullptr){
-                                currentUserObject->insertVirtualMachine(vmPtr, numVmInstances, nRentTime);
-                            }
-                            else{
-                                EV_ERROR << "Virtual Machine not found [" << vmNameStr << "] in user:" << userTypeStr << endl;
-                                result = SC_ERROR;
-                            }
+                    // Next vm
+                    currentVM++;
+                  }
+              }
 
-                        // Next vm
-                        currentVM++;
-                    }
-                }
+            // Include user in the vector
+            parseResult.push_back(currentUserObject);
 
-               // Include user in the vector
-                parseResult.push_back(currentUserObject);
-
-                // Process next user
-                currentUser++;
-        }
+            // Process next user
+            currentUser++;
+          }
 
     return result;
 }
 
-Application* UserListParser::findApplication (std::string appName){
+Application* UserListParser::findApplication (std::string appName) {
+    // Init
+    Application *result = nullptr;
+    std::vector<Application*>::iterator it = appTypes->begin();
 
-    std::vector<Application*>::iterator it;
-    Application* result;
-    bool found;
+    // Search...
+    while (it != appTypes->end())
+      {
+        if ((*it)->getAppName().compare(appName) == 0)
+          {
+            result = *it;
+            break;
+          }
 
-        // Init
-        found = false;
-        result = nullptr;
-        it = appTypes->begin();
-
-        // Search...
-        while((!found) && (it != appTypes->end())){
-
-            if ((*it)->getAppName() == appName){
-                found = true;
-                result = *it;
-            }
-            else
-                it++;
-        }
+        it++;
+      }
 
     return result;
 }
 
 
-VirtualMachine* UserListParser::findVirtualMachine (std::string vmType){
+VirtualMachine* UserListParser::findVirtualMachine (std::string vmType) {
+    // Init
+    VirtualMachine *result = nullptr;
+    std::vector<VirtualMachine*>::iterator it = vmTypes->begin();
 
-    std::vector<VirtualMachine*>::iterator it;
-    VirtualMachine* result;
-    bool found;
+    // Search...
+    while (it != vmTypes->end())
+      {
 
-        // Init
-        found = false;
-        result = nullptr;
-        it = vmTypes->begin();
+        if ((*it)->getType().compare(vmType) == 0)
+          {
+            result = (*it);
+            break;
+          }
 
-        // Search...
-        while((!found) && (it != vmTypes->end())){
-
-            if ((*it)->getType() == vmType){
-                found = true;
-                result = (*it);
-            }
-            else
-                it++;
-        }
+        it++;
+      }
 
     return result;
 }
