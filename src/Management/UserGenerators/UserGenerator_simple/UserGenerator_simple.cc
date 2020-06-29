@@ -348,7 +348,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *us
 }
 
 CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message *msg) {
-    CloudUserInstance *pUserInstance;
+    CloudUserInstance *pUserInstance = nullptr;
     SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
 
     if (userApp != nullptr) {
@@ -359,7 +359,10 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message 
 
         updateVmUserStatus(userApp->getUserID(), userApp->getVmId(), vmFinished);
 
-        emit(okSignal, pUserInstance->getId());
+        pUserInstance = userHashMap.at(userApp->getUserID());
+        if (pUserInstance != nullptr) {
+            emit(okSignal, pUserInstance->getId());
+        }
 
         EV_INFO << "handleAppOk - End" << endl;
     }
