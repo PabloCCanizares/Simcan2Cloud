@@ -315,7 +315,7 @@ protected:
      * @param strAppType Indentifier of the application
      * @return
      */
-    Application* searchAppTypeById(std::string strAppType);
+    Application* searchAppPerType(std::string strAppType);
 
 };
 

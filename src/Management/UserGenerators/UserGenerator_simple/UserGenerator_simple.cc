@@ -859,7 +859,7 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
     SM_UserAPP *userApp;
     CloudUserInstance *pUserInstance;
     AppInstance *pAppInstance;
-    std::string strIp, strAppInstance, strUserName, strService, strVmId;
+    std::string strIp, strAppInstance, strUserName, strAppType, strVmId;
     int nStartRentTime, nPrice, nMaxStarTime, nIndexRes;
 
     EV_TRACE << "UserGenerator::createNextAppRequest - Init" << endl;
@@ -879,7 +879,8 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
 
             pAppInstance = pUserInstance->getAppInstance(i);
             if (pAppInstance != nullptr) {
-                strService = pAppInstance->getAppName();
+                strAppType = pAppInstance->getAppName();
+                strAppInstance = pAppInstance->getAppInstanceId();
             }
 
             //In this first approach, we get the first element,
@@ -906,7 +907,7 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
                     if (bMaxStartTime_t1_active) {
                         //Check if T2 <T3
                         if (nMaxStarTime >= nStartRentTime) {
-                            userApp->createNewAppRequest(strService, strIp,
+                            userApp->createNewAppRequest(strAppInstance, strAppType, strIp,
                                     strVmId, nStartRentTime);
                         } else {
                             //The rent time proposed by the server is too high.
@@ -916,7 +917,7 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
                                            << nStartRentTime << endl;
                         }
                     } else {
-                        userApp->createNewAppRequest(strService, strIp, strVmId,
+                        userApp->createNewAppRequest(strAppInstance, strAppType, strIp, strVmId,
                                 nStartRentTime);
                     }
                 }

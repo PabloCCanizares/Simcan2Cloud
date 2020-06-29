@@ -266,6 +266,28 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
 
             if (pUserApp != nullptr)
               {
+
+                ////////////////////// Probando
+                APP_Request appRq;
+                int nIndex;
+                bool bFound;
+
+                bFound =  false;
+                nIndex = 0;
+
+                while(!bFound && nIndex<pUserApp->getAppArraySize())
+                {
+                    appRq=pUserApp->getApp(nIndex);
+                    if(appRq.strApp.compare(strAppName)== 0 && strVmId.compare(appRq.vmId) == 0)
+                    {
+                        pUserApp->getApp(nIndex).pMsgTimeout = nullptr;
+                        bFound=true;
+                    }
+                    nIndex++;
+                }
+/////////////////////////////////
+
+
                 pUserApp->increaseFinishedApps();
                 //Check for a possible timeout
                 if (!pUserApp->isFinishedKO(strAppName, strVmId))
@@ -890,7 +912,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
                             if(strVmId.compare(userApp.vmId)==0)
                               {
-                                appType = searchAppTypeById(userApp.strAppType);
+                                appType = searchAppPerType(userApp.strAppType);
 
                                 if(appType != nullptr)
                                   {
@@ -968,7 +990,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
       }
 }
 
-Application* CloudProviderBase_firstBestFit::searchAppTypeById(std::string strAppType)
+Application* CloudProviderBase_firstBestFit::searchAppPerType(std::string strAppType)
 {
     Application* appTypeRet;
     bool bFound;
@@ -978,7 +1000,7 @@ Application* CloudProviderBase_firstBestFit::searchAppTypeById(std::string strAp
     bFound = false;
     nIndex = 0;
 
-    EV_DEBUG << "searchAppTypeById - Init" << endl;
+    EV_DEBUG << "searchAppPerType - Init" << endl;
 
     while(!bFound && nIndex < appTypes.size())
       {
@@ -986,7 +1008,7 @@ Application* CloudProviderBase_firstBestFit::searchAppTypeById(std::string strAp
         if(strAppType.compare(appTypeRet->getAppName()) == 0)
             bFound = true;
 
-        EV_DEBUG << "searchAppTypeById - " << strAppType << " vs " << appTypeRet->getAppName() << " Found="<< bFound << endl;
+        EV_DEBUG << "searchAppPerType - " << strAppType << " vs " << appTypeRet->getAppName() << " Found="<< bFound << endl;
 
         nIndex++;
       }

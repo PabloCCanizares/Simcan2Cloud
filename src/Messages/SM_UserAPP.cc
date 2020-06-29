@@ -95,7 +95,7 @@ int SM_UserAPP::createNewAppRequest(std::string strService,std::string strIp,std
     appRQ.finishTime = 0;
     appRQ.strIp=strIp;
     appRQ.strApp=strService;
-    appRQ.strAppType=strService;
+    appRQ.strAppType="";
     appRQ.eState = appWaiting;
     appRQ.pMsgTimeout = nullptr;
     appRQ.vmId=strVmId;
