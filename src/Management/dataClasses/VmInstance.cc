@@ -4,15 +4,15 @@ VmInstance::VmInstance(std::string vmType, int currentInstanceIndex, int totalVm
 
     std::ostringstream osStream;
 
-        // Generate the unique name -> vmType-userID[currentInstanceIndex/totalVmInstances]
-        osStream << vmType << "-" << userID << "-[" << currentInstanceIndex+1 << "/" << totalVmInstances << "]";
-        this->vmInstanceID = osStream.str();
+    // Generate the unique name -> vmType-userID[currentInstanceIndex/totalVmInstances]
+    osStream << vmType << "-" << userID << "-[" << currentInstanceIndex+1 << "/" << totalVmInstances << "]";
+    this->vmInstanceID = osStream.str();
 
-        // Vm State
-        this->vmType = vmType;
-        this->instanceNumber = currentInstanceIndex;
-        this->userID = userID;
-        this->state = vmIdle;
+    // Vm State
+    this->vmType = vmType;
+    this->instanceNumber = currentInstanceIndex;
+    this->userID = userID;
+    this->state = vmIdle;
 }
 
 VmInstance::~VmInstance() {

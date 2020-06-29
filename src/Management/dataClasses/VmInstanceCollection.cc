@@ -1,6 +1,6 @@
 #include "VmInstanceCollection.h"
 
-VmInstanceCollection::VmInstanceCollection(VirtualMachine* vmPtr, std::string userID, int numInstances, int nRentTime){
+VmInstanceCollection::VmInstanceCollection(VirtualMachine* vmPtr, std::string userID, int numInstances, int nRentTime, int total, int offset){
 
     // Check!
     if (vmPtr == nullptr)
@@ -13,23 +13,24 @@ VmInstanceCollection::VmInstanceCollection(VirtualMachine* vmPtr, std::string us
     this->nRentTime = nRentTime;
 
     // Generate the replicas
-    this->generateInstances(userID, numInstances);
+    this->generateInstances(userID, numInstances, total, offset);
 }
 
 VmInstanceCollection::~VmInstanceCollection() {
     vmInstances.clear();
 }
 
-void VmInstanceCollection::generateInstances (std::string userID, int numInstances){
+void VmInstanceCollection::generateInstances (std::string userID, int numInstances, int total, int offset){
 
     VmInstance *newInstance;
     int i;
 
-        // Create and include replicas in the replica vector
-        for (i=0; i<numInstances; i++){
-            newInstance = new VmInstance(vmBase->getType(), i, numInstances, userID);
-            vmInstances.push_back(newInstance);
-        }
+    // Create and include replicas in the replica vector
+    for (i=0; i < numInstances; i++)
+      {
+        newInstance = new VmInstance(vmBase->getType(), i + offset, total, userID);
+        vmInstances.push_back(newInstance);
+      }
 }
 
 VirtualMachine* VmInstanceCollection::getVirtualMachineBase (){

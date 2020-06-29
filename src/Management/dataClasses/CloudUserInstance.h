@@ -147,7 +147,7 @@ class CloudUserInstance: public UserInstance {
         * @param vmPtr Pointer to the </b>VirtualMachine</b> object that contains the main features of the generated VM.
         * @param numInstances Number of instances of the generated VM.
         */
-       void insertNewVirtualMachineInstances (VirtualMachine* vmPtr, int numInstances, int nRentTime);
+       void insertNewVirtualMachineInstances (VirtualMachine* vmPtr, int numInstances, int nRentTime, int total, int offset);
 
        /**
         *Process the application collection in order to include them in a single vector
@@ -159,6 +159,8 @@ class CloudUserInstance: public UserInstance {
         * @param index Index of the required vm.
         */
        VmInstance* getNthVm(int index);
+
+       int getNumVms(std::string strType, CloudUser *ptrUser);
 };
 
 #endif /* USERINSTANCE_H_ */

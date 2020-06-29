@@ -10,16 +10,33 @@ CloudUserInstance::CloudUserInstance (CloudUser    *ptrUser,
 {
 
     UserVmReference* vmReference;
+    std::map<std::string, int> offsetMap,
+                               totalVmMap;
     int currentVm;
+
+    for (currentVm = 0; currentVm < ptrUser->getNumVirtualMachines(); currentVm++)
+      {
+        std::string strType = ptrUser->getVirtualMachine(currentVm)->getVmBase()->getType();
+        if (offsetMap.find(strType) == offsetMap.end())
+          {
+            offsetMap[strType] = 0;
+            totalVmMap[strType] = getNumVms(strType, ptrUser);
+          }
+      }
 
     // Include VM instances
     for (currentVm = 0; currentVm < ptrUser->getNumVirtualMachines(); currentVm++)
       {
         // Get current application
         vmReference = ptrUser->getVirtualMachine(currentVm);
+        std::string strType = vmReference->getVmBase()->getType();
+        int offset = offsetMap.at(strType),
+            totalVm = totalVmMap.at(strType);
 
         // Insert a new collection of application instances
-        insertNewVirtualMachineInstances (vmReference->getVmBase(), vmReference->getNumInstances(), vmReference->getRentTime());
+        insertNewVirtualMachineInstances (vmReference->getVmBase(), vmReference->getNumInstances(), vmReference->getRentTime(), totalVm, offset);
+
+        offsetMap[strType] = offset + vmReference->getNumInstances();
       }
 
     processApplicationCollection();
@@ -40,12 +57,26 @@ CloudUserInstance::~CloudUserInstance() {
     virtualMachines.clear();
 }
 
+int CloudUserInstance::getNumVms(std::string strType, CloudUser *ptrUser)
+{
+    int numVms = 0;
 
-void CloudUserInstance::insertNewVirtualMachineInstances (VirtualMachine* vmPtr, int numInstances, int nRentTime){
+    for (int currentVm = 0; currentVm < ptrUser->getNumVirtualMachines(); currentVm++)
+      {
+        UserVmReference* vmReference = ptrUser->getVirtualMachine(currentVm);
+
+        if (vmReference->getVmBase()->getType().compare(strType) == 0)
+            numVms += vmReference->getNumInstances();
+      }
+
+    return numVms;
+}
+
+void CloudUserInstance::insertNewVirtualMachineInstances (VirtualMachine* vmPtr, int numInstances, int nRentTime, int total, int offset){
 
     VmInstanceCollection* newVmCollection;
 
-    newVmCollection = new VmInstanceCollection(vmPtr, this->userID, numInstances,nRentTime);
+    newVmCollection = new VmInstanceCollection(vmPtr, this->userID, numInstances, nRentTime, total, offset);
     virtualMachines.push_back(newVmCollection);
 }
 
@@ -149,7 +180,7 @@ void CloudUserInstance::processApplicationCollection()
               }
             else
               {
-                EV_ERROR << "Error while setting vmId to appInstance. The number of App collections must match the number of VMs";
+                EV_FATAL << "Error while setting vmId to appInstance. The number of App collections must match the number of VMs";
               }
           }
 

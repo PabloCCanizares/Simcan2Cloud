@@ -34,7 +34,7 @@ class VmInstanceCollection{
          * @param userID User that contains this collection of VMs.
          * @param numInstances Number of VM instances to be created.
          */
-        VmInstanceCollection(VirtualMachine* vmPtr, std::string userID, int numInstances, int nRentTime);
+        VmInstanceCollection(VirtualMachine* vmPtr, std::string userID, int numInstances, int nRentTime, int total, int offset);
 
         /**
          * Destructor
@@ -83,7 +83,7 @@ class VmInstanceCollection{
          * @param userID User that contains this collection of VMs.
          * @param numInstances Number of VM instances to be created.
          */
-         void generateInstances (std::string userID, int numInstances);
+         void generateInstances (std::string userID, int numInstances, int total, int offset);
 };
 
 #endif /* APPINSTANCECOLLECTION_H_ */

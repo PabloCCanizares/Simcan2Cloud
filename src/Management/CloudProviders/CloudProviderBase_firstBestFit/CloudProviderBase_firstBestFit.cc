@@ -863,6 +863,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
             //First step consists in calculating the total units of time spent in executing the application.
             if(userAPP_Rq->getArrayAppsSize() > 0)
               {
+                EV_WARN << "NVMs: " << userVmRequest.getVmsArraySize() << endl;
                 for(int j = 0; j < userVmRequest.getVmsArraySize(); j++)
                   {
                     //Getting VM and scheduling renting timeout
@@ -870,6 +871,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                     //scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUsername, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
                     strVmId = vmRequest.strVmId;
+                    EV_WARN << "VmId: " << strVmId << endl;
                     vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
 
                     double totalTimePerCore[vmType->getNumCores()];
@@ -877,6 +879,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                     for (int i = 0; i < vmType->getNumCores(); i++)
                         totalTimePerCore[i] = 0;
 
+                    EV_WARN << "NApps: " << userAPP_Rq->getAppArraySize() << endl;
                     for(int i = 0; i < userAPP_Rq->getAppArraySize(); i++)
                       {
                         //Get the app
@@ -891,6 +894,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
                                 if(appType != nullptr)
                                   {
+                                    EV_WARN << userApp.strApp << " dentro de " << strVmId << endl;
                                     //Assing the app to core with less utilization time
                                     //std::sort(totalTimePerCore, totalTimePerCore+vmType->getNumCores());
                                     int minIndex = std::min_element(totalTimePerCore, totalTimePerCore+vmType->getNumCores()) - totalTimePerCore;
@@ -926,17 +930,17 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                                     //Change status to running
                                     userAPP_Rq->changeState(strAppName, strVmId, appRunning);
                                     userAPP_Rq->changeStateByIndex(i, strAppName, appRunning);
-                                    userAPP_Rq->setVmIdByIndex(i, userApp.strIp, strVmId);
+                                    //userAPP_Rq->setVmIdByIndex(i, userApp.strIp, strVmId);
 
 
                                     bHandle = true;
 
                                   }
+                                else
+                                  {
+                                    error ("%s - Unable to find App. Wrong AppType [%s]?", prettyFunc(__FILE__, __func__).c_str(), appType);
+                                  }
                               }
-                            else
-                            {
-                                error ("%s - Unable to find App. Wrong AppType [%s]?", prettyFunc(__FILE__, __func__).c_str(), appType);
-                            }
                           }
                       }
                   }
