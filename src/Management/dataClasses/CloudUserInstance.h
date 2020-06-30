@@ -37,10 +37,10 @@ class CloudUserInstance: public UserInstance {
         int maxSubscriptionTime_t4;
         int nId;
 
-        double dArrival2Cloud;
-        double dInitTime;
-        double dInitExec;
-        double dEndTime;
+        SimTime dArrival2Cloud;
+        SimTime dInitTime;
+        SimTime dInitExec;
+        SimTime dEndTime;
 
         bool bSubscribe;
         bool bTimeout_t2;
@@ -116,10 +116,10 @@ class CloudUserInstance: public UserInstance {
 
         void setRentTimes(int maxStartTime_t1, int nRentTime_t2, int maxSubTime_t3, int maxSubscriptionTime_t4);
 
-        double getEndTime() const;
-        double getInitTime() const;
-        double getArrival2Cloud() const;
-        double getInitExecTime()  const;
+        SimTime getEndTime() const;
+        SimTime getInitTime() const;
+        SimTime getArrival2Cloud() const;
+        SimTime getInitExecTime()  const;
 
         bool isFinished() const;
         bool isTimeout();
@@ -127,15 +127,15 @@ class CloudUserInstance: public UserInstance {
         bool isTimeoutSubscribed();
         bool hasSubscribed();
 
-        void setArrival2Cloud(double arrival2Cloud);
+        void setArrival2Cloud(SimTime arrival2Cloud);
         void setTimeoutMaxStart();
         void setTimeoutMaxRentTime();
         void setTimeoutMaxSubscribed();
         void setFinished(bool finished);
-        void setEndTime(double endTime);
-        void setInitTime(double initTime);
+        void setEndTime(SimTime endTime);
+        void setInitTime(SimTime initTime);
         void setSubscribe(bool bSubscribe);
-        void setInitExecTime(double dExec);
+        void setInitExecTime(SimTime dExec);
     int getId() const;
     void setId(int id);
 

@@ -20,7 +20,7 @@ protected:
     bool bMaxStartTime_t1_active;
 
     //TODO: Delete
-    double m_dInitSim;
+    SimTime m_dInitSim;
     int m_nUsersSent;
 
     // Timeouts
@@ -89,7 +89,7 @@ protected:
      * @param pUserInstance Pointer to the user instance.
      * @param last Last user arrival time.
      */
-    virtual double getNextTime(CloudUserInstance *pUserInstance, double last);
+    virtual SimTime getNextTime(CloudUserInstance *pUserInstance, SimTime last);
 
     /**
      * Processes a self message of type WaitToExecute.

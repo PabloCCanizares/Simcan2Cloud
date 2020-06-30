@@ -187,22 +187,22 @@ void CloudUserInstance::processApplicationCollection()
       }
 }
 
-double CloudUserInstance::getEndTime() const
+SimTime CloudUserInstance::getEndTime() const
 {
    return dEndTime;
 }
 
-void CloudUserInstance::setEndTime(double endTime)
+void CloudUserInstance::setEndTime(SimTime endTime)
 {
    dEndTime = endTime;
 }
 
-double CloudUserInstance::getInitTime() const
+SimTime CloudUserInstance::getInitTime() const
 {
    return dInitTime;
 }
 
-void CloudUserInstance::setInitTime(double initTime)
+void CloudUserInstance::setInitTime(SimTime initTime)
 {
    dInitTime = initTime;
 }
@@ -217,12 +217,12 @@ void CloudUserInstance::setFinished(bool finished)
    bFinished = finished;
 }
 
-double CloudUserInstance::getArrival2Cloud() const
+SimTime CloudUserInstance::getArrival2Cloud() const
 {
    return dArrival2Cloud;
 }
 
-void CloudUserInstance::setArrival2Cloud(double arrival2Cloud)
+void CloudUserInstance::setArrival2Cloud(SimTime arrival2Cloud)
 {
    dArrival2Cloud = arrival2Cloud;
 }
@@ -253,11 +253,11 @@ bool CloudUserInstance::isTimeoutSubscribed()
 {
    return bTimeout_t4;
 }
-double CloudUserInstance::getInitExecTime() const
+SimTime CloudUserInstance::getInitExecTime() const
 {
     return this->dInitExec;
 }
-void CloudUserInstance::setInitExecTime(double dExec)
+void CloudUserInstance::setInitExecTime(SimTime dExec)
 {
     this->dInitExec = dExec;
 }

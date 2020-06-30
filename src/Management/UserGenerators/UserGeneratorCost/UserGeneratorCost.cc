@@ -365,8 +365,8 @@ SM_UserVM* UserGeneratorCost::createVmRequest(CloudUserInstance* pUserInstance)
 }
 
 void UserGeneratorCost::calculateStatistics() {
-    double dInitTime, dEndTime, dExecTime, dSubTime, dMaxSub, dTotalSub,  dMeanSub, dNoWaitUsers, dWaitUsers;
-    double dUserCost, dTotalCost, dMeanCost, dBaseCost, dRentingBaseCost, dOfferCost, dTotalOfferCost;
+    SimTime dInitTime, dEndTime, dExecTime, dSubTime, dMaxSub, dTotalSub,  dMeanSub;
+    double dUserCost, dTotalCost, dMeanCost, dBaseCost, dRentingBaseCost, dOfferCost, dTotalOfferCost, dNoWaitUsers, dWaitUsers;
     int nIndex, nSize, nTotalUnprovided, nTotalRentTimeout, nRentTime, nAcceptOffer;
     CloudUserInstance* pUserInstance;
     CloudUserPriority* pCloudUser;

@@ -126,13 +126,13 @@ void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg)
 {
     SM_UserVM *userVm;
     CloudUserInstance *pUserInstance;
-    double lastTime;
+    SimTime lastTime;
 
     // Log (INFO)
     EV_INFO << "Starting execution!!!" << endl;
 
     //TODO:
-    m_dInitSim = simTime().dbl();
+    m_dInitSim = simTime();
     lastTime = 0;
 
     if (shuffleUsers)
@@ -164,20 +164,20 @@ void UserGenerator_simple::handleWaitToExecuteMessage(cMessage *msg)
     scheduleNextReqGenMessage();
 }
 
-double UserGenerator_simple::getNextTime(CloudUserInstance *pUserInstance, double last)
+SimTime UserGenerator_simple::getNextTime(CloudUserInstance *pUserInstance, SimTime last)
 {
-    double next;
+    SimTime next;
 
     if (intervalBetweenUsers)
       {
         if (last > 0)
-            next = distribution->doubleValue() + last;
+            next = SimTime(distribution->doubleValue()) + last;
         else
             next = m_dInitSim;
       }
     else
       {
-        next = distribution->doubleValue() + m_dInitSim;
+        next = SimTime(distribution->doubleValue()) + m_dInitSim;
       }
 
     return next;
@@ -201,7 +201,7 @@ void UserGenerator_simple::handleUserReqGenMessage(cMessage *msg)
 
         //TODO: ¿Dejamos este mensaje o lo quitamos?
         EV_FATAL << "#___ini#" << m_nUsersSent << " "
-                        << (simTime().dbl() - m_dInitSim) / 3600 << endl;
+                        << (simTime() - m_dInitSim) / 3600 << endl;
       }
     m_nUsersSent++;
 
@@ -267,13 +267,13 @@ void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *
 {
     emit(notifySignal, pUserInstance->getId());
     emit(executeNotSignal, pUserInstance->getId());
-    pUserInstance->setInitExecTime(simTime().dbl());
+    pUserInstance->setInitExecTime(simTime());
     submitService(userVm);
 }
 
 void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance)
 {
-    pUserInstance->setEndTime(simTime().dbl());
+    pUserInstance->setEndTime(simTime());
     pUserInstance->setFinished(true);
     nUserInstancesFinished++;
 }
@@ -298,7 +298,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *us
 
         if (pUserInstance != nullptr) {
             emit(responseSignal, pUserInstance->getId());
-            pUserInstance->setInitExecTime(simTime().dbl());
+            pUserInstance->setInitExecTime(simTime());
 
             // If the vm-request has been rejected by the cloudprovider
             // we have to subscribe the service
@@ -331,7 +331,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *us
 
         if (pUserInstance != nullptr) {
             emit(responseSignal, pUserInstance->getId());
-            pUserInstance->setInitExecTime(simTime().dbl());
+            pUserInstance->setInitExecTime(simTime());
 
             // If the vm-request has been rejected by the cloudprovider
             // we have to subscribe the service
@@ -966,7 +966,8 @@ void UserGenerator_simple::printExperiments_phase1() {
 
     nSize = userInstances.size();
 
-    double dInitTime, dEndTime, dExecTime, dSubTime, dMaxSub;
+    SimTime dInitTime, dEndTime, dExecTime, dSubTime;
+    double dMaxSub;
     nIndex = 1;
     for (int i = 0; (i < nSize); i++) {
         pUserInstance = userInstances.at(i);
@@ -1039,8 +1040,8 @@ void UserGenerator_simple::printFinal() {
 
 }
 void UserGenerator_simple::calculateStatistics() {
-    double dInitTime, dEndTime, dExecTime, dSubTime, dMaxSub, dTotalSub,
-            dMeanSub, dNoWaitUsers, dWaitUsers;
+    SimTime dInitTime, dEndTime, dExecTime, dSubTime, dMaxSub, dTotalSub, dMeanSub;
+    double dNoWaitUsers, dWaitUsers;
     int nIndex, nSize, nTotalTimeouts;
     CloudUserInstance *pUserInstance;
     std::vector<CloudUserInstance*> userVector;
