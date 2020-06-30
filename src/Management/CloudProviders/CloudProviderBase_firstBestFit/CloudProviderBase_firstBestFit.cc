@@ -647,12 +647,13 @@ void CloudProviderBase_firstBestFit::updateSubsQueue()
 
         if(checkVmUserFit(userVmSub))
         {
-            EV_INFO << "Notifying subscription of user: "<< userVmSub->getUserID()<<endl;
+            EV_INFO << "Notifying subscription of user: "<< userVmSub->getUserID() << endl;
             notifySubscription(userVmSub);
 
             //Remove from queue
             subscribeQueue.erase(subscribeQueue.begin()+i);
-            acceptedUsersRqMap[userVmSub->getUserID()] = *userVmSub;
+            if (strcmp(userVmSub->getStrVmId(), "") == 0)
+                acceptedUsersRqMap[userVmSub->getUserID()] = *userVmSub;
             i--;
         }
     }
@@ -1000,7 +1001,7 @@ Application* CloudProviderBase_firstBestFit::searchAppPerType(std::string strApp
     bFound = false;
     nIndex = 0;
 
-    EV_DEBUG << "searchAppPerType - Init" << endl;
+    EV_DEBUG << prettyFunc(__FILE__, __func__) << " - Init" << endl;
 
     while(!bFound && nIndex < appTypes.size())
       {
@@ -1008,7 +1009,7 @@ Application* CloudProviderBase_firstBestFit::searchAppPerType(std::string strApp
         if(strAppType.compare(appTypeRet->getAppName()) == 0)
             bFound = true;
 
-        EV_DEBUG << "searchAppPerType - " << strAppType << " vs " << appTypeRet->getAppName() << " Found="<< bFound << endl;
+        EV_DEBUG << __func__ << " - " << strAppType << " vs " << appTypeRet->getAppName() << " Found=" << bFound << endl;
 
         nIndex++;
       }
