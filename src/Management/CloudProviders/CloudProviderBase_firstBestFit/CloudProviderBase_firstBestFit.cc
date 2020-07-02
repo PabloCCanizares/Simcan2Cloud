@@ -1,5 +1,6 @@
 #include <algorithm>
 #include "CloudProviderBase_firstBestFit.h"
+#include "Management/utils/LogUtils.h"
 
 //Define_Module(CloudProviderBase_firstBestFit);
 
@@ -25,7 +26,7 @@ void CloudProviderBase_firstBestFit::initialize(){
 
     bFinished = false;
     scheduleAt(SimTime(), new cMessage(INITIAL_STAGE));
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - End" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
 /**
@@ -57,7 +58,7 @@ void CloudProviderBase_firstBestFit::loadNodes()
     RackInfo* pRackInfo;
     int nComputingRacks, nTotalNodes, nDataCenter, nIndex;
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - Init" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
     //Initialize
     nComputingRacks =  nTotalNodes = nDataCenter = nIndex=0;
 
@@ -66,15 +67,15 @@ void CloudProviderBase_firstBestFit::loadNodes()
     //Go over the datacenter object: all racks
     if(nDataCenter>0)
     {
-        EV_INFO << prettyFunc(__FILE__, __func__) << " - handling the DC: " <<  dataCentersToString() << endl;
+        EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - handling the DC: " <<  dataCentersToString() << endl;
         for(int nIndex=0;nIndex<nDataCenter;nIndex++)
         {
-            EV_TRACE << prettyFunc(__FILE__, __func__) << " - loading dataCenter: " << nIndex << endl;
+            EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - loading dataCenter: " << nIndex << endl;
             pDataCenter = dataCentersBase.at(nIndex);
             if(pDataCenter != nullptr)
             {
                 nComputingRacks = pDataCenter->getNumRacks(false);
-                EV_TRACE << prettyFunc(__FILE__, __func__) << " - Number of computing racks: "<< nComputingRacks << endl;
+                EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Number of computing racks: "<< nComputingRacks << endl;
                 for(int i=0;i<nComputingRacks; i++)
                 {
                     EV_DEBUG << "Getting computing rack: "<< i << endl;
@@ -105,7 +106,7 @@ void CloudProviderBase_firstBestFit::loadNodes()
     //Print the content of the loaded DC
     datacenterCollection->printDCSizes();
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - Ende" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Ende" << endl;
 }
 void CloudProviderBase_firstBestFit::initDataCenterStructures(){
 
@@ -169,7 +170,7 @@ void CloudProviderBase_firstBestFit::cancelAndDeleteAppFinishMsgs(SM_UserAPP* us
 }
 
 void CloudProviderBase_firstBestFit::handleInitialStage(cMessage* msg) { // ADAA
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - INITIAL_STAGE" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - INITIAL_STAGE" << endl;
     scheduleAt(simTime() + SimTime(1), new cMessage(MANAGE_SUBSCRIBTIONS));
 }
 
@@ -248,7 +249,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                 strIp;
     std::map<std::string, SM_UserAPP*>::iterator it;
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_APP_END_SINGLE" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - EXEC_APP_END_SINGLE" << endl;
     if ((pUserAppFinish = dynamic_cast<SM_UserAPP_Finish *>(msg)))
       {
         strUsername = pUserAppFinish->getUserID();
@@ -292,7 +293,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                 //Check for a possible timeout
                 if (!pUserApp->isFinishedKO(strAppName, strVmId))
                   {
-                    EV_INFO << prettyFunc(__FILE__, __func__)
+                    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
                     << " - Changing status of the application [ app: "
                     << strAppName << " | vmId: " << strVmId << endl;
                     pUserApp->printUserAPP();
@@ -306,21 +307,21 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
               }
             else
               {
-                EV_INFO << prettyFunc(__FILE__, __func__)
+                EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
                 << " - WARNING! I cant found the apps corresponding with the user "
                 << strUsername << endl;
               }
           }
         else
           {
-            EV_INFO << prettyFunc(__FILE__, __func__)
+            EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
             << " - WARNING! I cant found the apps corresponding with the user "
             << strUsername << endl;
           }
       }
     else
       {
-        error ("%s - Unable to cast msg to SM_UserAPP_Finish*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
+        error ("%s - Unable to cast msg to SM_UserAPP_Finish*. Wrong msg name [%s]?", LogUtils::prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
 }
 
@@ -334,7 +335,7 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
               {
                 if (pUserApp->allAppsFinishedOK())
                   {
-                    EV_INFO << prettyFunc(__FILE__, __func__)
+                    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
                     << " - All the apps corresponding with the user "
                     << strUsername
                     << " have finished successfully" << endl;
@@ -346,7 +347,7 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
                   }
                 else
                   {
-                    EV_INFO << prettyFunc(__FILE__, __func__)
+                    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
                     << " - All the apps corresponding with the user "
                     << strUsername
                     << " have finished with some errors" << endl;
@@ -363,7 +364,7 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
               }
             else
               {
-                EV_INFO << prettyFunc(__FILE__, __func__)
+                EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
                         << " - Total apps finished: "
                         << pUserApp->getNFinishedApps() << " of "
                         << pUserApp->getAppArraySize() << endl;
@@ -371,7 +372,7 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
       }
     else
     {
-        EV_INFO << prettyFunc(__FILE__, __func__)
+        EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
         << " - WARNING! Null pointer parameter "
         << strUsername << endl;
     }
@@ -396,7 +397,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
 
     if ((pUserVmFinish = dynamic_cast<SM_UserVM_Finish*>(msg)))
       {
-        EV_INFO << prettyFunc(__FILE__, __func__) << " - INIT" << endl;
+        EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - INIT" << endl;
         bAlreadyFinished = false;
         strUsername = pUserVmFinish->getUserID();
         strVmId = pUserVmFinish->getStrVmId();
@@ -439,7 +440,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
 //                if (pUserApp->allAppsFinished() && !pUserApp->getFinished() && !bAlreadyFinished)
 //                  {
 //                    //Notify the user the end of the execution
-//                    EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_VM_RENT_TIMEOUT Init" << endl;
+//                    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - EXEC_VM_RENT_TIMEOUT Init" << endl;
 //
 //                    //if so, notify this.
 //                    //timeoutAppRequest(pUserApp);
@@ -459,39 +460,15 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
       }
     else
       {
-        error ("%s - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
+        error ("%s - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", LogUtils::prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
-}
-
-std::string CloudProviderBase_firstBestFit::prettyFunc(const char *fileName, const char *funcName)
-{
-    const char *lastBar;
-
-    char *className;
-
-    int startPos,
-        length;
-
-    std::string strFile,
-                prettyName;
-
-    lastBar = strrchr(fileName, '/');
-    if (lastBar == nullptr)
-        lastBar = strrchr(fileName, '\\');
-
-    startPos = lastBar - fileName + 1;
-    length = strrchr(fileName, '.') - fileName - startPos;
-    strFile = fileName;
-    prettyName = strFile.substr(startPos, length) + "::" + funcName;
-
-    return prettyName;
 }
 
 void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
     std::string strUsername;
     SM_UserAPP *userAPP_Rq;
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - EXEC_APP_END" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - EXEC_APP_END" << endl;
     if ((userAPP_Rq = dynamic_cast<SM_UserAPP*>(msg)))
       {
         strUsername = userAPP_Rq->getUserID();
@@ -504,14 +481,14 @@ void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
       }
     else
       {
-        error ("%s - Unable to cast msg to SM_UserAPP*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
+        error ("%s - Unable to cast msg to SM_UserAPP*. Wrong msg name [%s]?", LogUtils::prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
 }
 
 void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
     std::map<std::string, std::function<void(cMessage*)>>::iterator it;
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - Received Request Message" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Received Request Message" << endl;
 
     it = selfHandlers.find(msg->getName());
 
@@ -522,7 +499,7 @@ void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
 
     cancelAndDelete(msg);
 
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
 void CloudProviderBase_firstBestFit::handleSubscriptionTimeout(cMessage *msg)
@@ -533,7 +510,7 @@ void CloudProviderBase_firstBestFit::handleSubscriptionTimeout(cMessage *msg)
     SM_UserVM *userVmSub;
     std::string strUsername;
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - RECEIVED TIMEOUT " << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - RECEIVED TIMEOUT " << endl;
     EV_TRACE << __func__ << " - Init" << endl;
 
     nIndex = 0;
@@ -584,10 +561,10 @@ void CloudProviderBase_firstBestFit::handleSubscriptionTimeout(cMessage *msg)
       }
     else
       {
-        error ("%s - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", prettyFunc(__FILE__, __func__).c_str(), msg->getName());
+        error ("%s - Unable to cast msg to SM_UserVM_Finish*. Wrong msg name [%s]?", LogUtils::prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
 
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - USER_SUBSCRIPTION_TIMEOUT End" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - USER_SUBSCRIPTION_TIMEOUT End" << endl;
 }
 
 int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername, std::string strVmId)
@@ -596,7 +573,7 @@ int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername
     SM_UserVM* pUserVM;
     bool bFound;
 
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - Init" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
     nRet = -1;
     bFound= false;
     nIndex=0;
@@ -632,7 +609,7 @@ int CloudProviderBase_firstBestFit::searchUserInSubQueue(std::string strUsername
     if(bFound)
         nRet = nIndex;
 
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 
     return nRet;
 }
@@ -666,7 +643,7 @@ void CloudProviderBase_firstBestFit::freeUserVms(std::string strUsername)
     std::map<std::string, SM_UserVM>::iterator it;
     VM_Request vmRequest;
 
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - Init" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
 
     //Mark the user VMs as free
     it = acceptedUsersRqMap.find(strUsername);
@@ -684,20 +661,20 @@ void CloudProviderBase_firstBestFit::freeUserVms(std::string strUsername)
         acceptedUsersRqMap.erase(strUsername);
       }
 
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
 void CloudProviderBase_firstBestFit::freeVm(std::string strVmId)
 {
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - Init" << endl;
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - Releasing the Vm:  "<< strVmId << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Releasing the Vm:  "<< strVmId << endl;
 
     if(datacenterCollection->freeVmRequest(strVmId))
         EV_DEBUG << "the Vm has been released sucessfully: "<< strVmId << endl;
     else //Error freeing the VM
         EV_INFO << "Error releasing the VM: "<< strVmId << endl;
 
-    EV_TRACE << prettyFunc(__FILE__, __func__) << " - End" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
 
 void CloudProviderBase_firstBestFit::insertRack(int nIndex, int nRack, RackInfo* pRackInfo)
@@ -711,7 +688,7 @@ void CloudProviderBase_firstBestFit::insertRack(int nIndex, int nRack, RackInfo*
     storage= false;
     nTotalCpus = nTotalMemory = cpuSpeed = nTotalNodes = 0;
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - Init "<< endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Init "<< endl;
 
     if(pRackInfo != NULL)
     {
@@ -743,14 +720,14 @@ void CloudProviderBase_firstBestFit::insertRack(int nIndex, int nRack, RackInfo*
                 pNodeResInfo->setIp("dc:"+std::to_string(nIndex)+"_rack:"+std::to_string(nRack)+"_node:"+std::to_string(j));
                 pNodeResInfo->setDataCenter(nIndex);
 
-                EV_TRACE << prettyFunc(__FILE__, __func__) << " - Inserting node "<< j << " at datacenter: " << nIndex << endl;
+                EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Inserting node "<< j << " at datacenter: " << nIndex << endl;
                 //Insert the node info into the corresponding DC
                 datacenterCollection->insertNode(nIndex, pNodeResInfo);
             }
         }
     }
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - End "<< endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - End "<< endl;
 }
 
 void CloudProviderBase_firstBestFit::handleVmRequestFits(SIMCAN_Message *sm)
@@ -758,7 +735,7 @@ void CloudProviderBase_firstBestFit::handleVmRequestFits(SIMCAN_Message *sm)
     SM_UserVM *userVM_Rq;
 
     userVM_Rq = dynamic_cast<SM_UserVM*>(sm);
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - Handle VM_Request"  << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Handle VM_Request"  << endl;
 
     if(userVM_Rq != nullptr)
       {
@@ -771,7 +748,7 @@ void CloudProviderBase_firstBestFit::handleVmRequestFits(SIMCAN_Message *sm)
       }
     else
       {
-        throw omnetpp::cRuntimeError(("[" + prettyFunc(__FILE__, __func__) + "] Wrong userVM_Rq. Null pointer or bad operation code!").c_str());
+        throw omnetpp::cRuntimeError(("[" + LogUtils::prettyFunc(__FILE__, __func__) + "] Wrong userVM_Rq. Null pointer or bad operation code!").c_str());
       }
 }
 
@@ -780,7 +757,7 @@ void CloudProviderBase_firstBestFit::handleVmSubscription(SIMCAN_Message *sm)
     SM_UserVM *userVM_Rq;
 
     userVM_Rq = dynamic_cast<SM_UserVM*>(sm);
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - Received Subscribe operation"  << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Received Subscribe operation"  << endl;
 
     if(userVM_Rq != nullptr)
       {
@@ -791,7 +768,7 @@ void CloudProviderBase_firstBestFit::handleVmSubscription(SIMCAN_Message *sm)
       }
     else
       {
-        throw omnetpp::cRuntimeError(("[" + prettyFunc(__FILE__, __func__) + "] Wrong userVM_Rq. Null pointer or bad operation code!").c_str());
+        throw omnetpp::cRuntimeError(("[" + LogUtils::prettyFunc(__FILE__, __func__) + "] Wrong userVM_Rq. Null pointer or bad operation code!").c_str());
       }
 }
 
@@ -800,7 +777,7 @@ void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
     SM_CloudProvider_Control* userControl;
     std::map<int, std::function<void(SIMCAN_Message*)>>::iterator it;
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - Received Request Message" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Received Request Message" << endl;
 
     it = requestHandlers.find(sm->getOperation());
 
@@ -810,7 +787,7 @@ void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
 
         if(userControl != nullptr)
           {
-            EV_INFO << prettyFunc(__FILE__, __func__) << " - Received end of party"  << endl;
+            EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Received end of party"  << endl;
             //Stop the checking process.
             bFinished = true;
             cancelAndDelete(userControl);
@@ -857,7 +834,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
     std::map<std::string, SM_UserVM>::iterator it;
 
-    EV_INFO << prettyFunc(__FILE__, __func__) << " - Handle AppRequest"  << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Handle AppRequest"  << endl;
     userAPP_Rq = dynamic_cast<SM_UserAPP *>(sm);
 
     if(userAPP_Rq != nullptr)
@@ -961,7 +938,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                                   }
                                 else
                                   {
-                                    error ("%s - Unable to find App. Wrong AppType [%s]?", prettyFunc(__FILE__, __func__).c_str(), appType);
+                                    error ("%s - Unable to find App. Wrong AppType [%s]?", LogUtils::prettyFunc(__FILE__, __func__).c_str(), appType);
                                   }
                               }
                           }
@@ -970,13 +947,13 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
               }
             else
               {
-                EV_INFO << "WARNING! [" << prettyFunc(__FILE__, __func__) << "] The user: " << strUsername << "has the application list empty!"<< endl;
-                throw omnetpp::cRuntimeError(("[" + prettyFunc(__FILE__, __func__) + "] The list of applications of a the user is empty!!").c_str());
+                EV_INFO << "WARNING! [" << LogUtils::prettyFunc(__FILE__, __func__) << "] The user: " << strUsername << "has the application list empty!"<< endl;
+                throw omnetpp::cRuntimeError(("[" + LogUtils::prettyFunc(__FILE__, __func__) + "] The list of applications of a the user is empty!!").c_str());
               }
           }
         else
           {
-            EV_INFO << "WARNING! [" << prettyFunc(__FILE__, __func__) << "] The user: " << strUsername << "has not previously registered!!"<< endl;
+            EV_INFO << "WARNING! [" << LogUtils::prettyFunc(__FILE__, __func__) << "] The user: " << strUsername << "has not previously registered!!"<< endl;
           }
 
         if(!bHandle)
@@ -987,7 +964,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
       }
     else
       {
-        throw omnetpp::cRuntimeError(("[" + prettyFunc(__FILE__, __func__) + "] Wrong userAPP_Rq. Nullpointer!!").c_str());
+        throw omnetpp::cRuntimeError(("[" + LogUtils::prettyFunc(__FILE__, __func__) + "] Wrong userAPP_Rq. Nullpointer!!").c_str());
       }
 }
 
@@ -1001,7 +978,7 @@ Application* CloudProviderBase_firstBestFit::searchAppPerType(std::string strApp
     bFound = false;
     nIndex = 0;
 
-    EV_DEBUG << prettyFunc(__FILE__, __func__) << " - Init" << endl;
+    EV_DEBUG << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
 
     while(!bFound && nIndex < appTypes.size())
       {

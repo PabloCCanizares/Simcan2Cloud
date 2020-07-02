@@ -86,6 +86,7 @@ OBJS = \
     $O/Management/parser/UserListParser.o \
     $O/Management/parser/UserPriorityListParser.o \
     $O/Management/parser/VmListParser.o \
+    $O/Management/utils/LogUtils.o \
     $O/Messages/SIMCAN_Message.o \
     $O/Messages/SM_CPU_Message.o \
     $O/Messages/SM_UserAPP.o \

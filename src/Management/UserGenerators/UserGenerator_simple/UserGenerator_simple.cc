@@ -1,4 +1,5 @@
 #include "UserGenerator_simple.h"
+#include "Management/utils/LogUtils.h"
 
 #define USER_REQ_GEN_MSG "USER_REQ_GEN"
 
@@ -286,7 +287,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *us
     SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
 
     if (userVm != nullptr) {
-        EV_INFO << "handleResponse - Response message" << endl;
+        EV_INFO << __func__ << " - Response message" << endl;
 
         userVm->printUserVM();
 
@@ -319,7 +320,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *us
     SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
 
     if (userVm != nullptr) {
-        EV_INFO << "handleResponse - Response message" << endl;
+        EV_INFO << __func__ << " - Response message" << endl;
 
         userVm->printUserVM();
 
@@ -355,7 +356,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message 
         //Print a debug trace ...
         userApp->printUserAPP();
 
-        EV_INFO << "handleAppOk - Init" << endl;
+        EV_INFO << __func__ << " - Init" << endl;
 
         updateVmUserStatus(userApp->getUserID(), userApp->getVmId(), vmFinished);
 
@@ -364,7 +365,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message 
             emit(okSignal, pUserInstance->getId());
         }
 
-        EV_INFO << "handleAppOk - End" << endl;
+        EV_INFO << __func__ << " - End" << endl;
     }
     else {
         error("Could not cast SIMCAN_Message to SM_UserAPP (wrong operation code?)");
@@ -381,7 +382,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
         //Print a debug trace ...
         userApp->printUserAPP();
 
-        EV_INFO << "handleResponseAppReject - Init" << endl;
+        EV_INFO << __func__ << " - Init" << endl;
 
         //The next step is to send a subscription to the cloudprovider
         //Recover the user instance, and get the VmRequest
@@ -401,7 +402,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
             }
         }
 
-        EV_INFO << "handleResponseAppReject - End" << endl;
+        EV_INFO << __func__ << " - End" << endl;
     }
     else {
         error("Could not cast SIMCAN_Message to SM_UserAPP (wrong operation code?)");
@@ -420,7 +421,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
         strVmId = std::string(userApp->getVmId());
         userApp->printUserAPP();
 
-        EV_INFO << "handleResponseAppTimeout - Init" << endl;
+        EV_INFO << __func__ << " - Init" << endl;
 
         if (strVmId.empty()) //Global timeout
           {
@@ -452,7 +453,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
         }
 
 
-        EV_INFO << "handleResponseAppTimeout - End" << endl;
+        EV_INFO << __func__ << " - End" << endl;
     }
     else {
         error("Could not cast SIMCAN_Message to SM_UserAPP (wrong operation code?)");
@@ -467,6 +468,7 @@ CloudUserInstance* UserGenerator_simple::handleSubNotify(SIMCAN_Message *userVm_
     SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
 
     if (userVm != nullptr) {
+        EV_INFO << __func__ << " - Init" << endl;
 
         userVm->printUserVM();
 
@@ -494,6 +496,7 @@ CloudUserInstance* UserGenerator_simple::handleSubTimeout(SIMCAN_Message *userVm
     SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
 
     if (userVm != nullptr) {
+        EV_INFO << __func__ << " - Init" << endl;
 
         userVm->printUserVM();
 
@@ -587,9 +590,9 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp)
 
     if (strUserId.size() > 0)
       {
-        EV_INFO
-                       << "recoverVmAndsubscribe - Subscribing to the cluster with user: "
-                       << strUserId << endl;
+        EV_INFO << __func__
+                << " - Subscribing to the cluster with user: "
+                << strUserId << endl;
         pUserInstance = userHashMap.at(strUserId);
         if (pUserInstance != nullptr)
           {
@@ -709,7 +712,7 @@ void UserGenerator_simple::updateVmUserStatus(std::string strUserId, std::string
 }
 
 void UserGenerator_simple::subscribe(SM_UserVM *userVM_Rq) {
-    EV_INFO << "UserGenerator::subscribe - Sending Subscribe message" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Sending Subscribe message" << endl;
     if (userVM_Rq != nullptr) {
         userVM_Rq->setIsResponse(false);
         userVM_Rq->setOperation(SM_VM_Sub);
@@ -764,16 +767,16 @@ CloudUserInstance* UserGenerator_simple::getNextUser() {
 
     if (nUserIndex < userInstances.size()) {
         pUserInstance = userInstances.at(nUserIndex);
-        EV_INFO
-                       << "UserGenerator::getNextUser - The next user to be processed is "
-                       << pUserInstance->getUserID() << " [" << nUserIndex
-                       << " of " << userInstances.size() << "]" << endl;
+        EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
+                << " - The next user to be processed is "
+                << pUserInstance->getUserID() << " [" << nUserIndex
+                << " of " << userInstances.size() << "]" << endl;
         nUserIndex++;
     } else {
-        EV_INFO
-                       << "UserGenerator::getNextUser - The requested user index is greater than the collection size. ["
-                       << nUserIndex << " of " << userInstances.size() << "]"
-                       << endl;
+        EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
+                << "r - The requested user index is greater than the collection size. ["
+                << nUserIndex << " of " << userInstances.size() << "]"
+                << endl;
     }
     return pUserInstance;
 }
@@ -787,7 +790,7 @@ SM_UserVM* UserGenerator_simple::createVmRequest(
     VmInstance *pVmInstance;
     VmInstanceCollection *pVmCollection;
 
-    EV_TRACE << "UserGenerator::createNextVmRequest - Init" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
 
     pUserRet = nullptr;
 
@@ -799,7 +802,7 @@ SM_UserVM* UserGenerator_simple::createVmRequest(
         nCollectionNumber = pUserInstance->getNumberVmCollections();
         userId = pUserInstance->getUserID();
 
-        EV_TRACE << "UserGenerator::createNextVmRequest - UserId: " << userId
+        EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - UserId: " << userId
                         << " | maxStartTime_t1: " << maxStartTime_t1
                         << " | rentTime_t2: " << nRentTime_t2
                         << " | maxSubTime: " << maxSubTime_t3
@@ -851,7 +854,7 @@ SM_UserVM* UserGenerator_simple::createVmRequest(
                        << endl;
     }
 
-    EV_TRACE << "UserGenerator::createNextVmRequest - End" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 
     return pUserRet;
 }
@@ -865,7 +868,7 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
     std::string strIp, strAppInstance, strUserName, strAppType, strVmId;
     int nStartRentTime, nPrice, nMaxStarTime, nIndexRes;
 
-    EV_TRACE << "UserGenerator::createNextAppRequest - Init" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
 
     if (userVm != nullptr) {
         userApp = new SM_UserAPP();
@@ -931,7 +934,7 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
         }
     }
 
-    EV_TRACE << "UserGenerator::createNextVmRequest - End" << endl;
+    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 
     return userApp;
 }
@@ -939,11 +942,11 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
 bool UserGenerator_simple::allUsersFinished() {
     bool bRet;
 
-    EV_INFO << "allUsersFinished - Checking if all users have finished" << endl;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Checking if all users have finished" << endl;
 
     bRet = nUserInstancesFinished >= userInstances.size();
 
-    EV_INFO << "allUsersFinished - Res " << bRet << " | NFinished: "
+    EV_INFO << __func__ << " - Res " << bRet << " | NFinished: "
                    << nUserInstancesFinished << " vs Total: " << userInstances.size() // Antes comparaba con nUserInstancesFinished. No se actualiza en los timeout
                    << endl;
 
@@ -994,11 +997,9 @@ void UserGenerator_simple::printExperiments_phase1() {
             dSubTime = 0;
 
         if (pUserInstance->isTimeout())
-            EV_FATAL << "#___#Timeout " << nIndex << " -1 " << dMaxSub
-                            << "   \n" << endl;
+            EV_FATAL << "#___#Timeout " << nIndex << " -1 " << dMaxSub << endl;
         else
-            EV_FATAL << "#___#Success " << nIndex << " " << dSubTime << " -1 "
-                            << "   \n" << endl;
+            EV_FATAL << "#___#Success " << nIndex << " " << dSubTime << " -1 " << endl;
 
         nIndex++;
     }
@@ -1078,13 +1079,11 @@ void UserGenerator_simple::calculateStatistics() {
             dSubTime = 0;
 
         if (pUserInstance->isTimeout()) {
-            EV_FATAL << "#___#Timeout " << nIndex << " -1 " << dMaxSub
-                            << "   \n" << endl;
+            EV_FATAL << "#___#Timeout " << nIndex << " -1 " << dMaxSub << endl;
             dSubTime += dMaxSub;
             nTotalTimeouts++;
         } else {
-            EV_FATAL << "#___#Success " << nIndex << " " << dSubTime << " -1 "
-                            << "   \n" << endl;
+            EV_FATAL << "#___#Success " << nIndex << " " << dSubTime << " -1 " << endl;
             dTotalSub += dSubTime;
         }
         if (pUserInstance->hasSubscribed())
@@ -1099,10 +1098,9 @@ void UserGenerator_simple::calculateStatistics() {
     }
 
     //Print the experiments data
-    EV_FATAL << "#___3d#" << dMeanSub << "   \n" << endl;
+    EV_FATAL << "#___3d#" << dMeanSub << endl;
     EV_FATAL << "#___t#" << dMaxSub << " " << dMeanSub << " " << nTotalTimeouts
-                    << " " << dNoWaitUsers << " " << dWaitUsers << "   \n"
-                    << endl;
+                    << " " << dNoWaitUsers << " " << dWaitUsers << endl;
 }
 SM_UserVM* UserGenerator_simple::createFakeVmRequest() {
     SM_UserVM *userVm;

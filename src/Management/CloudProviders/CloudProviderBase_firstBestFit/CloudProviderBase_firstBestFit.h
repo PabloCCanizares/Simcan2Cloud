@@ -56,9 +56,6 @@ protected:
     /** Initialize the cloud provider*/
     virtual void initialize()=0;
 
-    /** Log message */
-    virtual std::string prettyFunc(const char *fileName, const char *funcName);
-
     /**
      * Initializes the self message handlers.
      */
