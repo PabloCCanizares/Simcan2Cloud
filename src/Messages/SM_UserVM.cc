@@ -39,7 +39,7 @@ SM_UserVM* SM_UserVM::dup() const
         for(int j = 0; j < vmReq.responseList.size(); j++)
         {
             VM_Response vmRes = vmReq.responseList.at(j);
-            pRet->createResponse(j,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
+            pRet->createResponse(i,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
         }
     }
 
@@ -80,7 +80,7 @@ SM_UserVM* SM_UserVM::dup(std::string strVmId) const
             for(int j = 0; j < vmReq.responseList.size(); j++)
               {
                 VM_Response vmRes = vmReq.responseList.at(j);
-                pRet->createResponse(j,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
+                pRet->createResponse(i,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
               }
 
             break;

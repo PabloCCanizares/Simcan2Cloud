@@ -42,9 +42,10 @@ public:
     //TODO: Esto hay que quitarlo en un futuro, cuando arreglemos la excepcion
     void setVmIdByIndex(int nIndex, std::string strIp, std::string strVmId);
     virtual SM_UserAPP* dup() const;
-    virtual SM_UserAPP* dup(std::string strVmId, bool copyOk) const;
+    virtual SM_UserAPP* dup(std::string strVmId) const;
 
-    virtual SM_UserAPP* update(SM_UserAPP* newData);
+    virtual void update(SM_UserAPP* newData);
+    virtual void resetUnfinishedApps(std::string strVmId);
 
 private:
     //APP_Request* findRequest(std::string strService,std::string strIp);

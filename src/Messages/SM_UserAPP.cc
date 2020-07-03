@@ -153,26 +153,24 @@ SM_UserAPP* SM_UserAPP::dup() const
     return pRet;
 }
 
-SM_UserAPP* SM_UserAPP::dup(std::string strVmId, bool copyOk) const
+SM_UserAPP* SM_UserAPP::dup(std::string strVmId) const
 {
     SM_UserAPP* pRet;
+    int finished = 0;
 
     pRet= new SM_UserAPP();
-    pRet->setVmId(getVmId());
+    pRet->setVmId(strVmId.c_str());
     pRet->setUserID(getUserID());
-    pRet->setFinished(getFinished());
-    pRet->setNFinishedApps(getNFinishedApps());
 
     for(int i=0 ; i < getAppArraySize (); i++)
       {
         APP_Request appReq = getApp (i);
-        if (strVmId.compare(appReq.vmId) == 0 && (copyOk || appReq.eState != appFinishedOK))
-        {
-            tApplicationState newState = copyOk ? appReq.eState : appWaiting;
-
-            pRet->createNewAppRequestFull (appReq.strApp, appReq.strAppType, appReq.strIp, appReq.vmId, appReq.startTime, appReq.finishTime, newState, appReq.pMsgTimeout);
-        }
+        if (strVmId.compare(appReq.vmId) == 0)
+            pRet->createNewAppRequestFull (appReq.strApp, appReq.strAppType, appReq.strIp, appReq.vmId, appReq.startTime, appReq.finishTime, appReq.eState, appReq.pMsgTimeout);
       }
+
+    pRet->setNFinishedApps(finished);
+    pRet->setFinished(pRet->getAppArraySize() <= finished);
 
     // Reserve memory to trace!
     pRet->setTraceArraySize (getTraceArraySize());
@@ -184,10 +182,28 @@ SM_UserAPP* SM_UserAPP::dup(std::string strVmId, bool copyOk) const
     return pRet;
 }
 
-SM_UserAPP* SM_UserAPP::update(SM_UserAPP* newData)
+void SM_UserAPP::resetUnfinishedApps(std::string strVmId)
+{
+    int finishedApps = 0;
+
+    for (int i = 0; i < getAppArraySize(); i++)
+      {
+        APP_Request appReq = getApp(i);
+        if (strVmId.compare(appReq.vmId) == 0 && appReq.eState != appFinishedOK)
+          {
+            changeStateByIndex(i, appReq.strApp, appWaiting);
+          }
+        if (appReq.eState == appFinishedOK || appReq.eState == appFinishedTimeout || appReq.eState == appFinishedError)
+            finishedApps++;
+      }
+    setNFinishedApps(finishedApps);
+    setFinished(finishedApps == getAppArraySize());
+}
+
+void SM_UserAPP::update(SM_UserAPP* newData)
 {
     std::string strVmId = newData->getVmId();
-    int newFinished = 0;
+    int totalFinished = 0;
     for (int i = 0; i < getAppArraySize(); i++)
       {
         APP_Request appReq = getApp(i);
@@ -198,15 +214,13 @@ SM_UserAPP* SM_UserAPP::update(SM_UserAPP* newData)
                 APP_Request appReq2 = newData->getApp(j);
                 if (appReq.strApp.compare(appReq2.strApp) == 0)
                   {
-                    if (appReq2.eState == appFinishedOK && appReq.eState != appFinishedOK)
-                      {
-                        newFinished++;
-                        appReq.eState = appFinishedOK;
-                      }
+                    changeStateByIndex(i, appReq.strApp, appReq2.eState);
                     break;
                   }
               }
           }
+        if (appReq.eState == appFinishedOK || appReq.eState == appFinishedTimeout || appReq.eState == appFinishedError)
+            totalFinished++;
       }
 
     // Reserve memory to trace!
@@ -216,9 +230,8 @@ SM_UserAPP* SM_UserAPP::update(SM_UserAPP* newData)
     for (int i = 0; i < newData->trace.size(); i++)
         addNodeTrace(newData->trace[i].first, newData->trace[i].second);
 
-    int totalFinished = getNFinishedApps() + newFinished;
     setNFinishedApps(totalFinished);
-    setFinished(totalFinished == getAppArraySize());
+    setFinished(totalFinished >= getAppArraySize());
 }
 
 int SM_UserAPP::findRequestIndex(std::string strService, std::string strVmId)
@@ -312,7 +325,7 @@ void SM_UserAPP::setStartTime(std::string strService,std::string strIp, double d
         printUserAPP();
     }
 }
-bool SM_UserAPP::isFinishedOK(std::string strService,std::string strIp)
+bool SM_UserAPP::isFinishedOK(std::string strService, std::string strIp)
 {
     bool bRet;
     int nIndex;
@@ -345,7 +358,7 @@ bool SM_UserAPP::allAppsFinishedOK()
     EV_DEBUG << "SM_UserAPP::allAppsFinishedOK - Init" << endl;
     while(bFinished && nIndex<getAppArraySize())
     {
-        appRq=getApp(nIndex);
+        appRq = getApp(nIndex);
         bFinished = (appRq.eState == appFinishedOK);
         EV_DEBUG << "SM_UserAPP::allAppsFinishedOK - App " << appRq.strApp << " | status " << stateToString(appRq.eState)<< endl;
         nIndex++;
@@ -509,6 +522,9 @@ void SM_UserAPP::printUserAPP()
     nRequests = getArrayAppsSize();
     EV_INFO << "User received: " << getUserID() << endl;
     EV_INFO << "Associated VM: " << getVmId() << endl;
+    EV_INFO << "Finished: " << this->getNFinishedApps() << endl;
+    EV_INFO << "All: " << this->allAppsFinished() << endl;
+    EV_INFO << "Ok: " << this->allAppsFinishedOK() << endl;
     EV_INFO << "Total requests received: " << nRequests << endl;
 
     for(int i=0;i<nRequests;i++)

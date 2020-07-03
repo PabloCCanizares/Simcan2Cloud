@@ -413,11 +413,12 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
 
 void UserGenerator_simple::updateUserApp(SM_UserAPP *userApp) {
     CloudUserInstance *pUserInstance = userHashMap.at(userApp->getUserID());
-    SM_UserAPP *full = pUserInstance->getRequestAppMsg();
     std::string strVmId = userApp->getVmId();
+    SM_UserAPP *full = pUserInstance->getRequestAppMsg(),
+               *newMsg = userApp->dup(strVmId);
 
     full->update(userApp);
-    pUserInstance->setRequestApp(userApp->dup(strVmId, false), strVmId);
+    newMsg->resetUnfinishedApps(strVmId);
 }
 
 CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message *msg) {
@@ -757,7 +758,8 @@ void UserGenerator_simple::submitService(SM_UserVM *userVm) {
         EV_FATAL << "Not first!" << endl;
         try
           {
-            pAppRq = pUserInstance->getRequestAppMsg(userVm->getStrVmId());
+            pAppRq = pUserInstance->getRequestAppMsg()->dup(userVm->getStrVmId());
+            pAppRq->resetUnfinishedApps(userVm->getStrVmId());
           }
         catch (const std::logic_error &e)
           {

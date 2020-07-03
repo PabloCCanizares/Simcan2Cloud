@@ -360,7 +360,7 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
                   }
 
                 //Delete the application on the hashmap
-                handlingAppsRqMap.erase(strUsername);
+                //handlingAppsRqMap.erase(strUsername);
               }
             else
               {
@@ -853,10 +853,21 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
           {
             userVmRequest = it->second;
 
-            if(handlingAppsRqMap.find(strUsername) == handlingAppsRqMap.end())
+            std::map<std::string, SM_UserAPP*>::iterator appIt = handlingAppsRqMap.find(strUsername);
+            if(appIt == handlingAppsRqMap.end())
               {
                 //Registering the appRq
                 handlingAppsRqMap[strUsername] = userAPP_Rq;
+              }
+            else
+              {
+                SM_UserAPP *uapp = appIt->second;
+                EV_ERROR << "Patata cuantica" << endl;
+                uapp->printUserAPP();
+                uapp->update(userAPP_Rq);
+                EV_ERROR << "Patata relativista" << endl;
+                uapp->printUserAPP();
+                EV_ERROR << "Fin de la patatacion" << endl;
               }
             EV_INFO << "Executing the VMs corresponding with the user: " << strUsername << " | Total: "<< userVmRequest.getVmsArraySize() << endl;
 

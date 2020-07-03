@@ -27,7 +27,6 @@ class CloudUserInstance: public UserInstance {
 
         SM_UserVM* requestVmMsg;
         SM_UserAPP* requestAppMsg;
-        std::map<std::string, SM_UserAPP*> vmToRequestApp;
         SM_UserVM* subscribeVmMsg;
 
         //Request times.
@@ -108,11 +107,9 @@ class CloudUserInstance: public UserInstance {
         //Managing the messages sent and received by the user.
         SM_UserVM* getRequestVmMsg(){return requestVmMsg;}
         SM_UserAPP* getRequestAppMsg(){return requestAppMsg;};
-        SM_UserAPP* getRequestAppMsg(std::string vmId){return vmToRequestApp.at(vmId);};
         SM_UserVM* getSubscribeVmMsg(){return subscribeVmMsg;};
 
         void setRequestApp(SM_UserAPP* requestAppMsg){this->requestAppMsg = requestAppMsg;};
-        void setRequestApp(SM_UserAPP* requestAppMsg, std::string vmId){this->vmToRequestApp[vmId] = requestAppMsg;};
         void setRequestVmMsg(SM_UserVM* requestVmMsg){this->requestVmMsg=requestVmMsg;}
 
         //Getters for the T1, ..., T4
