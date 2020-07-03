@@ -100,6 +100,19 @@ std::string CloudUserInstance::toString (bool includeAppsParameters, bool includ
 
     return info.str();
 }
+
+int CloudUserInstance::getAppCollectionSize(int nIndex)
+{
+    int size = -1;
+
+    if(nIndex<applications.size())
+    {
+        size = applications.at(nIndex)->getNumInstances();
+    }
+
+    return size;
+}
+
 AppInstance* CloudUserInstance::getAppInstance(int nIndex)
 {
     AppInstance* pAppRet;

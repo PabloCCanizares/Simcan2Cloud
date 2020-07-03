@@ -6,6 +6,7 @@
  */
 
 #include "SM_UserAPP.h"
+#include "Management/utils/LogUtils.h"
 
 SM_UserAPP::SM_UserAPP() {
     // TODO Auto-generated constructor stub
@@ -42,6 +43,7 @@ int SM_UserAPP::createNewAppRequestFull(std::string strApp, std::string strIp, s
     appRQ.strApp=strApp;
     appRQ.strAppType="";
     appRQ.eState = eState;
+    appRQ.vmId=vmId;
 
     if(pMsgTimeout != nullptr)
     {
@@ -69,6 +71,7 @@ int SM_UserAPP::createNewAppRequestFull(std::string strApp, std::string strAppTy
     appRQ.strApp=strApp;
     appRQ.strAppType=strAppType;
     appRQ.eState = eState;
+    appRQ.vmId=vmId;
 
     if(pMsgTimeout != nullptr)
     {
@@ -137,7 +140,7 @@ SM_UserAPP* SM_UserAPP::dup() const
     for(int i=0 ; i < getAppArraySize (); i++)
       {
         APP_Request appReq = getApp (i);
-        pRet->createNewAppRequestFull (appReq.strApp,appReq.strIp,appReq.vmId, appReq.startTime, appReq.finishTime, appReq.eState,appReq.pMsgTimeout);
+        pRet->createNewAppRequestFull (appReq.strApp, appReq.strAppType, appReq.strIp, appReq.vmId, appReq.startTime, appReq.finishTime, appReq.eState, appReq.pMsgTimeout);
       }
 
     // Reserve memory to trace!
@@ -150,7 +153,75 @@ SM_UserAPP* SM_UserAPP::dup() const
     return pRet;
 }
 
-int SM_UserAPP::findRequestIndex(std::string strService,std::string strVmId)
+SM_UserAPP* SM_UserAPP::dup(std::string strVmId, bool copyOk) const
+{
+    SM_UserAPP* pRet;
+
+    pRet= new SM_UserAPP();
+    pRet->setVmId(getVmId());
+    pRet->setUserID(getUserID());
+    pRet->setFinished(getFinished());
+    pRet->setNFinishedApps(getNFinishedApps());
+
+    for(int i=0 ; i < getAppArraySize (); i++)
+      {
+        APP_Request appReq = getApp (i);
+        if (strVmId.compare(appReq.vmId) == 0 && (copyOk || appReq.eState != appFinishedOK))
+        {
+            tApplicationState newState = copyOk ? appReq.eState : appWaiting;
+
+            pRet->createNewAppRequestFull (appReq.strApp, appReq.strAppType, appReq.strIp, appReq.vmId, appReq.startTime, appReq.finishTime, newState, appReq.pMsgTimeout);
+        }
+      }
+
+    // Reserve memory to trace!
+    pRet->setTraceArraySize (getTraceArraySize());
+
+    // Copy trace!
+    for (int i=0; i<trace.size(); i++)
+        pRet->addNodeTrace (trace[i].first, trace[i].second);
+
+    return pRet;
+}
+
+SM_UserAPP* SM_UserAPP::update(SM_UserAPP* newData)
+{
+    std::string strVmId = newData->getVmId();
+    int newFinished = 0;
+    for (int i = 0; i < getAppArraySize(); i++)
+      {
+        APP_Request appReq = getApp(i);
+        if (strVmId.compare(appReq.vmId) == 0)
+          {
+            for (int j = 0; j < newData->getAppArraySize(); j++)
+              {
+                APP_Request appReq2 = newData->getApp(j);
+                if (appReq.strApp.compare(appReq2.strApp) == 0)
+                  {
+                    if (appReq2.eState == appFinishedOK && appReq.eState != appFinishedOK)
+                      {
+                        newFinished++;
+                        appReq.eState = appFinishedOK;
+                      }
+                    break;
+                  }
+              }
+          }
+      }
+
+    // Reserve memory to trace!
+    setTraceArraySize (getTraceArraySize() + newData->getTraceArraySize());
+
+    // Copy trace!
+    for (int i = 0; i < newData->trace.size(); i++)
+        addNodeTrace(newData->trace[i].first, newData->trace[i].second);
+
+    int totalFinished = getNFinishedApps() + newFinished;
+    setNFinishedApps(totalFinished);
+    setFinished(totalFinished == getAppArraySize());
+}
+
+int SM_UserAPP::findRequestIndex(std::string strService, std::string strVmId)
 {
     APP_Request appRq;
     int nIndex, nRet;
@@ -363,7 +434,7 @@ void SM_UserAPP::abortAllApps(std::string strVmId)
 
      while(nIndex<getAppArraySize())
      {
-         appRq=getApp(nIndex);
+         appRq = getApp(nIndex);
          if(appRq.vmId.compare(strVmId)==0)
          {
              bFinished = (appRq.eState == appFinishedOK ||appRq.eState == appFinishedTimeout || appRq.eState == appFinishedError);
@@ -376,7 +447,10 @@ void SM_UserAPP::abortAllApps(std::string strVmId)
                  //cancelEvent(getApp(nIndex).pMsgTimeout);
 
 
-                 EV_INFO << "SM_UserAPP::abortAllApps - Application " << nIndex << " in VM "<< strVmId<< "has been aborted by timeout" << endl;
+                 EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
+                         << " - Application[" << nIndex << "] " << getApp(nIndex).strApp
+                         << " in VM "<< strVmId
+                         << " has been aborted by timeout" << endl;
                  increaseFinishedApps();
              }
          }
@@ -434,6 +508,7 @@ void SM_UserAPP::printUserAPP()
     //Print Message
     nRequests = getArrayAppsSize();
     EV_INFO << "User received: " << getUserID() << endl;
+    EV_INFO << "Associated VM: " << getVmId() << endl;
     EV_INFO << "Total requests received: " << nRequests << endl;
 
     for(int i=0;i<nRequests;i++)

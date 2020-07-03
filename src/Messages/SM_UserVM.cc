@@ -6,6 +6,7 @@
  */
 
 #include "SM_UserVM.h"
+#include "Management/utils/LogUtils.h"
 
 SM_UserVM::SM_UserVM() {
     // TODO Auto-generated constructor stub
@@ -23,6 +24,7 @@ SM_UserVM::SM_UserVM(const char *name, short kind) : ::SM_UserVM_Base(name,kind)
 SM_UserVM* SM_UserVM::dup() const
 {
     SM_UserVM* pRet;
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Starting full dup" << endl;
     pRet = new SM_UserVM();
 
     pRet->setDEndSubscriptionTime(getDEndSubscriptionTime());
@@ -30,16 +32,16 @@ SM_UserVM* SM_UserVM::dup() const
     pRet->setUserID(getUserID());
     pRet->setStrVmId(getStrVmId());
 
-    for(int i=0;i<this->getVmsArraySize();i++)
-    {
+    for(int i = 0; i < this->getVmsArraySize(); i++)
+      {
         VM_Request vmReq = getVms(i);
         pRet->createNewVmRequest(vmReq.strVmType, vmReq.strVmId, vmReq.maxStartTime_t1, vmReq.nRentTime_t2, vmReq.maxSubTime_t3, vmReq.maxSubscriptionTime_t4);
-        for(int j=0;j<vmReq.responseList.size();j++)
-        {
-            VM_Response vmRes = vmReq.responseList.at(j);
-            pRet->createResponse(j,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
-        }
-    }
+        if(i < vmReq.responseList.size())
+          {
+            VM_Response vmRes = vmReq.responseList.at(i);
+            pRet->createResponse(i, vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
+          }
+      }
 
     //TODO: pMsgTimeoutSub pasando de momento
 
@@ -59,6 +61,7 @@ SM_UserVM* SM_UserVM::dup(std::string strVmId) const
     SM_UserVM* pRet;
     bool found;
 
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Starting partial dup" << endl;
     found = false;
     pRet = new SM_UserVM();
 
@@ -74,11 +77,13 @@ SM_UserVM* SM_UserVM::dup(std::string strVmId) const
           {
             found = true;
             pRet->createNewVmRequest(vmReq.strVmType, vmReq.strVmId, vmReq.maxStartTime_t1, vmReq.nRentTime_t2, vmReq.maxSubTime_t3, vmReq.maxSubscriptionTime_t4);
-            for(int j=0;j<vmReq.responseList.size();j++)
+
+            if(i < vmReq.responseList.size())
               {
-                VM_Response vmRes = vmReq.responseList.at(j);
-                pRet->createResponse(j,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
+                VM_Response vmRes = vmReq.responseList.at(i);
+                pRet->createResponse(i, vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
               }
+
             break;
           }
       }
@@ -116,7 +121,7 @@ int SM_UserVM::createNewVmRequest(std::string strType, std::string instanceId, i
     vmReq.maxSubTime_t3 = maxSubTime_t3;
     vmReq.maxSubscriptionTime_t4 = maxSubscriptionTime_t4;
 
-    EV_INFO << "SM_UserVM::createNextVmRequest - VmId: " << instanceId << " | maxStartTime_t1: "<< maxStartTime_t1 <<
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - VmId: " << instanceId << " | maxStartTime_t1: "<< maxStartTime_t1 <<
             " | rentTime_t2: " << nRentTime_t2 <<" | maxSubTime: " <<maxSubTime_t3<< " | MaxSubscriptionTime_T4:" << maxSubscriptionTime_t4<< endl;
 
     return addVmRequest(vmReq);

@@ -95,6 +95,13 @@ class CloudUserInstance: public UserInstance {
          */
         VmInstanceCollection* getVmCollection(int nCollection);
 
+        /**
+         * Gets the number of instances of a specific App collection
+         * @param nCollection The ID of the app collection to be retrieved.
+         * @return Size of the collection of APP instances.
+         */
+        int getAppCollectionSize(int nIndex);
+
 
         AppInstance* getAppInstance(int nIndex);
 

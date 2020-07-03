@@ -355,8 +355,8 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
                     //Check the subscription queue
                     //updateSubsQueue();
 
-                    if (!pUserApp->getFinished())
-                        timeoutAppRequest(pUserApp);  //Notify the user the end of the execution
+                    //if (!pUserApp->getFinished())
+                    //    timeoutAppRequest(pUserApp);  //Notify the user the end of the execution
                   }
 
                 //Delete the application on the hashmap
@@ -401,7 +401,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
         bAlreadyFinished = false;
         strUsername = pUserVmFinish->getUserID();
         strVmId = pUserVmFinish->getStrVmId();
-        EV_INFO << "The rent of the VM [" << pUserVmFinish->getStrVmId()
+        EV_INFO << "The rent of the VM [" << strVmId
                                << "] launched by the user " << strUsername
                                << " has finished" << endl;
         //Check the Application status
@@ -424,7 +424,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
                   {
                     EV_INFO << "Aborting running applications" << endl;
                     abortAllApps(pUserApp, strVmId);
-                    timeoutAppRequest(pUserApp, strVmId);
+                    timeoutAppRequest(pUserApp, strVmId); // Boniato
                     checkAllAppsFinished(pUserApp);
                   }
 
@@ -863,7 +863,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
             //First step consists in calculating the total units of time spent in executing the application.
             if(userAPP_Rq->getArrayAppsSize() > 0)
               {
-                EV_WARN << "NVMs: " << userVmRequest.getVmsArraySize() << endl;
+                EV_WARN << "Patata NVMs: " << userVmRequest.getVmsArraySize() << endl;
                 for(int j = 0; j < userVmRequest.getVmsArraySize(); j++)
                   {
                     //Getting VM and scheduling renting timeout
@@ -871,7 +871,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                     //scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUsername, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
                     strVmId = vmRequest.strVmId;
-                    EV_WARN << "VmId: " << strVmId << endl;
+                    EV_WARN << "Patata VmId: " << strVmId << endl;
                     vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
 
                     double totalTimePerCore[vmType->getNumCores()];
@@ -879,7 +879,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                     for (int i = 0; i < vmType->getNumCores(); i++)
                         totalTimePerCore[i] = 0;
 
-                    EV_WARN << "NApps: " << userAPP_Rq->getAppArraySize() << endl;
+                    EV_WARN << "Patata NApps: " << userAPP_Rq->getAppArraySize() << endl;
                     for(int i = 0; i < userAPP_Rq->getAppArraySize(); i++)
                       {
                         //Get the app
@@ -894,7 +894,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
                                 if(appType != nullptr)
                                   {
-                                    EV_WARN << userApp.strApp << " dentro de " << strVmId << endl;
+                                    EV_WARN << "Patata " << userApp.strApp << " dentro de " << strVmId << endl;
                                     //Assing the app to core with less utilization time
                                     //std::sort(totalTimePerCore, totalTimePerCore+vmType->getNumCores());
                                     int minIndex = std::min_element(totalTimePerCore, totalTimePerCore+vmType->getNumCores()) - totalTimePerCore;
@@ -1363,6 +1363,7 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq, 
     EV_INFO << "Last id gate: " << userAPP_Rq->getLastGateId() << endl;
 
     SM_UserAPP* userAPP_Res = userAPP_Rq->dup();
+    userAPP_Res->printUserAPP();
 
     userAPP_Res->setVmId(strVmId.c_str());
     userAPP_Res->setFinished(true);

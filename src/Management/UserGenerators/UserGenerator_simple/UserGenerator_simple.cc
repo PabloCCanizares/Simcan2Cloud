@@ -411,46 +411,58 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
     return pUserInstance;
 }
 
+void UserGenerator_simple::updateUserApp(SM_UserAPP *userApp) {
+    CloudUserInstance *pUserInstance = userHashMap.at(userApp->getUserID());
+    SM_UserAPP *full = pUserInstance->getRequestAppMsg();
+    std::string strVmId = userApp->getVmId();
+
+    full->update(userApp);
+    pUserInstance->setRequestApp(userApp->dup(strVmId, false), strVmId);
+}
+
 CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message *msg) {
     CloudUserInstance *pUserInstance = nullptr;
     SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
     std::string strVmId;
 
     if (userApp != nullptr) {
+        EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
+
         //Print a debug trace ...
-        strVmId = std::string(userApp->getVmId());
+        strVmId = userApp->getVmId();
         userApp->printUserAPP();
 
-        EV_INFO << __func__ << " - Init" << endl;
-
-        if (strVmId.empty()) //Global timeout
+        if (strVmId.compare("") == 0) //Global timeout
           {
             pUserInstance = userHashMap.at(userApp->getUserID());
-            if (pUserInstance != nullptr) {
+            if (pUserInstance != nullptr)
+              {
                 emit(failSignal, pUserInstance->getId());
-                if (!pUserInstance->hasSubscribed()) {
+                if (!pUserInstance->hasSubscribed())
+                  {
                     //End of the protocol, exit!!
                     finishUser(pUserInstance);
                     pUserInstance->setTimeoutMaxRentTime();
 
                     cancelAndDeleteMessages(pUserInstance);
-                }
-
-
-            }
+                  }
+              }
           }
         else //Individual VM timeout
-        {
+          {
             //The next step is to send a subscription to the cloudprovider
             //Recover the user instance, and get the VmRequest
 
-                if (hasToSubscribeVm(userApp)) {
-                    recoverVmAndsubscribe(userApp, strVmId);
-                } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
+            if (hasToSubscribeVm(userApp))
+              {
+                recoverVmAndsubscribe(userApp, strVmId);
+                //pUserInstance->setRequestApp(userApp, strVmId);
+                updateUserApp(userApp);
+              } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
 
-                //Delete ephemeral message
-                delete msg;
-        }
+            //Delete ephemeral message
+            delete msg;
+          }
 
 
         EV_INFO << __func__ << " - End" << endl;
@@ -468,7 +480,7 @@ CloudUserInstance* UserGenerator_simple::handleSubNotify(SIMCAN_Message *userVm_
     SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
 
     if (userVm != nullptr) {
-        EV_INFO << __func__ << " - Init" << endl;
+        EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
 
         userVm->printUserVM();
 
@@ -566,11 +578,11 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp, std::strin
       {
         pUserInstance->setSubscribe(true);
         userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), strVmId);
-            if (userVM_Rq != nullptr)
-              {
-                bSent = true;
-                sendRequestMessage(userVM_Rq, toCloudProviderGate);
-              }
+        if (userVM_Rq != nullptr)
+          {
+            bSent = true;
+            sendRequestMessage(userVM_Rq, toCloudProviderGate);
+          }
       }
 
     if (bSent == false)
@@ -742,6 +754,7 @@ void UserGenerator_simple::submitService(SM_UserVM *userVm) {
       }
     else
       {
+        EV_FATAL << "Not first!" << endl;
         try
           {
             pAppRq = pUserInstance->getRequestAppMsg(userVm->getStrVmId());
@@ -756,6 +769,7 @@ void UserGenerator_simple::submitService(SM_UserVM *userVm) {
       {
         pAppRq->setIsResponse(false);
         pAppRq->setOperation(SM_APP_Req);
+
         sendRequestMessage(pAppRq, toCloudProviderGate);
       }
 }
@@ -866,11 +880,13 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
     CloudUserInstance *pUserInstance;
     AppInstance *pAppInstance;
     std::string strIp, strAppInstance, strUserName, strAppType, strVmId;
-    int nStartRentTime, nPrice, nMaxStarTime, nIndexRes;
+    int nStartRentTime, nPrice, nMaxStarTime, nIndexRes, offset;
 
     EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
+    offset = 0;
 
-    if (userVm != nullptr) {
+    if (userVm != nullptr)
+      {
         userApp = new SM_UserAPP();
         strUserName = userVm->getUserID();
         userApp->setUserID(strUserName.c_str());
@@ -879,60 +895,78 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
         pUserInstance->setRequestApp(userApp);
 
         //Include the Ips and startTime
-        for (int i = 0; i < userVm->getTotalVmsRequests(); i++) {
+        for (int i = 0; i < userVm->getTotalVmsRequests(); i++)
+          {
+        //for (int i = 0; i < pUserInstance->getNumberApps(); i++) {
             //TODO: Hay que tomar una decision y enviar cada aplicacion a cada maquina?
             vmRq = userVm->getVms(i);
 
-            pAppInstance = pUserInstance->getAppInstance(i);
-            if (pAppInstance != nullptr) {
-                strAppType = pAppInstance->getAppName();
-                strAppInstance = pAppInstance->getAppInstanceId();
-            }
+            int pAppColSize = pUserInstance->getAppCollectionSize(i);
 
-            //In this first approach, we get the first element,
-            //in future cases, we can get the cheapest or the VM with a higher performance ratio
-            nIndexRes = 0;
+            for (int j = 0; j < pAppColSize; j++)
+              {
+                EV_WARN << "Patata " << offset + j << endl;
+                pAppInstance = pUserInstance->getAppInstance(offset + j);
+                if (pAppInstance != nullptr)
+                  {
+                    strAppType = pAppInstance->getAppName();
+                    strAppInstance = pAppInstance->getAppInstanceId();
+                  }
 
-            if (userVm->hasResponse(i, nIndexRes)) {
-                pRes = userVm->getResponse(i, nIndexRes);
+                //In this first approach, we get the first element,
+                //in future cases, we can get the cheapest or the VM with a higher performance ratio
+                nIndexRes = 0;
 
-                if (pRes != nullptr) {
-                    nMaxStarTime = maxStartTime_t1;
+                if (userVm->hasResponse(i, nIndexRes)) {
+                    pRes = userVm->getResponse(i, nIndexRes);
 
-                    //strIp = vmRes.strIp;
-                    //nStartRentTime = vmRes.startTime;
-                    //nPrice = vmRes.nPrice;
+                    if (pRes != nullptr) {
+                        nMaxStarTime = maxStartTime_t1;
 
-                    strIp = pRes->strIp;
-                    nStartRentTime = pRes->startTime;
-                    nPrice = pRes->nPrice;
-                    //strVmId = vmRq.strVmId;
-                    strVmId = pAppInstance->getVmInstanceId();
+                        //strIp = vmRes.strIp;
+                        //nStartRentTime = vmRes.startTime;
+                        //nPrice = vmRes.nPrice;
 
-                    //TODO: YA funciona esto, adaptar!!
-                    if (bMaxStartTime_t1_active) {
-                        //Check if T2 <T3
-                        if (nMaxStarTime >= nStartRentTime) {
-                            userApp->createNewAppRequest(strAppInstance, strAppType, strIp,
-                                    strVmId, nStartRentTime);
-                        } else {
-                            //The rent time proposed by the server is too high.
-                            EV_INFO
-                                           << "The maximum start rent time provided by the cloudprovider is greater than the maximum required by the user: "
-                                           << nMaxStarTime << " < "
-                                           << nStartRentTime << endl;
-                        }
-                    } else {
-                        userApp->createNewAppRequest(strAppInstance, strAppType, strIp, strVmId,
-                                nStartRentTime);
-                    }
-                }
+                        strIp = pRes->strIp;
+                        nStartRentTime = pRes->startTime;
+                        nPrice = pRes->nPrice;
+                        //strVmId = vmRq.strVmId;
+                        strVmId = pAppInstance->getVmInstanceId();
 
-            } else
-                EV_INFO << "WARNING! Invalid response in user: "
-                               << userVm->getName() << endl;
-        }
-    }
+                        //TODO: YA funciona esto, adaptar!!
+                        if (bMaxStartTime_t1_active) {
+                            //Check if T2 <T3
+                            if (nMaxStarTime >= nStartRentTime)
+                              {
+                                userApp->createNewAppRequest(strAppInstance, strAppType, strIp,
+                                        strVmId, nStartRentTime);
+                              }
+                            else
+                              {
+                                //The rent time proposed by the server is too high.
+                                EV_INFO
+                                               << "The maximum start rent time provided by the cloudprovider is greater than the maximum required by the user: "
+                                               << nMaxStarTime << " < "
+                                               << nStartRentTime << endl;
+                              }
+                          }
+                        else
+                          {
+                            userApp->createNewAppRequest(strAppInstance, strAppType, strIp, strVmId,
+                                    nStartRentTime);
+                          }
+                      }
+
+                  }
+                else
+                  {
+                    EV_INFO << "WARNING! Invalid response in user: "
+                                   << userVm->getName() << endl;
+                  }
+              }
+            offset += pAppColSize;
+          }
+      }
 
     EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 
@@ -1102,7 +1136,9 @@ void UserGenerator_simple::calculateStatistics() {
     EV_FATAL << "#___t#" << dMaxSub << " " << dMeanSub << " " << nTotalTimeouts
                     << " " << dNoWaitUsers << " " << dWaitUsers << endl;
 }
-SM_UserVM* UserGenerator_simple::createFakeVmRequest() {
+
+SM_UserVM* UserGenerator_simple::createFakeVmRequest()
+{
     SM_UserVM *userVm;
     userVm = new SM_UserVM();
 

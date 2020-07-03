@@ -210,6 +210,8 @@ private:
     void recoverVmAndsubscribe(SM_UserAPP *userApp);
     void recoverVmAndsubscribe(SM_UserAPP *userApp, std::string strVmId);
 
+    void updateUserApp(SM_UserAPP *userApp);
+
     /**
      * Generates a Single VM SM_UserVM
      * @param userApp
