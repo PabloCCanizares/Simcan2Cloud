@@ -193,6 +193,7 @@ void SM_UserAPP::resetUnfinishedApps(std::string strVmId)
           {
             changeStateByIndex(i, appReq.strApp, appWaiting);
           }
+        appReq = getApp(i);
         if (appReq.eState == appFinishedOK || appReq.eState == appFinishedTimeout || appReq.eState == appFinishedError)
             finishedApps++;
       }
@@ -219,16 +220,17 @@ void SM_UserAPP::update(SM_UserAPP* newData)
                   }
               }
           }
+        appReq = getApp(i);
         if (appReq.eState == appFinishedOK || appReq.eState == appFinishedTimeout || appReq.eState == appFinishedError)
             totalFinished++;
       }
 
     // Reserve memory to trace!
-    setTraceArraySize (getTraceArraySize() + newData->getTraceArraySize());
+    //setTraceArraySize (getTraceArraySize() + newData->getTraceArraySize());
 
     // Copy trace!
-    for (int i = 0; i < newData->trace.size(); i++)
-        addNodeTrace(newData->trace[i].first, newData->trace[i].second);
+    //for (int i = 0; i < newData->trace.size(); i++)
+    //    addNodeTrace(newData->trace[i].first, newData->trace[i].second);
 
     setNFinishedApps(totalFinished);
     setFinished(totalFinished >= getAppArraySize());
@@ -522,9 +524,10 @@ void SM_UserAPP::printUserAPP()
     nRequests = getArrayAppsSize();
     EV_INFO << "User received: " << getUserID() << endl;
     EV_INFO << "Associated VM: " << getVmId() << endl;
-    EV_INFO << "Finished: " << this->getNFinishedApps() << endl;
-    EV_INFO << "All: " << this->allAppsFinished() << endl;
-    EV_INFO << "Ok: " << this->allAppsFinishedOK() << endl;
+    //EV_INFO << "Finished: " << this->getNFinishedApps() << endl;
+    //EV_INFO << "All: " << this->allAppsFinished() << endl;
+    //EV_INFO << "Ok: " << this->allAppsFinishedOK() << endl;
+    //EV_INFO << "Trace: " << this->trace.empty() << endl;
     EV_INFO << "Total requests received: " << nRequests << endl;
 
     for(int i=0;i<nRequests;i++)

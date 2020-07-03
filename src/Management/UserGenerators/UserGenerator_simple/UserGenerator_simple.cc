@@ -755,7 +755,7 @@ void UserGenerator_simple::submitService(SM_UserVM *userVm) {
       }
     else
       {
-        EV_FATAL << "Not first!" << endl;
+        EV_WARN << "Not first!" << endl;
         try
           {
             pAppRq = pUserInstance->getRequestAppMsg()->dup(userVm->getStrVmId());
@@ -907,7 +907,6 @@ SM_UserAPP* UserGenerator_simple::createAppRequest(SM_UserVM *userVm) {
 
             for (int j = 0; j < pAppColSize; j++)
               {
-                EV_WARN << "Patata " << offset + j << endl;
                 pAppInstance = pUserInstance->getAppInstance(offset + j);
                 if (pAppInstance != nullptr)
                   {

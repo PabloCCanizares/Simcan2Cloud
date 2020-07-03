@@ -40,6 +40,9 @@ protected:
     /** Map of the accepted applications*/
     std::map<std::string, SM_UserAPP*> handlingAppsRqMap;
 
+    /** Map of finished VMs*/
+    std::map<std::string, bool> vmFinished;
+
     /** Queue of the users that are waiting to be handled*/
     std::vector<SM_UserVM*> subscribeQueue;
 
@@ -107,7 +110,7 @@ protected:
     SM_UserAPP_Finish* scheduleAppTimeout (std::string name, std::string strUserName, std::string strAppName, std::string strVmId, double totalTime);
     void clearVMReq (SM_UserVM*& userVM_Rq, int lastId);
     void cancelAndDeleteAppFinishMsgs(SM_UserAPP* userApp, std::string strVmId);
-    void checkAllAppsFinished(SM_UserAPP* pUserApp);
+    void checkAllAppsFinished(SM_UserAPP* pUserApp, std::string strVmId);
 
     /**
      * Update the subscription queue. Analyse the queue in order to find timeouts, and accepting the enqueued VM requests.
@@ -248,7 +251,7 @@ protected:
      * Accepts the app request.
      * @param userAPP_Rq apps User submission.
      */
-    void acceptAppRequest(SM_UserAPP *userAPP_Rq);
+    void acceptAppRequest(SM_UserAPP *userAPP_Rq, std::string strVmId);
 
     /**
      * Sends a timeout to the app request.

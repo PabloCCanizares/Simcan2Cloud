@@ -302,7 +302,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                     pUserApp->setEndTime(strAppName, strVmId, simTime().dbl());
                   }
                 //if(userApp->getNFinishedApps() >= userApp->getAppArraySize())
-                checkAllAppsFinished(pUserApp);
+                checkAllAppsFinished(pUserApp, strVmId);
 
               }
             else
@@ -325,7 +325,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
       }
 }
 
-void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) {
+void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp, std::string strVmId) {
     std::string strUsername;
 
     if (pUserApp != nullptr)
@@ -343,7 +343,7 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
                     pUserApp->printUserAPP();
 
                     //Notify the user the end of the execution
-                    acceptAppRequest(pUserApp);
+                    acceptAppRequest(pUserApp, strVmId);
                   }
                 else
                   {
@@ -356,7 +356,7 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
                     //updateSubsQueue();
 
                     //if (!pUserApp->getFinished())
-                    //    timeoutAppRequest(pUserApp);  //Notify the user the end of the execution
+                    timeoutAppRequest(pUserApp, strVmId);  //Notify the user the end of the execution
                   }
 
                 //Delete the application on the hashmap
@@ -371,12 +371,11 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) 
               }
       }
     else
-    {
+      {
         EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
         << " - WARNING! Null pointer parameter "
         << strUsername << endl;
-    }
-
+      }
 }
 
 //TODO: asignar la vm que hace el timout al mensaje de la app. Duplicarlo y enviarlo.
@@ -394,59 +393,62 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
 
     std::map<std::string, SM_UserAPP*>::iterator it;
 
-
     if ((pUserVmFinish = dynamic_cast<SM_UserVM_Finish*>(msg)))
       {
         EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - INIT" << endl;
-        bAlreadyFinished = false;
-        strUsername = pUserVmFinish->getUserID();
         strVmId = pUserVmFinish->getStrVmId();
-        EV_INFO << "The rent of the VM [" << strVmId
-                               << "] launched by the user " << strUsername
-                               << " has finished" << endl;
-        //Check the Application status
-        it = handlingAppsRqMap.find(strUsername);
-        if (it != handlingAppsRqMap.end())
+        std::map<std::string, bool>::iterator vm = vmFinished.find(strVmId);
+        bAlreadyFinished = vm != vmFinished.end() && vm->second;
+
+        if (!bAlreadyFinished)
           {
-            pUserApp = it->second;
-
-            //Check the application status
-            if (pUserApp != nullptr)
+            strUsername = pUserVmFinish->getUserID();
+            EV_INFO << "The rent of the VM [" << strVmId
+                                   << "] launched by the user " << strUsername
+                                   << " has finished" << endl;
+            //Check the Application status
+            it = handlingAppsRqMap.find(strUsername);
+            if (it != handlingAppsRqMap.end())
               {
+                pUserApp = it->second;
 
-                EV_INFO << "Last id gate: " << pUserApp->getLastGateId() << endl;
-                EV_INFO
-                << "Checking the status of the applications which are running over this VM"
-                << endl;
-
-                //Abort the running applications
-                if (!pUserApp->allAppsFinished(strVmId))
+                //Check the application status
+                if (pUserApp != nullptr)
                   {
-                    EV_INFO << "Aborting running applications" << endl;
-                    abortAllApps(pUserApp, strVmId);
-                    timeoutAppRequest(pUserApp, strVmId); // Boniato
-                    checkAllAppsFinished(pUserApp);
+
+                    EV_INFO << "Last id gate: " << pUserApp->getLastGateId() << endl;
+                    EV_INFO
+                    << "Checking the status of the applications which are running over this VM"
+                    << endl;
+
+                    //Abort the running applications
+                    if (!pUserApp->allAppsFinished(strVmId))
+                      {
+                        EV_INFO << "Aborting running applications" << endl;
+                        abortAllApps(pUserApp, strVmId);
+                        checkAllAppsFinished(pUserApp, strVmId);
+                      }
+
+
+    //                else
+    //                  {
+    //                    EV_INFO << "All the applications have already finished" << endl;
+    //                    bAlreadyFinished = true;
+    //                  }
+
+
+                    //Check if all the applications of the user have finished
+    //                if (pUserApp->allAppsFinished() && !pUserApp->getFinished() && !bAlreadyFinished)
+    //                  {
+    //                    //Notify the user the end of the execution
+    //                    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - EXEC_VM_RENT_TIMEOUT Init" << endl;
+    //
+    //                    //if so, notify this.
+    //                    //timeoutAppRequest(pUserApp);
+    //                    //if so. Delete the application on the hashmap
+    //                    handlingAppsRqMap.erase(strUsername);
+    //                  }
                   }
-
-
-//                else
-//                  {
-//                    EV_INFO << "All the applications have already finished" << endl;
-//                    bAlreadyFinished = true;
-//                  }
-
-
-                //Check if all the applications of the user have finished
-//                if (pUserApp->allAppsFinished() && !pUserApp->getFinished() && !bAlreadyFinished)
-//                  {
-//                    //Notify the user the end of the execution
-//                    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - EXEC_VM_RENT_TIMEOUT Init" << endl;
-//
-//                    //if so, notify this.
-//                    //timeoutAppRequest(pUserApp);
-//                    //if so. Delete the application on the hashmap
-//                    handlingAppsRqMap.erase(strUsername);
-//                  }
               }
           }
 
@@ -477,7 +479,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
         //Check the subscription queue
         updateSubsQueue();
         //Notify the user the end of the execution
-        acceptAppRequest(userAPP_Rq);
+        acceptAppRequest(userAPP_Rq, "");
       }
     else
       {
@@ -667,12 +669,15 @@ void CloudProviderBase_firstBestFit::freeUserVms(std::string strUsername)
 void CloudProviderBase_firstBestFit::freeVm(std::string strVmId)
 {
     EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
-    EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Releasing the Vm:  "<< strVmId << endl;
+    if (!strVmId.empty())
+      {
+        EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Releasing the Vm:  "<< strVmId << endl;
 
-    if(datacenterCollection->freeVmRequest(strVmId))
-        EV_DEBUG << "the Vm has been released sucessfully: "<< strVmId << endl;
-    else //Error freeing the VM
-        EV_INFO << "Error releasing the VM: "<< strVmId << endl;
+        if(datacenterCollection->freeVmRequest(strVmId))
+            EV_DEBUG << "the Vm has been released sucessfully: "<< strVmId << endl;
+        else //Error freeing the VM
+            EV_INFO << "Error releasing the VM: "<< strVmId << endl;
+      }
 
     EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
 }
@@ -862,19 +867,14 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
             else
               {
                 SM_UserAPP *uapp = appIt->second;
-                EV_ERROR << "Patata cuantica" << endl;
-                uapp->printUserAPP();
                 uapp->update(userAPP_Rq);
-                EV_ERROR << "Patata relativista" << endl;
-                uapp->printUserAPP();
-                EV_ERROR << "Fin de la patatacion" << endl;
+                vmFinished[userAPP_Rq->getVmId()] = false;
               }
             EV_INFO << "Executing the VMs corresponding with the user: " << strUsername << " | Total: "<< userVmRequest.getVmsArraySize() << endl;
 
             //First step consists in calculating the total units of time spent in executing the application.
             if(userAPP_Rq->getArrayAppsSize() > 0)
               {
-                EV_WARN << "Patata NVMs: " << userVmRequest.getVmsArraySize() << endl;
                 for(int j = 0; j < userVmRequest.getVmsArraySize(); j++)
                   {
                     //Getting VM and scheduling renting timeout
@@ -882,7 +882,6 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                     //scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUsername, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
                     strVmId = vmRequest.strVmId;
-                    EV_WARN << "Patata VmId: " << strVmId << endl;
                     vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
 
                     double totalTimePerCore[vmType->getNumCores()];
@@ -890,7 +889,6 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                     for (int i = 0; i < vmType->getNumCores(); i++)
                         totalTimePerCore[i] = 0;
 
-                    EV_WARN << "Patata NApps: " << userAPP_Rq->getAppArraySize() << endl;
                     for(int i = 0; i < userAPP_Rq->getAppArraySize(); i++)
                       {
                         //Get the app
@@ -905,7 +903,6 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
                                 if(appType != nullptr)
                                   {
-                                    EV_WARN << "Patata " << userApp.strApp << " dentro de " << strVmId << endl;
                                     //Assing the app to core with less utilization time
                                     //std::sort(totalTimePerCore, totalTimePerCore+vmType->getNumCores());
                                     int minIndex = std::min_element(totalTimePerCore, totalTimePerCore+vmType->getNumCores()) - totalTimePerCore;
@@ -1339,7 +1336,7 @@ void  CloudProviderBase_firstBestFit::acceptAppRequestWithTimeout(SM_UserAPP* us
     sendResponseMessage(userAPP_Rq);
 
 }
-void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq)
+void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq, std::string strVmId)
 {
     EV_INFO << "Sending accept to the user:" << userAPP_Rq->getUserID() << endl;
 
@@ -1347,6 +1344,8 @@ void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq)
     userAPP_Rq->setIsResponse(true);
     userAPP_Rq->setOperation(SM_APP_Rsp);
     userAPP_Rq->setResult(SM_APP_Res_Accept);
+
+    vmFinished[strVmId] = true;
 
     //Send the values
     sendResponseMessage(userAPP_Rq);
@@ -1363,6 +1362,8 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
     userAPP_Rq->setIsResponse(true);
     userAPP_Rq->setOperation(SM_APP_Rsp);
     userAPP_Rq->setResult(SM_APP_Res_Timeout);
+
+    vmFinished[userAPP_Rq->getVmId()] = true;
 
     //Send the values
     sendResponseMessage(userAPP_Rq);
@@ -1383,6 +1384,8 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq, 
     userAPP_Res->setIsResponse(true);
     userAPP_Res->setOperation(SM_APP_Rsp);
     userAPP_Res->setResult(SM_APP_Res_Timeout);
+
+    vmFinished[strVmId] = true;
 
     //Send the values
     sendResponseMessage(userAPP_Res);
