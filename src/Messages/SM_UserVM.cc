@@ -170,7 +170,6 @@ void SM_UserVM::printUserVM()
 }
 void SM_UserVM::createResponse(int nIndex, bool bResOk, int nTime, std::string strIp, int nPrice)
 {
-    VM_Request& vmReq;
     VM_Response vmRes;
 
     if(nIndex < getVmsArraySize())
@@ -189,8 +188,7 @@ void SM_UserVM::createResponse(int nIndex, bool bResOk, int nTime, std::string s
           }
 
         //Introduce a new response
-        vmReq = getVms(nIndex);
-        vmReq.responseList.push_back(vmRes);
+        getVms(nIndex).responseList.push_back(vmRes);
 
       }
     else
