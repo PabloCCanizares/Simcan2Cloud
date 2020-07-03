@@ -36,12 +36,12 @@ SM_UserVM* SM_UserVM::dup() const
       {
         VM_Request vmReq = getVms(i);
         pRet->createNewVmRequest(vmReq.strVmType, vmReq.strVmId, vmReq.maxStartTime_t1, vmReq.nRentTime_t2, vmReq.maxSubTime_t3, vmReq.maxSubscriptionTime_t4);
-        if(i < vmReq.responseList.size())
-          {
-            VM_Response vmRes = vmReq.responseList.at(i);
-            pRet->createResponse(i, vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
-          }
-      }
+        for(int j = 0; j < vmReq.responseList.size(); j++)
+        {
+            VM_Response vmRes = vmReq.responseList.at(j);
+            pRet->createResponse(j,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
+        }
+    }
 
     //TODO: pMsgTimeoutSub pasando de momento
 
@@ -77,11 +77,10 @@ SM_UserVM* SM_UserVM::dup(std::string strVmId) const
           {
             found = true;
             pRet->createNewVmRequest(vmReq.strVmType, vmReq.strVmId, vmReq.maxStartTime_t1, vmReq.nRentTime_t2, vmReq.maxSubTime_t3, vmReq.maxSubscriptionTime_t4);
-
-            if(i < vmReq.responseList.size())
+            for(int j = 0; j < vmReq.responseList.size(); j++)
               {
-                VM_Response vmRes = vmReq.responseList.at(i);
-                pRet->createResponse(i, vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
+                VM_Response vmRes = vmReq.responseList.at(j);
+                pRet->createResponse(j,vmRes.nOperationResult==1,vmRes.startTime, vmRes.strIp,vmRes.nPrice);
               }
 
             break;
@@ -171,9 +170,8 @@ void SM_UserVM::printUserVM()
 }
 void SM_UserVM::createResponse(int nIndex, bool bResOk, int nTime, std::string strIp, int nPrice)
 {
-    VM_Request vmReq;
+    VM_Request& vmReq;
     VM_Response vmRes;
-    int nResponses;
 
     if(nIndex < getVmsArraySize())
       {
@@ -191,14 +189,12 @@ void SM_UserVM::createResponse(int nIndex, bool bResOk, int nTime, std::string s
           }
 
         //Introduce a new response
-        // nResponses=getVms(nIndex).responseList.size();
-        // getVms(nIndex).responseList.resize(nResponses+1);
-        getVms(nIndex).responseList.push_back(vmRes);
+        vmReq = getVms(nIndex);
+        vmReq.responseList.push_back(vmRes);
 
       }
     else
       {
-        // TODO: Error!
         EV_FATAL << "    ~+RSP(" << nIndex << ") out of bounds! Max: " << getVmsArraySize() << endl;
       }
 }
@@ -214,7 +210,7 @@ std::string SM_UserVM::getVmRequestType(int nIndex)
 
     }else
     {
-        //TODO: Error!!
+        EV_FATAL << "    ~+RSP(" << nIndex << ") out of bounds! Max: " << getTotalVmsRequests() << endl;
     }
     return strRet;
 }
