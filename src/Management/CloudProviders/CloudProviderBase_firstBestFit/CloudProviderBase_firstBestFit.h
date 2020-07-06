@@ -317,6 +317,10 @@ protected:
      */
     Application* searchAppPerType(std::string strAppType);
 
+    bool isVmFinished(std::string strVmId);
+
+    void updateVMState(SM_UserAPP *userAPP);
+
 };
 
 #endif

@@ -398,8 +398,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
         EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - INIT" << endl;
         strVmId = pUserVmFinish->getStrVmId();
 
-        std::map<std::string, bool>::iterator vm = vmFinished.find(strVmId);
-        bAlreadyFinished = vm != vmFinished.end() && vm->second;
+        bAlreadyFinished = isVmFinished(strVmId);
 
         if (!bAlreadyFinished)
           {
@@ -869,8 +868,8 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
               {
                 SM_UserAPP *uapp = appIt->second;
                 uapp->update(userAPP_Rq);
-                vmFinished[userAPP_Rq->getVmId()] = false;
               }
+            updateVMState(userAPP_Rq);
             EV_INFO << "Executing the VMs corresponding with the user: " << strUsername << " | Total: "<< userVmRequest.getVmsArraySize() << endl;
 
             //First step consists in calculating the total units of time spent in executing the application.
@@ -1339,7 +1338,6 @@ void  CloudProviderBase_firstBestFit::acceptAppRequestWithTimeout(SM_UserAPP* us
 }
 void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq)
 {
-    std::string strVmId(userAPP_Rq->getVmId());
     EV_INFO << "Sending accept to the user:" << userAPP_Rq->getUserID() << endl;
 
     //Fill the message
@@ -1347,15 +1345,7 @@ void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq)
     userAPP_Rq->setOperation(SM_APP_Rsp);
     userAPP_Rq->setResult(SM_APP_Res_Accept);
 
-    if (strVmId.compare("") == 0)
-      {
-        for (unsigned int i = 0; i < userAPP_Rq->getAppArraySize(); i++)
-            vmFinished[userAPP_Rq->getApp(i).vmId] = true;
-      }
-    else
-      {
-        vmFinished[strVmId] = true;
-      }
+    updateVMState(userAPP_Rq);
 
     //Send the values
     sendResponseMessage(userAPP_Rq);
@@ -1373,7 +1363,7 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
     userAPP_Rq->setOperation(SM_APP_Rsp);
     userAPP_Rq->setResult(SM_APP_Res_Timeout);
 
-    vmFinished[userAPP_Rq->getVmId()] = true;
+    updateVMState(userAPP_Rq);
 
     //Send the values
     sendResponseMessage(userAPP_Rq);
@@ -1395,7 +1385,7 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq, 
     userAPP_Res->setOperation(SM_APP_Rsp);
     userAPP_Res->setResult(SM_APP_Res_Timeout);
 
-    vmFinished[strVmId] = true;
+    updateVMState(userAPP_Rq);
 
     //Send the values
     sendResponseMessage(userAPP_Res);
@@ -1484,6 +1474,7 @@ int CloudProviderBase_firstBestFit::getTotalCoresByVmType(std::string strVmType)
 
     return nRet;
 }
+
 int CloudProviderBase_firstBestFit::calculateTotalCoresRequested(SM_UserVM* userVM_Rq)
 {
     int nRet, nRequestedVms;
@@ -1504,4 +1495,23 @@ int CloudProviderBase_firstBestFit::calculateTotalCoresRequested(SM_UserVM* user
     EV_DEBUG << "User:" << userVM_Rq->getUserID() << " has requested: "<< nRet << " cores" << endl;
 
     return nRet;
+}
+
+bool CloudProviderBase_firstBestFit::isVmFinished(std::string strVmId)
+{
+    std::map<std::string, bool>::iterator vm = vmFinished.find(strVmId);
+    return vm != vmFinished.end() && vm->second;
+}
+
+void CloudProviderBase_firstBestFit::updateVMState(SM_UserAPP *userAPP)
+{
+    for (unsigned int i = 0; i < userAPP->getAppArraySize(); i++)
+      {
+        vmFinished[userAPP->getApp(i).vmId] = true;
+      }
+    for (unsigned int i = 0; i < userAPP->getAppArraySize(); i++)
+      {
+        if (userAPP->getApp(i).eState == appRunning)
+            vmFinished[userAPP->getApp(i).vmId] = false;
+      }
 }

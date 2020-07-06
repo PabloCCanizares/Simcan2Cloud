@@ -433,36 +433,47 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
         strVmId = userApp->getVmId();
         userApp->printUserAPP();
 
-        if (strVmId.compare("") == 0) //Global timeout
-          {
-            pUserInstance = userHashMap.at(userApp->getUserID());
-            if (pUserInstance != nullptr)
-              {
-                emit(failSignal, pUserInstance->getId());
-                if (!pUserInstance->hasSubscribed())
-                  {
-                    //End of the protocol, exit!!
-                    finishUser(pUserInstance);
-                    pUserInstance->setTimeoutMaxRentTime();
 
-                    cancelAndDeleteMessages(pUserInstance);
-                  }
+        pUserInstance = userHashMap.at(userApp->getUserID());
+        if (pUserInstance != nullptr)
+          {
+            emit(failSignal, pUserInstance->getId());
+
+            if (strVmId.compare("") == 0) //Global timeout
+              {
+                EV_ERROR << "Patata global" << endl;
+
+                if (hasToSubscribeVm(userApp))
+                    recoverVmAndsubscribe(userApp);
+                // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
               }
-          }
-        else //Individual VM timeout
-          {
-            //The next step is to send a subscription to the cloudprovider
-            //Recover the user instance, and get the VmRequest
-
-            if (hasToSubscribeVm(userApp))
+            else //Individual VM timeout
               {
-                recoverVmAndsubscribe(userApp, strVmId);
-                //pUserInstance->setRequestApp(userApp, strVmId);
-                updateUserApp(userApp);
-              } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
+                EV_ERROR << "Patata individual" << endl;
+                //The next step is to send a subscription to the cloudprovider
+                //Recover the user instance, and get the VmRequest
 
-            //Delete ephemeral message
-            delete msg;
+                if (hasToSubscribeVm(userApp))
+                  {
+                    recoverVmAndsubscribe(userApp, strVmId);
+                    EV_ERROR << "Patata media" << endl;
+                    //pUserInstance->setRequestApp(userApp, strVmId);
+                    updateUserApp(userApp);
+                  } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
+              }
+            EV_ERROR << "Patata casi finalizada" << endl;
+
+
+
+            if (!pUserInstance->hasSubscribed())
+              {
+                EV_ERROR << "Patata no subscrita" << endl;
+                //End of the protocol, exit!!
+                finishUser(pUserInstance);
+                pUserInstance->setTimeoutMaxRentTime();
+
+                cancelAndDeleteMessages(pUserInstance);
+              }
           }
 
 
@@ -579,6 +590,7 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp, std::strin
       {
         pUserInstance->setSubscribe(true);
         userVM_Rq = getSingleVMSubscriptionMessage(pUserInstance->getRequestVmMsg(), strVmId);
+
         if (userVM_Rq != nullptr)
           {
             bSent = true;
