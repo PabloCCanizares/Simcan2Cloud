@@ -251,7 +251,7 @@ protected:
      * Accepts the app request.
      * @param userAPP_Rq apps User submission.
      */
-    void acceptAppRequest(SM_UserAPP *userAPP_Rq, std::string strVmId);
+    void acceptAppRequest(SM_UserAPP *userAPP_Rq);
 
     /**
      * Sends a timeout to the app request.

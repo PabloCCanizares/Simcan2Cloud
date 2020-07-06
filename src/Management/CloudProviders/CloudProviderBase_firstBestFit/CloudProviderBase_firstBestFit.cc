@@ -343,7 +343,7 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp, 
                     pUserApp->printUserAPP();
 
                     //Notify the user the end of the execution
-                    acceptAppRequest(pUserApp, strVmId);
+                    acceptAppRequest(pUserApp);
                   }
                 else
                   {
@@ -397,6 +397,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
       {
         EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - INIT" << endl;
         strVmId = pUserVmFinish->getStrVmId();
+
         std::map<std::string, bool>::iterator vm = vmFinished.find(strVmId);
         bAlreadyFinished = vm != vmFinished.end() && vm->second;
 
@@ -479,7 +480,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
         //Check the subscription queue
         updateSubsQueue();
         //Notify the user the end of the execution
-        acceptAppRequest(userAPP_Rq, "");
+        acceptAppRequest(userAPP_Rq);
       }
     else
       {
@@ -1336,8 +1337,9 @@ void  CloudProviderBase_firstBestFit::acceptAppRequestWithTimeout(SM_UserAPP* us
     sendResponseMessage(userAPP_Rq);
 
 }
-void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq, std::string strVmId)
+void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq)
 {
+    std::string strVmId(userAPP_Rq->getVmId());
     EV_INFO << "Sending accept to the user:" << userAPP_Rq->getUserID() << endl;
 
     //Fill the message
@@ -1345,7 +1347,15 @@ void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq, s
     userAPP_Rq->setOperation(SM_APP_Rsp);
     userAPP_Rq->setResult(SM_APP_Res_Accept);
 
-    vmFinished[strVmId] = true;
+    if (strVmId.compare("") == 0)
+      {
+        for (unsigned int i = 0; i < userAPP_Rq->getAppArraySize(); i++)
+            vmFinished[userAPP_Rq->getApp(i).vmId] = true;
+      }
+    else
+      {
+        vmFinished[strVmId] = true;
+      }
 
     //Send the values
     sendResponseMessage(userAPP_Rq);
