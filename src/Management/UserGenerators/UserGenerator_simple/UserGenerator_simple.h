@@ -148,7 +148,8 @@ protected:
 
     /**
      * Handles the VM response received from the CloudProvider
-     * @param userVm incoming message
+     * @param msg Incoming message
+     * @return Pointer to the user instance related to the received message
      */
     virtual CloudUserInstance* handleResponseAccept(SIMCAN_Message *msg);
     virtual CloudUserInstance* handleResponseReject(SIMCAN_Message *msg);
@@ -208,8 +209,18 @@ private:
      * @param userApp
      */
     void recoverVmAndsubscribe(SM_UserAPP *userApp);
+
+    /**
+     * Recovers a VM given a user name, and sends a subscribe message with only that vm to the cloudmanager
+     * @param userApp A pointer to the related SM_UserAPP message
+     * @param strVmId The VMId of the VM to subscribe to
+     */
     void recoverVmAndsubscribe(SM_UserAPP *userApp, std::string strVmId);
 
+    /**
+     * Updates the state of the apps of a certain user with the info provided by a SM_UserAPP message
+     * @param userApp A pointer to the SM_UserAPP message which contains the new information
+     */
     void updateUserApp(SM_UserAPP *userApp);
 
     /**

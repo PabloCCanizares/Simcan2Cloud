@@ -260,10 +260,16 @@ protected:
     void acceptAppRequestWithTimeout(SM_UserAPP *userAPP_Rq);
 
     /**
-     * Sends a timeout of VM renting
+     * Sends a timeout of all VM renting
      * @param userAPP_Rq apps User submission.
      */
     void timeoutAppRequest(SM_UserAPP *userAPP_Rq);
+
+    /**
+     * Sends a timeout of a certain VM renting
+     * @param userAPP_Rq apps User submission.
+     * @param strVmId The VM that caused the timeout.
+     */
     void timeoutAppRequest(SM_UserAPP *userAPP_Rq, std::string strVmId);
 
     /**
@@ -317,8 +323,17 @@ protected:
      */
     Application* searchAppPerType(std::string strAppType);
 
+    /**
+     * Checks if a vm is marked as finished in vmFinished
+     * @param strVmId VM to check
+     * @return whether it is finished or not
+     */
     bool isVmFinished(std::string strVmId);
 
+    /**
+     * Sets all the VMs related to a message to finished or not, depending on the state of the related apps
+     * @param userAPP Pointer to a SM_UserAPP message
+     */
     void updateVMState(SM_UserAPP *userAPP);
 
 };
