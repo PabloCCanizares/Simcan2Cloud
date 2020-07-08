@@ -549,16 +549,22 @@ void SIMCAN_Message::addNodeTrace (std::string host, std::vector<TraceComponent>
 }
 
 
-std::string SIMCAN_Message::getInitialModuleName (int k){
+std::string SIMCAN_Message::getInitialModuleName (int k ){
 	return trace[k].first;
 }
 
 
-std::vector<TraceComponent> SIMCAN_Message::getNodeTrace (int k){
+std::vector<TraceComponent> SIMCAN_Message::getNodeTrace (int k) {
 	return trace[k].second;
 }
 
+TraceComponent& SIMCAN_Message::getTrace(unsigned int k) {
+    TraceComponent *tc = (TraceComponent*) malloc (sizeof(TraceComponent));
 
+    EV_ERROR << "Thou shouldst not be hither! Please reportest this." << endl;
+
+    return *tc;
+}
 
 
 

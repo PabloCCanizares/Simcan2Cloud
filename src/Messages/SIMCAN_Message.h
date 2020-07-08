@@ -329,7 +329,7 @@ class SIMCAN_Message: public SIMCAN_Message_Base{
        /**
         * Empty method
         */
-        virtual TraceComponent& getTrace(unsigned int k){};
+        virtual TraceComponent& getTrace(unsigned int k);
 
 
        /**
