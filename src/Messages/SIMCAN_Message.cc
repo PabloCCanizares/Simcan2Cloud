@@ -559,11 +559,7 @@ std::vector<TraceComponent> SIMCAN_Message::getNodeTrace (int k) {
 }
 
 TraceComponent& SIMCAN_Message::getTrace(unsigned int k) {
-    TraceComponent *tc = (TraceComponent*) malloc (sizeof(TraceComponent));
-
-    EV_ERROR << "Thou shouldst not be hither! Please reportest this." << endl;
-
-    return *tc;
+    return trace[k].second.back();
 }
 
 
