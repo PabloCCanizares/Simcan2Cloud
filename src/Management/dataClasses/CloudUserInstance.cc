@@ -13,6 +13,8 @@ CloudUserInstance::CloudUserInstance (CloudUser    *ptrUser,
     std::map<std::string, int> offsetMap,
                                totalVmMap;
     int currentVm;
+    numFinishedVMs = 0;
+    numTotalVMs = 0;
 
     for (currentVm = 0; currentVm < ptrUser->getNumVirtualMachines(); currentVm++)
       {
@@ -21,6 +23,7 @@ CloudUserInstance::CloudUserInstance (CloudUser    *ptrUser,
           {
             offsetMap[strType] = 0;
             totalVmMap[strType] = getNumVms(strType, ptrUser);
+            numTotalVMs += totalVmMap[strType];
           }
       }
 
@@ -285,4 +288,20 @@ bool CloudUserInstance::hasSubscribed()
 
 bool CloudUserInstance::operator <(const CloudUserInstance &other) const {
     return this->getArrival2Cloud() < other.getArrival2Cloud() ;
+}
+
+bool CloudUserInstance::allVmsFinished()
+{
+    return numTotalVMs <= numFinishedVMs;
+}
+
+
+void CloudUserInstance::addFinishedVMs(int newFinished)
+{
+    numFinishedVMs += newFinished;
+}
+
+int CloudUserInstance::getTotalVMs() const
+{
+    return numTotalVMs;
 }

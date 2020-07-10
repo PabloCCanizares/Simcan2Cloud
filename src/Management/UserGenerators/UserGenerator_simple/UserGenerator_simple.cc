@@ -437,33 +437,33 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
 
             if (strVmId.compare("") == 0) //Global timeout
               {
-                EV_ERROR << "Patata global" << endl;
-
                 if (hasToSubscribeVm(userApp))
                     recoverVmAndsubscribe(userApp);
+                else
+                    updateVmUserStatus(userApp->getUserID(), "", vmFinished);
                 // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
               }
             else //Individual VM timeout
               {
-                EV_ERROR << "Patata individual" << endl;
                 //The next step is to send a subscription to the cloudprovider
                 //Recover the user instance, and get the VmRequest
 
                 if (hasToSubscribeVm(userApp))
                   {
                     recoverVmAndsubscribe(userApp, strVmId);
-                    EV_ERROR << "Patata media" << endl;
                     //pUserInstance->setRequestApp(userApp, strVmId);
                     updateUserApp(userApp);
                   } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
+                else
+                  {
+                    updateVmUserStatus(userApp->getUserID(), strVmId, vmFinished);
+                  }
               }
-            EV_ERROR << "Patata casi finalizada" << endl;
 
 
 
             if (!pUserInstance->hasSubscribed())
               {
-                EV_ERROR << "Patata no subscrita" << endl;
                 //End of the protocol, exit!!
                 finishUser(pUserInstance);
                 pUserInstance->setTimeoutMaxRentTime();
@@ -662,40 +662,11 @@ class cCustomNotification : public cObject, noncopyable
 };
 
 bool UserGenerator_simple::allVmsFinished(std::string strUserId) {
-    CloudUserInstance *pUserInstance;
-    VmInstanceCollection *pVmCollection;
-    VmInstance *pVmInstance;
-    int nCollectionNumber,
-        nInstances;
+    CloudUserInstance *pUserInstance = userHashMap.at(strUserId);
     bool result = true;
 
-    pUserInstance = userHashMap.at(strUserId);
-
     if (pUserInstance != nullptr)
-      {
-        nCollectionNumber = pUserInstance->getNumberVmCollections();
-        for (int i = 0; i < nCollectionNumber; i++)
-          {
-            pVmCollection = pUserInstance->getVmCollection(i);
-            if (pVmCollection != nullptr)
-              {
-                nInstances = pVmCollection->getNumInstances();
-
-                for (int j = 0; j < nInstances; j++)
-                  {
-                    pVmInstance = pVmCollection->getVmInstance(j);
-                    if (pVmInstance != nullptr)
-                      {
-                        if (pVmInstance->getState() != vmFinished)
-                          {
-                            result = false;
-                            break;
-                          }
-                      }
-                  }
-              }
-          }
-      }
+        result = pUserInstance->allVmsFinished();
 
     return result;
 }
@@ -725,7 +696,11 @@ void UserGenerator_simple::updateVmUserStatus(std::string strUserId, std::string
                     if (pVmInstance != nullptr)
                       {
                         if (strVmId.compare("") == 0 || strVmId.compare(pVmInstance->getVmInstanceId()) == 0)
+                          {
                             pVmInstance->setState(state);
+                            if (state == vmFinished)
+                                pUserInstance->addFinishedVMs(1);
+                          }
                       }
                   }
               }

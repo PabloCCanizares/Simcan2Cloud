@@ -36,6 +36,9 @@ class CloudUserInstance: public UserInstance {
         int maxSubscriptionTime_t4;
         int nId;
 
+        int numFinishedVMs;
+        int numTotalVMs;
+
         SimTime dArrival2Cloud;
         SimTime dInitTime;
         SimTime dInitExec;
@@ -130,9 +133,11 @@ class CloudUserInstance: public UserInstance {
         bool isTimeoutMaxRent();
         bool isTimeoutSubscribed();
         bool hasSubscribed();
+        bool allVmsFinished();
 
         void setArrival2Cloud(SimTime arrival2Cloud);
         void setTimeoutMaxStart();
+        void addFinishedVMs(int newFinished);
         void setTimeoutMaxRentTime();
         void setTimeoutMaxSubscribed();
         void setFinished(bool finished);
@@ -140,8 +145,9 @@ class CloudUserInstance: public UserInstance {
         void setInitTime(SimTime initTime);
         void setSubscribe(bool bSubscribe);
         void setInitExecTime(SimTime dExec);
-    int getId() const;
-    void setId(int id);
+        int getId() const;
+        int getTotalVMs() const;
+        void setId(int id);
 
     protected:
 
