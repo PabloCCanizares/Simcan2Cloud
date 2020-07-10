@@ -346,6 +346,34 @@ bool SM_UserAPP::isFinishedOK(std::string strService, std::string strIp)
     }
     return bRet;
 }
+
+bool SM_UserAPP::allAppsFinishedOK(std::string strVmId)
+{
+    bool bRet;
+
+    APP_Request appRq;
+    int nIndex;
+    bool bFinished;
+
+    bFinished =  true;
+    nIndex = 0;
+
+    EV_DEBUG << "SM_UserAPP::allAppsFinishedOK - Init" << endl;
+    while(bFinished && nIndex<getAppArraySize())
+    {
+        appRq = getApp(nIndex);
+        if (appRq.vmId.compare(strVmId) == 0)
+            bFinished = (appRq.eState == appFinishedOK);
+        EV_DEBUG << "SM_UserAPP::allAppsFinishedOK - App " << appRq.strApp << " | status " << stateToString(appRq.eState)<< endl;
+        nIndex++;
+    }
+
+    bRet = bFinished;
+    EV_DEBUG << "SM_UserAPP::allAppsFinishedOK - End" << endl;
+
+    return bRet;
+}
+
 bool SM_UserAPP::allAppsFinishedOK()
 {
     bool bRet;
@@ -371,6 +399,7 @@ bool SM_UserAPP::allAppsFinishedOK()
 
     return bRet;
 }
+
 bool SM_UserAPP::allAppsFinishedKO()
 {
     bool bRet;

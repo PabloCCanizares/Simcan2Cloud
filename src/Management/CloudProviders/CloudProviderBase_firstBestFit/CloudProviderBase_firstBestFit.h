@@ -183,7 +183,7 @@ protected:
      * Handles the finalisation of an application.
      * @param userAPP_Rq User application request.
      */
-    virtual void handleAppExecEnd(cMessage *msg);
+    //virtual void handleAppExecEnd(cMessage *msg);
 
     //END - API
     //################################################################
@@ -251,19 +251,26 @@ protected:
      * Accepts the app request.
      * @param userAPP_Rq apps User submission.
      */
-    void acceptAppRequest(SM_UserAPP *userAPP_Rq);
+    //void acceptAppRequest(SM_UserAPP *userAPP_Rq);
+
+    /**
+     * Accepts the app request.
+     * @param userAPP_Rq apps User submission.
+     * @param strVmId The VM that has finished.
+     */
+    void acceptAppRequest(SM_UserAPP *userAPP_Rq, std::string strVmId);
 
     /**
      * Sends a timeout to the app request.
      * @param userAPP_Rq User app request
      */
-    void acceptAppRequestWithTimeout(SM_UserAPP *userAPP_Rq);
+    //void acceptAppRequestWithTimeout(SM_UserAPP *userAPP_Rq);
 
     /**
      * Sends a timeout of all VM renting
      * @param userAPP_Rq apps User submission.
      */
-    void timeoutAppRequest(SM_UserAPP *userAPP_Rq);
+    //void timeoutAppRequest(SM_UserAPP *userAPP_Rq);
 
     /**
      * Sends a timeout of a certain VM renting

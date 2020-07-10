@@ -37,14 +37,14 @@ protected:
     // Signals
     simsignal_t requestSignal;
     simsignal_t responseSignal;
-    simsignal_t executeIpSignal;
+    simsignal_t executeReqSignal;
     simsignal_t executeNotSignal;
     simsignal_t okSignal;
     simsignal_t failSignal;
-    simsignal_t subscribeNoipSignal;
+    simsignal_t subscribeReqSignal;
     simsignal_t subscribeFailSignal;
     simsignal_t notifySignal;
-    simsignal_t timeOutSignal;
+    simsignal_t timeoutSignal;
 
     /** Iterators */
     /**

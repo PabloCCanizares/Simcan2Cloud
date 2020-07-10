@@ -36,7 +36,7 @@ void CloudProviderBase_firstBestFit::initializeSelfHandlers() {
     // ADAA
     selfHandlers[INITIAL_STAGE] = [this](cMessage *msg) -> void { return handleInitialStage(msg); };
     selfHandlers[EXEC_VM_RENT_TIMEOUT] = [this](cMessage *msg) -> void { return handleExecVmRentTimeout(msg); };
-    selfHandlers[EXEC_APP_END] = [this](cMessage *msg) -> void { return handleAppExecEnd(msg); };
+    //selfHandlers[EXEC_APP_END] = [this](cMessage *msg) -> void { return handleAppExecEnd(msg); };
     selfHandlers[EXEC_APP_END_SINGLE] = [this](cMessage *msg) -> void { return handleAppExecEndSingle(msg); };
     selfHandlers[USER_SUBSCRIPTION_TIMEOUT] = [this](cMessage *msg) -> void { return handleSubscriptionTimeout(msg); };
     selfHandlers[MANAGE_SUBSCRIBTIONS] = [this](cMessage *msg) -> void { return handleManageSubscriptions(msg); };
@@ -331,44 +331,44 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp, 
     if (pUserApp != nullptr)
       {
         strUsername = pUserApp->getUserID();
-        if (pUserApp->allAppsFinished())
+        if (pUserApp->allAppsFinished(strVmId))
+          {
+            if (pUserApp->allAppsFinishedOK(strVmId))
               {
-                if (pUserApp->allAppsFinishedOK())
-                  {
-                    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
-                    << " - All the apps corresponding with the user "
-                    << strUsername
-                    << " have finished successfully" << endl;
+                EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
+                << " - All the apps corresponding with the user "
+                << strUsername
+                << " have finished successfully" << endl;
 
-                    pUserApp->printUserAPP();
+                pUserApp->printUserAPP();
 
-                    //Notify the user the end of the execution
-                    acceptAppRequest(pUserApp);
-                  }
-                else
-                  {
-                    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
-                    << " - All the apps corresponding with the user "
-                    << strUsername
-                    << " have finished with some errors" << endl;
-
-                    //Check the subscription queue
-                    //updateSubsQueue();
-
-                    //if (!pUserApp->getFinished())
-                    timeoutAppRequest(pUserApp, strVmId);  //Notify the user the end of the execution
-                  }
-
-                //Delete the application on the hashmap
-                //handlingAppsRqMap.erase(strUsername);
+                //Notify the user the end of the execution
+                acceptAppRequest(pUserApp, strVmId);
               }
             else
               {
                 EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
-                        << " - Total apps finished: "
-                        << pUserApp->getNFinishedApps() << " of "
-                        << pUserApp->getAppArraySize() << endl;
+                << " - All the apps corresponding with the user "
+                << strUsername
+                << " have finished with some errors" << endl;
+
+                //Check the subscription queue
+                //updateSubsQueue();
+
+                //if (!pUserApp->getFinished())
+                timeoutAppRequest(pUserApp, strVmId);  //Notify the user the end of the execution
               }
+
+            //Delete the application on the hashmap
+            //handlingAppsRqMap.erase(strUsername);
+          }
+        else
+          {
+            EV_INFO << LogUtils::prettyFunc(__FILE__, __func__)
+                    << " - Total apps finished: "
+                    << pUserApp->getNFinishedApps() << " of "
+                    << pUserApp->getAppArraySize() << endl;
+          }
       }
     else
       {
@@ -426,8 +426,9 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
                       {
                         EV_INFO << "Aborting running applications" << endl;
                         abortAllApps(pUserApp, strVmId);
-                        checkAllAppsFinished(pUserApp, strVmId);
                       }
+                    // Check the result and send it
+                    checkAllAppsFinished(pUserApp, strVmId);
 
 
     //                else
@@ -466,6 +467,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
       }
 }
 
+/*
 void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
     std::string strUsername;
     SM_UserAPP *userAPP_Rq;
@@ -486,6 +488,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEnd(cMessage *msg) {
         error ("%s - Unable to cast msg to SM_UserAPP*. Wrong msg name [%s]?", LogUtils::prettyFunc(__FILE__, __func__).c_str(), msg->getName());
       }
 }
+*/
 
 void CloudProviderBase_firstBestFit::processSelfMessage (cMessage *msg){
     std::map<std::string, std::function<void(cMessage*)>>::iterator it;
@@ -1323,6 +1326,8 @@ void  CloudProviderBase_firstBestFit::acceptVmRequest(SM_UserVM* userVM_Rq)
     sendResponseMessage(userVM_Rq);
 
 }
+
+/*
 void  CloudProviderBase_firstBestFit::acceptAppRequestWithTimeout(SM_UserAPP* userAPP_Rq)
 {
     EV_INFO << "Sending accept to the user:" << userAPP_Rq->getUserID() << endl;
@@ -1336,21 +1341,31 @@ void  CloudProviderBase_firstBestFit::acceptAppRequestWithTimeout(SM_UserAPP* us
     sendResponseMessage(userAPP_Rq);
 
 }
-void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq)
+*/
+
+void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq, std::string strVmId)
 {
     EV_INFO << "Sending accept to the user:" << userAPP_Rq->getUserID() << endl;
 
+    SM_UserAPP* userAPP_Res = userAPP_Rq->dup();
+    userAPP_Res->printUserAPP();
+
+    userAPP_Res->setVmId(strVmId.c_str());
+    userAPP_Res->setFinished(true);
+
     //Fill the message
-    userAPP_Rq->setIsResponse(true);
-    userAPP_Rq->setOperation(SM_APP_Rsp);
-    userAPP_Rq->setResult(SM_APP_Res_Accept);
+    userAPP_Res->setIsResponse(true);
+    userAPP_Res->setOperation(SM_APP_Rsp);
+    userAPP_Res->setResult(SM_APP_Res_Accept);
 
     updateVMState(userAPP_Rq);
 
     //Send the values
-    sendResponseMessage(userAPP_Rq);
+    sendResponseMessage(userAPP_Res);
 
 }
+
+/*
 void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
 {
     EV_INFO << "Sending timeout to the user:" << userAPP_Rq->getUserID() << endl;
@@ -1369,6 +1384,8 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq)
     sendResponseMessage(userAPP_Rq);
 
 }
+*/
+
 void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq, std::string strVmId)
 {
     EV_INFO << "Sending timeout to the user:" << userAPP_Rq->getUserID() << endl;

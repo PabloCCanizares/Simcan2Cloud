@@ -36,6 +36,7 @@ public:
     bool allAppsFinishedOK();
     bool allAppsFinishedKO();
     bool allAppsFinished(std::string strVmId);
+    bool allAppsFinishedOK(std::string strVmId);
     void abortAllApps(std::string strVmId);
     std::string stateToString(tApplicationState eState);
 

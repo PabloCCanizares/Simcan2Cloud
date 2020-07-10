@@ -45,14 +45,14 @@ void UserGenerator_simple::initializeSignals ()
 {
     requestSignal       = registerSignal("request");
     responseSignal      = registerSignal("response");
-    executeIpSignal     = registerSignal("executeIp");
-    executeNotSignal    = registerSignal("executeNot");
-    okSignal            = registerSignal("ok");
-    failSignal          = registerSignal("fail");
-    subscribeNoipSignal = registerSignal("subscribeNoip");
-    subscribeFailSignal = registerSignal("subscribeFail");
+    executeReqSignal    = registerSignal("executeRequest");
+    executeNotSignal    = registerSignal("executeNotify");
+    okSignal            = registerSignal("appOK");
+    failSignal          = registerSignal("appTimeout");
+    subscribeReqSignal  = registerSignal("subscribeRequest");
+    subscribeFailSignal = registerSignal("subscribeFailure");
     notifySignal        = registerSignal("notify");
-    timeOutSignal       = registerSignal("timeOut");
+    timeoutSignal       = registerSignal("timeout");
 }
 
 
@@ -266,7 +266,6 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm)
 
 void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm)
 {
-    emit(notifySignal, pUserInstance->getId());
     emit(executeNotSignal, pUserInstance->getId());
     pUserInstance->setInitExecTime(simTime());
     submitService(userVm);
@@ -278,8 +277,6 @@ void UserGenerator_simple::finishUser(CloudUserInstance *pUserInstance)
     pUserInstance->setFinished(true);
     nUserInstancesFinished++;
 }
-
-
 
 CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *userVm_RAW)
 {
@@ -304,7 +301,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *us
             // If the vm-request has been rejected by the cloudprovider
             // we have to subscribe the service
             pUserInstance->setSubscribe(false);
-            emit(executeIpSignal, pUserInstance->getId());
+            emit(executeReqSignal, pUserInstance->getId());
             submitService(userVm);
         }
     }
@@ -337,7 +334,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *us
             // If the vm-request has been rejected by the cloudprovider
             // we have to subscribe the service
             pUserInstance->setSubscribe(true);
-            emit(subscribeNoipSignal, pUserInstance->getId());
+            emit(subscribeReqSignal, pUserInstance->getId());
             subscribe(userVm);
         }
     }
@@ -361,9 +358,8 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message 
         updateVmUserStatus(userApp->getUserID(), userApp->getVmId(), vmFinished);
 
         pUserInstance = userHashMap.at(userApp->getUserID());
-        if (pUserInstance != nullptr) {
+        if (pUserInstance != nullptr)
             emit(okSignal, pUserInstance->getId());
-        }
 
         EV_INFO << __func__ << " - End" << endl;
     }
@@ -503,6 +499,7 @@ CloudUserInstance* UserGenerator_simple::handleSubNotify(SIMCAN_Message *userVm_
         EV_INFO << "Subscription accepted ...  " << endl;
 
         if (pUserInstance != nullptr) {
+            emit(notifySignal, pUserInstance->getId());
             execute(pUserInstance, userVm);
         }
     }
@@ -535,7 +532,7 @@ CloudUserInstance* UserGenerator_simple::handleSubTimeout(SIMCAN_Message *userVm
         if (pUserInstance != nullptr)
           {
             pUserInstance->setTimeoutMaxSubscribed();
-            emit(timeOutSignal, pUserInstance->getId());
+            emit(timeoutSignal, pUserInstance->getId());
           }
     }
     else {
