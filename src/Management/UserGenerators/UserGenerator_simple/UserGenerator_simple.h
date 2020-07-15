@@ -35,16 +35,14 @@ protected:
     std::map<int, std::function<CloudUserInstance*(SIMCAN_Message*)>> responseHandlers;
 
     // Signals
-    simsignal_t requestSignal;
-    simsignal_t responseSignal;
-    simsignal_t executeReqSignal;
-    simsignal_t executeNotSignal;
-    simsignal_t okSignal;
-    simsignal_t failSignal;
-    simsignal_t subscribeReqSignal;
-    simsignal_t subscribeFailSignal;
-    simsignal_t notifySignal;
-    simsignal_t timeoutSignal;
+    simsignal_t  requestSignal;
+    simsignal_t  responseSignal;
+    std::map<std::string, simsignal_t> executeSignal;
+    std::map<std::string, simsignal_t> okSignal;
+    std::map<std::string, simsignal_t> failSignal;
+    std::map<std::string, simsignal_t> subscribeSignal;
+    std::map<std::string, simsignal_t> notifySignal;
+    std::map<std::string, simsignal_t> timeoutSignal;
 
     /** Iterators */
     /**

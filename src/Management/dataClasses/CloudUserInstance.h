@@ -149,6 +149,12 @@ class CloudUserInstance: public UserInstance {
         int getTotalVMs() const;
         void setId(int id);
 
+        /**
+         * Gets the nth vm in the virtualmachine list of collections flattened.
+         * @param index Index of the required vm.
+         */
+        VmInstance* getNthVm(int index);
+
     protected:
 
        /**
@@ -163,12 +169,6 @@ class CloudUserInstance: public UserInstance {
         *Process the application collection in order to include them in a single vector
         */
        void processApplicationCollection();
-
-       /**
-        * Gets the nth vm in the virtualmachine list of collections flattened.
-        * @param index Index of the required vm.
-        */
-       VmInstance* getNthVm(int index);
 
        int getNumVms(std::string strType, CloudUser *ptrUser);
 };

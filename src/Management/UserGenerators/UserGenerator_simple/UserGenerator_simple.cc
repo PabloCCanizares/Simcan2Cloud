@@ -45,14 +45,52 @@ void UserGenerator_simple::initializeSignals ()
 {
     requestSignal       = registerSignal("request");
     responseSignal      = registerSignal("response");
-    executeReqSignal    = registerSignal("executeRequest");
-    executeNotSignal    = registerSignal("executeNotify");
-    okSignal            = registerSignal("appOK");
-    failSignal          = registerSignal("appTimeout");
-    subscribeReqSignal  = registerSignal("subscribeRequest");
-    subscribeFailSignal = registerSignal("subscribeFailure");
-    notifySignal        = registerSignal("notify");
-    timeoutSignal       = registerSignal("timeout");
+    executeSignal[""]   = registerSignal("execute");
+    subscribeSignal[""] = registerSignal("subscribe");
+    notifySignal[""]    = registerSignal("notify");
+    timeoutSignal[""]   = registerSignal("timeout");
+
+    for (std::vector<CloudUserInstance*>::iterator it = userInstances.begin(); it != userInstances.end(); ++it)
+      {
+        CloudUserInstance *pUserInstance = *it;
+        for (int i = 0; i < pUserInstance->getTotalVMs(); i++)
+          {
+            std::string vmId = pUserInstance->getNthVm(i)->getVmInstanceId();
+
+            std::string auxExName = "execute_" + vmId;
+            simsignal_t auxEx = registerSignal(auxExName.c_str());
+            std::string auxSubName = "subscribe_" + vmId;
+            simsignal_t auxSub = registerSignal(auxSubName.c_str());
+            std::string auxNotName = "notify_" + vmId;
+            simsignal_t auxNot = registerSignal(auxNotName.c_str());
+            std::string auxTimName = "timeout_" + vmId;
+            simsignal_t auxTim = registerSignal(auxTimName.c_str());
+            std::string auxOkName = "appOK_" + vmId;
+            simsignal_t auxOk = registerSignal(auxOkName.c_str());
+            std::string auxFailName = "appTimeout_" + vmId;
+            simsignal_t auxFail = registerSignal(auxFailName.c_str());
+
+            cProperty *exTemplate = getProperties()->get("statisticTemplate", "executeSingleTemplate");
+            cProperty *subTemplate = getProperties()->get("statisticTemplate", "subscribeSingleTemplate");
+            cProperty *notTemplate = getProperties()->get("statisticTemplate", "notifySingleTemplate");
+            cProperty *timTemplate = getProperties()->get("statisticTemplate", "timeoutSingleTemplate");
+            cProperty *okTemplate = getProperties()->get("statisticTemplate", "appOKTemplate");
+            cProperty *failTemplate = getProperties()->get("statisticTemplate", "appTimeoutTemplate");
+            getEnvir()->addResultRecorders(this, auxEx, auxExName.c_str(),  exTemplate);
+            getEnvir()->addResultRecorders(this, auxSub, auxSubName.c_str(),  subTemplate);
+            getEnvir()->addResultRecorders(this, auxNot, auxNotName.c_str(),  notTemplate);
+            getEnvir()->addResultRecorders(this, auxTim, auxTimName.c_str(),  timTemplate);
+            getEnvir()->addResultRecorders(this, auxOk, auxOkName.c_str(),  okTemplate);
+            getEnvir()->addResultRecorders(this, auxFail, auxFailName.c_str(),  failTemplate);
+
+            executeSignal[vmId]   = auxEx;
+            subscribeSignal[vmId] = auxSub;
+            notifySignal[vmId]    = auxNot;
+            timeoutSignal[vmId]   = auxTim;
+            okSignal[vmId]        = auxOk;
+            failSignal[vmId]      = auxFail;
+          }
+      }
 }
 
 
@@ -266,7 +304,7 @@ void UserGenerator_simple::processResponseMessage(SIMCAN_Message *sm)
 
 void UserGenerator_simple::execute(CloudUserInstance *pUserInstance, SM_UserVM *userVm)
 {
-    emit(executeNotSignal, pUserInstance->getId());
+    emit(executeSignal[userVm->getStrVmId()], pUserInstance->getId());
     pUserInstance->setInitExecTime(simTime());
     submitService(userVm);
 }
@@ -301,7 +339,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *us
             // If the vm-request has been rejected by the cloudprovider
             // we have to subscribe the service
             pUserInstance->setSubscribe(false);
-            emit(executeReqSignal, pUserInstance->getId());
+            emit(executeSignal[""], pUserInstance->getId());
             submitService(userVm);
         }
     }
@@ -334,7 +372,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *us
             // If the vm-request has been rejected by the cloudprovider
             // we have to subscribe the service
             pUserInstance->setSubscribe(true);
-            emit(subscribeReqSignal, pUserInstance->getId());
+            emit(subscribeSignal[""], pUserInstance->getId());
             subscribe(userVm);
         }
     }
@@ -359,7 +397,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message 
 
         pUserInstance = userHashMap.at(userApp->getUserID());
         if (pUserInstance != nullptr)
-            emit(okSignal, pUserInstance->getId());
+            emit(okSignal[userApp->getVmId()], pUserInstance->getId());
 
         EV_INFO << __func__ << " - End" << endl;
     }
@@ -384,7 +422,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
         //Recover the user instance, and get the VmRequest
         pUserInstance = userHashMap.at(userApp->getUserID());
         if (pUserInstance != nullptr) {
-            emit(failSignal, pUserInstance->getId());
+            emit(failSignal[userApp->getVmId()], pUserInstance->getId());
 
             if (hasToSubscribeVm(userApp)) {
                 recoverVmAndsubscribe(userApp);
@@ -433,7 +471,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
         pUserInstance = userHashMap.at(userApp->getUserID());
         if (pUserInstance != nullptr)
           {
-            emit(failSignal, pUserInstance->getId());
+            emit(failSignal[strVmId], pUserInstance->getId());
 
             if (strVmId.compare("") == 0) //Global timeout
               {
@@ -499,7 +537,7 @@ CloudUserInstance* UserGenerator_simple::handleSubNotify(SIMCAN_Message *userVm_
         EV_INFO << "Subscription accepted ...  " << endl;
 
         if (pUserInstance != nullptr) {
-            emit(notifySignal, pUserInstance->getId());
+            emit(notifySignal[userVm->getStrVmId()], pUserInstance->getId());
             execute(pUserInstance, userVm);
         }
     }
@@ -532,7 +570,7 @@ CloudUserInstance* UserGenerator_simple::handleSubTimeout(SIMCAN_Message *userVm
         if (pUserInstance != nullptr)
           {
             pUserInstance->setTimeoutMaxSubscribed();
-            emit(timeoutSignal, pUserInstance->getId());
+            emit(timeoutSignal[userVm->getStrVmId()], pUserInstance->getId());
           }
     }
     else {
@@ -619,7 +657,7 @@ void UserGenerator_simple::recoverVmAndsubscribe(SM_UserAPP *userApp)
         if (pUserInstance != nullptr)
           {
             pUserInstance->setSubscribe(true);
-            emit(subscribeFailSignal, pUserInstance->getId());
+            emit(subscribeSignal[strVmId], pUserInstance->getId());
             if (strVmId.empty())
               {
                 //Ya no se suscribe si llega el timeout final, ya lo hace individualmente.
