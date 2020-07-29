@@ -187,6 +187,9 @@ NodeResourceInfo* DataCenter_CpuType::allocNewResources(NodeResourceRequest* pVm
     if(pList->size()==0)
         EV_INFO << "DataCenter_CpuType::allocNodeInList - WARNING empty list!!!!" << endl;
 
+    if (!bAlloc)
+        pNode = NULL;
+
     EV_DEBUG << "DataCenter_CpuType::allocNewResources - End" << endl;
 
     return pNode;

@@ -1177,12 +1177,11 @@ SM_UserAPP_Finish* CloudProviderBase_firstBestFit::scheduleAppTimeout (std::stri
 
 void CloudProviderBase_firstBestFit::clearVMReq (SM_UserVM*& userVM_Rq, int lastId)
 {
-    VM_Request vmRequest;
-
     for(int i = 0; i < lastId ; i++)
       {
-        vmRequest = userVM_Rq->getVms(i);
+        VM_Request& vmRequest = userVM_Rq->getVms(i);
         cancelAndDelete(vmRequest.pMsg);
+        vmRequest.pMsg = nullptr;
         datacenterCollection->freeVmRequest(vmRequest.strVmId);
       }
 }
@@ -1202,7 +1201,7 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
                 strUserName,
                 strVmId;
 
-    VM_Request vmRequest;
+    //VM_Request vmRequest;
 
 
     bAccepted = bRet = true;
@@ -1230,7 +1229,7 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
                 EV_DEBUG << endl <<"checkVmUserFit - Trying to handle the VM: " << i << endl;
 
                 //Get the VM request
-                vmRequest = userVM_Rq->getVms(i);
+                VM_Request& vmRequest = userVM_Rq->getVms(i);
 
                 //Create and fill the noderesource  with the VMrequest
                 NodeResourceRequest *pNode = generateNode(strUserName, vmRequest);

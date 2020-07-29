@@ -20,13 +20,18 @@ bool NodeResourceInfo::hasFit(NodeResourceRequest* pUser)
     bRet=false;
     if(pUser != NULL)
     {
-        if(pUser->getTotalCpUs() <= this->nAvailableCPUs)
+        bRet=true;
+        if(pUser->getTotalCpUs() > this->nAvailableCPUs)
         {
-            bRet = true;
+            bRet = false;
+            EV_TRACE << "Full cores list!!(max: "<<this->getNumCpUs() << "): " << pUser->getTotalCpUs() << " vs "<< this->nAvailableCPUs << endl;
+
         }
-        else
+
+        if(bRet && pUser->getTotalMemory() > this->nAvailableMemory)
         {
-            EV_TRACE << "Full list!!(max: "<<this->getNumCpUs() << "): " << pUser->getTotalCpUs() << " vs "<< this->nAvailableCPUs << endl;
+            bRet = false;
+            EV_TRACE << "Full memory list!!(max: "<< this->getTotalMemoryGb() << "): " << pUser->getTotalMemory() << " vs "<< this->nAvailableMemory << endl;
         }
     }
 
