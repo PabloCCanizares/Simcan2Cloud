@@ -95,7 +95,7 @@ void UserGeneratorBase::generateUsersBeforeSimulationStarts (){
 
             EV_DEBUG << "UserGeneratorBase::generateUsersBeforeSimulationStarts - 2" << endl;
             // Create a new user instance
-            newUser = new CloudUserInstance (*userTypeIterator, totalUserInstance, currentUserNumber, currentUserInstance, (*userTypeIterator)->getNumInstances());
+            newUser = createCloudUserInstance (*userTypeIterator, totalUserInstance, currentUserNumber, currentUserInstance, (*userTypeIterator)->getNumInstances());
 
             EV_DEBUG << "UserGeneratorBase::generateUsersBeforeSimulationStarts - 3" << endl;
             // Insert current user instance into the corresponding vector
@@ -162,3 +162,6 @@ string UserGeneratorBase::usersIstancesToString (){
 }
 
 
+CloudUserInstance* UserGeneratorBase::createCloudUserInstance(CloudUser *ptrUser, unsigned int  totalUserInstance, unsigned int  userNumber, int currentInstanceIndex, int totalUserInstances) {
+    return new CloudUserInstance (ptrUser, totalUserInstance, userNumber, currentInstanceIndex, totalUserInstances);
+}

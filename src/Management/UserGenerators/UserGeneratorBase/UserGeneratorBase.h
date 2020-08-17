@@ -83,6 +83,8 @@ class UserGeneratorBase: public CloudManagerBase{
          */
         virtual string usersIstancesToString ();
 
+        virtual CloudUserInstance* createCloudUserInstance(CloudUser *ptrUser, unsigned int  totalUserInstance, unsigned int  userNumber, int currentInstanceIndex, int totalUserInstances);
+
        /**
         * Process a self message.
         *
@@ -103,6 +105,7 @@ class UserGeneratorBase: public CloudManagerBase{
         * @param sm Incoming message.
         */
         virtual void processResponseMessage (SIMCAN_Message *sm) = 0;
+
 
 
 };

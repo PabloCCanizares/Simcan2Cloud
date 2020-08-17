@@ -1,10 +1,8 @@
-#include <algorithm>
 #include "CloudProviderBase_firstBestFit.h"
 #include "Management/utils/LogUtils.h"
+#include <algorithm>
 
-//Define_Module(CloudProviderBase_firstBestFit);
-
-
+Define_Module(CloudProviderBase_firstBestFit);
 
 CloudProviderBase_firstBestFit::~CloudProviderBase_firstBestFit(){
     handlingAppsRqMap.clear();
@@ -20,13 +18,19 @@ void CloudProviderBase_firstBestFit::initialize(){
 
     // Init data-center structures
     //Fill the meta-structures created to improve the performance of the cloudprovider
+    initializeDataCenterCollection();
     loadNodes();
     initializeSelfHandlers();
     initializeRequestHandlers();
 
+
     bFinished = false;
     scheduleAt(SimTime(), new cMessage(INITIAL_STAGE));
     EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - End" << endl;
+}
+
+void CloudProviderBase_firstBestFit::initializeDataCenterCollection(){
+    datacenterCollection = new DataCenterInfoCollection();
 }
 
 /**
@@ -49,6 +53,38 @@ void CloudProviderBase_firstBestFit::initializeRequestHandlers() {
     requestHandlers[SM_VM_Req] = [this](SIMCAN_Message *msg) -> void { return handleVmRequestFits(msg); };
     requestHandlers[SM_VM_Sub] = [this](SIMCAN_Message *msg) -> void { return handleVmSubscription(msg); };
     requestHandlers[SM_APP_Req] = [this](SIMCAN_Message *msg) -> void { return handleUserAppRequest(msg); };
+}
+
+void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
+{
+    SM_CloudProvider_Control* userControl;
+    std::map<int, std::function<void(SIMCAN_Message*)>>::iterator it;
+
+    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Received Request Message" << endl;
+
+    it = requestHandlers.find(sm->getOperation());
+
+    if (it == requestHandlers.end())
+      {
+        userControl = dynamic_cast<SM_CloudProvider_Control *>(sm);
+
+        if(userControl != nullptr)
+          {
+            EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Received end of party"  << endl;
+            //Stop the checking process.
+            bFinished = true;
+            cancelAndDelete(userControl);
+          }
+        else
+          {
+            EV_INFO << "Unknown message:"  << sm->getName() << endl;
+          }
+      }
+    else
+      {
+        //Perform the operations...
+        it->second(sm);
+      }
 }
 
 void CloudProviderBase_firstBestFit::loadNodes()
@@ -107,42 +143,6 @@ void CloudProviderBase_firstBestFit::loadNodes()
     datacenterCollection->printDCSizes();
 
     EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Ende" << endl;
-}
-void CloudProviderBase_firstBestFit::initDataCenterStructures(){
-
-    DataCenter* currentDataCenter;
-    DataCenter_CpuType* newDataCenter_CpuType;
-    Rack* currentRack;
-    int dataCenterIndex, rackIndex, nodeIndex, numCpus;
-
-    //TODO: Pensar si sustituir este método por loadNodes
-    // For each data-center
-    for (dataCenterIndex = 0; dataCenterIndex < dataCentersBase.size(); dataCenterIndex++){
-
-        // Get current data-center
-        currentDataCenter = dataCentersBase.at(dataCenterIndex);
-
-        // Create a new DataCenter_CpuType
-        newDataCenter_CpuType = new DataCenter_CpuType (currentDataCenter->getName());
-
-        // For each computing rack
-        for (rackIndex = 0; rackIndex < currentDataCenter->getNumRacks(false); rackIndex++){
-
-            // Get current rack
-            currentRack = currentDataCenter->getRack(rackIndex, false);
-
-            // Get number of CPUs
-            numCpus = currentRack->getRackInfo()->getNodeInfo()->getNumCpUs();
-
-            // For each node in current rack
-            for (nodeIndex=0; nodeIndex < currentRack->getNumNodes(); nodeIndex++){
-
-                // Insert the pointer of the current node into the new dataCenter
-                // newDataCenter_CpuType->insertNode(currentRack->getNode(nodeIndex), numCpus);
-            }
-        }
-    }
-    // nDataCenterIndex = nNodeIndex = 0;
 }
 void CloudProviderBase_firstBestFit::abortAllApps(SM_UserAPP* userApp, std::string strVmId)
 {
@@ -288,7 +288,6 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                 }
 /////////////////////////////////
 
-
                 pUserApp->increaseFinishedApps();
                 //Check for a possible timeout
                 if (!pUserApp->isFinishedKO(strAppName, strVmId))
@@ -302,7 +301,7 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
                     pUserApp->setEndTime(strAppName, strVmId, simTime().dbl());
                   }
                 //if(userApp->getNFinishedApps() >= userApp->getAppArraySize())
-                checkAllAppsFinished(pUserApp, strVmId);
+                //checkAllAppsFinished(pUserApp, strVmId);
 
               }
             else
@@ -344,6 +343,9 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp, 
 
                 //Notify the user the end of the execution
                 acceptAppRequest(pUserApp, strVmId);
+
+                if (pUserApp->allAppsFinishedOK())
+                    handlingAppsRqMap.erase(strUsername);
               }
             else
               {
@@ -398,10 +400,6 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
         EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - INIT" << endl;
         strVmId = pUserVmFinish->getStrVmId();
 
-        bAlreadyFinished = isVmFinished(strVmId);
-
-        if (!bAlreadyFinished)
-          {
             strUsername = pUserVmFinish->getUserID();
             EV_INFO << "The rent of the VM [" << strVmId
                                    << "] launched by the user " << strUsername
@@ -451,7 +449,7 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
     //                  }
                   }
               }
-          }
+
 
         EV_INFO << "Freeing resources..." << endl;
 
@@ -635,7 +633,7 @@ void CloudProviderBase_firstBestFit::updateSubsQueue()
             //Remove from queue
             subscribeQueue.erase(subscribeQueue.begin()+i);
             if (strcmp(userVmSub->getStrVmId(), "") == 0)
-                acceptedUsersRqMap[userVmSub->getUserID()] = *userVmSub;
+                acceptedUsersRqMap[userVmSub->getUserID()] = userVmSub;
             i--;
         }
     }
@@ -644,8 +642,8 @@ void CloudProviderBase_firstBestFit::updateSubsQueue()
 void CloudProviderBase_firstBestFit::freeUserVms(std::string strUsername)
 {
     std::string strVmId;
-    SM_UserVM pVmRequest;
-    std::map<std::string, SM_UserVM>::iterator it;
+    SM_UserVM* pVmRequest;
+    std::map<std::string, SM_UserVM*>::iterator it;
     VM_Request vmRequest;
 
     EV_TRACE << LogUtils::prettyFunc(__FILE__, __func__) << " - Init" << endl;
@@ -656,9 +654,9 @@ void CloudProviderBase_firstBestFit::freeUserVms(std::string strUsername)
       {
         pVmRequest = it->second;
 
-        for(int i=0;i<pVmRequest.getVmsArraySize();i++)
+        for(int i=0;i<pVmRequest->getVmsArraySize();i++)
           {
-            vmRequest = pVmRequest.getVms(i);
+            vmRequest = pVmRequest->getVms(i);
             strVmId = vmRequest.strVmId;
             freeVm(strVmId);
           }
@@ -780,38 +778,6 @@ void CloudProviderBase_firstBestFit::handleVmSubscription(SIMCAN_Message *sm)
       }
 }
 
-void CloudProviderBase_firstBestFit::processRequestMessage (SIMCAN_Message *sm)
-{
-    SM_CloudProvider_Control* userControl;
-    std::map<int, std::function<void(SIMCAN_Message*)>>::iterator it;
-
-    EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Received Request Message" << endl;
-
-    it = requestHandlers.find(sm->getOperation());
-
-    if (it == requestHandlers.end())
-      {
-        userControl = dynamic_cast<SM_CloudProvider_Control *>(sm);
-
-        if(userControl != nullptr)
-          {
-            EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Received end of party"  << endl;
-            //Stop the checking process.
-            bFinished = true;
-            cancelAndDelete(userControl);
-          }
-        else
-          {
-            EV_INFO << "Unknown message:"  << sm->getName() << endl;
-          }
-      }
-    else
-      {
-        //Perform the operations...
-        it->second(sm);
-      }
-}
-
 void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 {
     //Get the user name, and recover the info about the VmRequests;
@@ -830,7 +796,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
     Application *appType;
 
-    SM_UserVM userVmRequest;
+    SM_UserVM* pUserVmRequest;
 
     SM_UserAPP_Finish *pMsgFinish;
 
@@ -840,7 +806,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
     VirtualMachine *vmType;
 
-    std::map<std::string, SM_UserVM>::iterator it;
+    std::map<std::string, SM_UserVM*>::iterator it;
 
     EV_INFO << LogUtils::prettyFunc(__FILE__, __func__) << " - Handle AppRequest"  << endl;
     userAPP_Rq = dynamic_cast<SM_UserAPP *>(sm);
@@ -850,7 +816,7 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
         //Las aplicaciones estan relacionadas con las VM
         //Hay que relacionar la APP con la VM para asi poder terminar con ella.
         bHandle = false;
-
+        int bitLength = ((cPacket *)userAPP_Rq)->getBitLength();
         //APPRequest
         userAPP_Rq->printUserAPP();
 
@@ -859,33 +825,21 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
 
         if(it != acceptedUsersRqMap.end())
           {
-            userVmRequest = it->second;
+            pUserVmRequest = it->second;
 
-            std::map<std::string, SM_UserAPP*>::iterator appIt = handlingAppsRqMap.find(strUsername);
-            if(appIt == handlingAppsRqMap.end())
-              {
-                //Registering the appRq
-                handlingAppsRqMap[strUsername] = userAPP_Rq;
-              }
-            else
-              {
-                SM_UserAPP *uapp = appIt->second;
-                uapp->update(userAPP_Rq);
-              }
-            updateVMState(userAPP_Rq);
-            EV_INFO << "Executing the VMs corresponding with the user: " << strUsername << " | Total: "<< userVmRequest.getVmsArraySize() << endl;
+            EV_INFO << "Executing the VMs corresponding with the user: " << strUsername << " | Total: "<< pUserVmRequest->getVmsArraySize() << endl;
 
             //First step consists in calculating the total units of time spent in executing the application.
             if(userAPP_Rq->getArrayAppsSize() > 0)
               {
-                for(int j = 0; j < userVmRequest.getVmsArraySize(); j++)
+                for(int j = 0; j < pUserVmRequest->getVmsArraySize(); j++)
                   {
                     //Getting VM and scheduling renting timeout
-                    vmRequest = userVmRequest.getVms(j);
+                    vmRequest = pUserVmRequest->getVms(j);
                     //scheduleRentingTimeout(EXEC_VM_RENT_TIMEOUT, strUsername, vmRequest.strVmId, vmRequest.nRentTime_t2);
 
                     strVmId = vmRequest.strVmId;
-                    vmType = searchVmPerType(userVmRequest.getVmRequestType(j));
+                    vmType = searchVmPerType(pUserVmRequest->getVmRequestType(j));
 
                     double totalTimePerCore[vmType->getNumCores()];
 
@@ -961,13 +915,31 @@ void CloudProviderBase_firstBestFit::handleUserAppRequest(SIMCAN_Message *sm)
                 EV_INFO << "WARNING! [" << LogUtils::prettyFunc(__FILE__, __func__) << "] The user: " << strUsername << "has the application list empty!"<< endl;
                 throw omnetpp::cRuntimeError(("[" + LogUtils::prettyFunc(__FILE__, __func__) + "] The list of applications of a the user is empty!!").c_str());
               }
+
+
+
           }
         else
           {
             EV_INFO << "WARNING! [" << LogUtils::prettyFunc(__FILE__, __func__) << "] The user: " << strUsername << "has not previously registered!!"<< endl;
           }
 
-        if(!bHandle)
+        if(bHandle)
+        {
+            std::map<std::string, SM_UserAPP*>::iterator appIt = handlingAppsRqMap.find(strUsername);
+            if(appIt == handlingAppsRqMap.end())
+              {
+                //Registering the appRq
+                handlingAppsRqMap[strUsername] = userAPP_Rq;
+              }
+            else
+              {
+                SM_UserAPP *uapp = appIt->second;
+                uapp->update(userAPP_Rq);
+                delete userAPP_Rq; //Delete ephemeral message after update global message.
+              }
+        }
+        else
           {
             userAPP_Rq->setResult(0);
             rejectAppRequest(userAPP_Rq);
@@ -1193,7 +1165,6 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
 
     int nTotalRequestedCores,
         nRequestedVms,
-        nPrice,
         nAvailableCores,
         nTotalCores;
 
@@ -1201,13 +1172,9 @@ bool CloudProviderBase_firstBestFit::checkVmUserFit(SM_UserVM*& userVM_Rq)
                 strUserName,
                 strVmId;
 
-    //VM_Request vmRequest;
-
-
     bAccepted = bRet = true;
     if(userVM_Rq != nullptr)
       {
-        nPrice = 10;
         nRequestedVms = userVM_Rq->getTotalVmsRequests();
 
         EV_DEBUG << "checkVmUserFit- Init" << endl;
@@ -1312,7 +1279,7 @@ void  CloudProviderBase_firstBestFit::acceptVmRequest(SM_UserVM* userVM_Rq)
     {
         //Accepting new user
         EV_INFO << "Registering new user in the system:" << userVM_Rq->getUserID() << endl;
-        acceptedUsersRqMap[userVM_Rq->getUserID()] = *userVM_Rq;
+        acceptedUsersRqMap[userVM_Rq->getUserID()] = userVM_Rq;
     }
 
     //Fill the message
@@ -1357,8 +1324,6 @@ void  CloudProviderBase_firstBestFit::acceptAppRequest(SM_UserAPP* userAPP_Rq, s
     userAPP_Res->setOperation(SM_APP_Rsp);
     userAPP_Res->setResult(SM_APP_Res_Accept);
 
-    updateVMState(userAPP_Rq);
-
     //Send the values
     sendResponseMessage(userAPP_Res);
 
@@ -1390,18 +1355,15 @@ void  CloudProviderBase_firstBestFit::timeoutAppRequest(SM_UserAPP* userAPP_Rq, 
     EV_INFO << "Sending timeout to the user:" << userAPP_Rq->getUserID() << endl;
     EV_INFO << "Last id gate: " << userAPP_Rq->getLastGateId() << endl;
 
-    SM_UserAPP* userAPP_Res = userAPP_Rq->dup();
+    SM_UserAPP* userAPP_Res = userAPP_Rq->dup(strVmId);
     userAPP_Res->printUserAPP();
 
     userAPP_Res->setVmId(strVmId.c_str());
-    userAPP_Res->setFinished(true);
 
     //Fill the message
     userAPP_Res->setIsResponse(true);
     userAPP_Res->setOperation(SM_APP_Rsp);
     userAPP_Res->setResult(SM_APP_Res_Timeout);
-
-    updateVMState(userAPP_Rq);
 
     //Send the values
     sendResponseMessage(userAPP_Res);
@@ -1511,23 +1473,4 @@ int CloudProviderBase_firstBestFit::calculateTotalCoresRequested(SM_UserVM* user
     EV_DEBUG << "User:" << userVM_Rq->getUserID() << " has requested: "<< nRet << " cores" << endl;
 
     return nRet;
-}
-
-bool CloudProviderBase_firstBestFit::isVmFinished(std::string strVmId)
-{
-    std::map<std::string, bool>::iterator vm = vmFinished.find(strVmId);
-    return vm != vmFinished.end() && vm->second;
-}
-
-void CloudProviderBase_firstBestFit::updateVMState(SM_UserAPP *userAPP)
-{
-    for (unsigned int i = 0; i < userAPP->getAppArraySize(); i++)
-      {
-        vmFinished[userAPP->getApp(i).vmId] = true;
-      }
-    for (unsigned int i = 0; i < userAPP->getAppArraySize(); i++)
-      {
-        if (userAPP->getApp(i).eState == appRunning)
-            vmFinished[userAPP->getApp(i).vmId] = false;
-      }
 }

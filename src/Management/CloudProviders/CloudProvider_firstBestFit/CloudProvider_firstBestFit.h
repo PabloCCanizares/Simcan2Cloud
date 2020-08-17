@@ -18,6 +18,8 @@ class CloudProvider_firstBestFit : public CloudProviderBase_firstBestFit{
 
     protected:
 
+        bool checkReservedFirst;
+
 //        std::vector<SM_UserVM_Finish*> pendingVmRentTimeoutMessages;
 
         /** Destructor*/
@@ -26,19 +28,27 @@ class CloudProvider_firstBestFit : public CloudProviderBase_firstBestFit{
         /** Initialize the cloud provider*/
         virtual void initialize();
 
-//        virtual void initializeDataCenterCollection();
-//
-//        virtual void loadNodes() override;
-//
-//        virtual int parseDataCentersList() override;
-//
-//        /**
-//         * Check if the user request fits in the datacenter
-//         * @param userVM_Rq User request.
-//         */
-//        virtual bool checkVmUserFit(SM_UserVM*& userVM_Rq) override;
-//
-//        CloudUser* findUserTypeById (std::string userId);
+        virtual void initializeDataCenterCollection() override;
+
+        virtual void initializeRequestHandlers() override;
+
+        virtual void loadNodes() override;
+
+        virtual int parseDataCentersList() override;
+
+        /**
+         * Check if the user request fits in the datacenter
+         * @param userVM_Rq User request.
+         */
+        virtual bool checkVmUserFit(SM_UserVM*& userVM_Rq) override;
+
+        virtual void handleExecVmRentTimeout(cMessage *msg) override;
+
+        virtual void handleExtendVmAndResumeExecution(SIMCAN_Message *sm);
+
+        virtual void handleEndVmAndAbortExecution(SIMCAN_Message *sm);
+
+        CloudUser* findUserTypeById (std::string userId);
 //
 //        virtual void abortAllApps(SM_UserAPP* userApp, std::string strVmId) override;
 //

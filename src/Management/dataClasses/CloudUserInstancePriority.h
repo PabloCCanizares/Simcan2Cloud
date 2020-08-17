@@ -13,17 +13,20 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package simcan2.Management.UserGenerators.UserGeneratorCost;
-import simcan2.Management.UserGenerators.UserGenerator_simple.UserGenerator_simple;
+#ifndef MANAGEMENT_DATACLASSES_CLOUDUSERINSTANCEPRIORITY_H_
+#define MANAGEMENT_DATACLASSES_CLOUDUSERINSTANCEPRIORITY_H_
 
-//
-// TODO auto-generated module
-//
-simple UserGeneratorCost extends UserGenerator_simple
-{
-    parameters:
-        double offerAcceptanceDistribution = default(uniform(0.0,1.0));
-        double offerCostIncrease = default(0.5);
-        
-    @class(UserGeneratorCost);
-}
+#include "CloudUserInstance.h"
+
+class CloudUserInstancePriority: public CloudUserInstance {
+    public:
+        CloudUserInstancePriority(CloudUser *ptrUser, unsigned int totalUserInstance, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances);
+        virtual ~CloudUserInstancePriority();
+    bool isBCredit() const;
+    void setBCredit(bool bCredit);
+
+    private:
+        bool bCredit;
+};
+
+#endif /* MANAGEMENT_DATACLASSES_CLOUDUSERINSTANCEPRIORITY_H_ */

@@ -1,6 +1,7 @@
 #ifndef CLOUDUSER_H_
 #define CLOUDUSER_H_
 
+#include "User.h"
 #include "UserVmReference.h"
 #include "UserAppReference.h"
 #include "Management/dataClasses/include/SIMCAN2_types.h"
@@ -11,7 +12,7 @@
  * Class that represents a user in cloud environments.
  *
  */
-class CloudUser {
+class CloudUser: public User {
 
     protected:
 
@@ -68,49 +69,11 @@ class CloudUser {
         int getNumVirtualMachines();
 
         /**
-         * Gets the type of this user.
-         *
-         * @return Type of this user.
-         */
-        const std::string& getType() const;
-
-        /**
-         * Gets the number of instances of this user.
-         *
-         * @return Number of instances of this user.
-         */
-        int getNumInstances() const;
-
-        /**
-         * Assigns a new application to this user.
-         *
-         * @param appPtr Pointer to the new application assigned to this user.
-         * @param numInstances Number of instances of the new application.
-         */
-        void insertApplication(Application *appPtr, int numInstances);
-
-        /**
-         * Gets the application at index position in the <b>applications</b> vector.
-         *
-         * @param index Position of the application.
-         *
-         * @return If the requested application is located in the vector, then a pointer to its object is returned. In other case, \a nullptr is returned.
-         */
-        UserAppReference* getApplication (int index);
-
-        /**
-         * Gets the number of applications assigned to this user.
-         *
-         * @return Number of different applications, allocated in the <b>applications</b> vector, assigned to this user
-         */
-        int getNumApplications();
-
-        /**
          * Converts the information of this user into a string.
          *
          * @return String containing the information of this user.
          */
-        std::string toString ();
+        virtual std::string toString () override;
 
 
 };

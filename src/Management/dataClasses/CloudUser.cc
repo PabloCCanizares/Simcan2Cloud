@@ -1,12 +1,10 @@
 #include "CloudUser.h"
 
-CloudUser::CloudUser(std::string type, int numInstances){
-    this->type = type;
-    this->numInstances = numInstances;
+CloudUser::CloudUser(std::string type, int numInstances) : User(type, numInstances){
+
 }
 
 CloudUser::~CloudUser() {
-    applications.clear();
     virtualMachines.clear();
 }
 
@@ -48,34 +46,3 @@ std::string CloudUser::toString() {
 
     return info.str();
 }
-void CloudUser::insertApplication(Application* appPtr, int numInstances) {
-    UserAppReference* newElement;
-
-    newElement = new UserAppReference(appPtr, numInstances);
-    applications.push_back(newElement);
-}
-
-UserAppReference* CloudUser::getApplication (int index) {
-
-    UserAppReference *element = nullptr;
-
-    if ((index<0) || (index>=applications.size()))
-        throw omnetpp::cRuntimeError("Index out of bounds while accessing application (Element) %d in User:%s", index, type.c_str());
-    else
-        element = applications.at(index);
-
-    return element;
-}
-
-int CloudUser::getNumApplications() {
-    return applications.size();
-}
-
-const std::string& CloudUser::getType() const {
-    return type;
-}
-
-int CloudUser::getNumInstances() const {
-    return numInstances;
-}
-

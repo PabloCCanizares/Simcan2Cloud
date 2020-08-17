@@ -35,7 +35,7 @@ protected:
     IDataCenterCollection *datacenterCollection;
 
     /** Map of the accepted users*/
-    std::map<std::string, SM_UserVM> acceptedUsersRqMap;
+    std::map<std::string, SM_UserVM*> acceptedUsersRqMap;
 
     /** Map of the accepted applications*/
     std::map<std::string, SM_UserAPP*> handlingAppsRqMap;
@@ -57,7 +57,7 @@ protected:
     ~CloudProviderBase_firstBestFit();
 
     /** Initialize the cloud provider*/
-    virtual void initialize()=0;
+    virtual void initialize();
 
     /**
      * Initializes the self message handlers.
@@ -94,11 +94,6 @@ protected:
      * @param userAPP_Rq User APP request.
      */
     virtual void handleUserAppRequest(SIMCAN_Message *sm);
-
-    /**
-     * Initializes the structure of each data-center in the cloud
-     */
-    virtual void initDataCenterStructures();
 
     /**
      * Check if the user request fits in the datacenter
@@ -187,6 +182,9 @@ protected:
 
     //END - API
     //################################################################
+
+    virtual void initializeDataCenterCollection();
+
     /**
      * Load the datacenter information
      */
@@ -329,19 +327,6 @@ protected:
      * @return
      */
     Application* searchAppPerType(std::string strAppType);
-
-    /**
-     * Checks if a vm is marked as finished in vmFinished
-     * @param strVmId VM to check
-     * @return whether it is finished or not
-     */
-    bool isVmFinished(std::string strVmId);
-
-    /**
-     * Sets all the VMs related to a message to finished or not, depending on the state of the related apps
-     * @param userAPP Pointer to a SM_UserAPP message
-     */
-    void updateVMState(SM_UserAPP *userAPP);
 
 };
 

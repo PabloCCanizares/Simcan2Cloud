@@ -6,7 +6,7 @@ import simcan2.Architecture.Nodes.Cloud.CloudRack;
 import simcan2.Management.DataCenterManager.DataCenterManager;
 import simcan2.Management.CloudProviders.*.*;
 import simcan2.Architecture.Network.DataCenterNetwork.*;
-import simcan2.Management.UserGenerators.UserGenerator_simple.*;
+import simcan2.Management.UserGenerators.UserGeneratorCost.*;
 
 // ---------------------------------------------------------------
 //   Definition of the data-center DataCenter_A
@@ -16,7 +16,7 @@ module DataCenter_A{
 	parameters:
 		string appList;
 		string vmList;
-		//string slaList;
+		string slaList;
 		string userList;
 
 	gates:
@@ -35,7 +35,7 @@ module DataCenter_A{
 			parameters:
 				appList=appList;
 				vmList=vmList;
-				//slaList=slaList;
+				slaList=slaList;
 				userList=userList;
 		}
 
@@ -81,7 +81,7 @@ network ScenarioTest{
 	parameters:
 		string appList;
 		string vmList;
-		//string slaList;
+		string slaList;
 		string userList;
 		string dataCentersList;
 
@@ -97,7 +97,7 @@ network ScenarioTest{
 			parameters:
 				appList=appList;
 				vmList=vmList;
-				//slaList=slaList;
+				slaList=slaList;
 				userList=userList;
 		}
 
@@ -108,7 +108,7 @@ network ScenarioTest{
 			parameters:
 				appList=appList;
 				vmList=vmList;
-				//slaList=slaList;
+				slaList=slaList;
 				userList=userList;
 				dataCentersList=dataCentersList;
 
@@ -120,11 +120,11 @@ network ScenarioTest{
 		// -------------------------------------------------------
 		//   Definition of the user generator
 		// -------------------------------------------------------
-		userGenerator:UserGenerator_simple{
+		userGenerator:UserGeneratorCost{
 			parameters:
 				appList=appList;
 				vmList=vmList;
-				//slaList=slaList;
+				slaList=slaList;
 				userList=userList;
 		}
 

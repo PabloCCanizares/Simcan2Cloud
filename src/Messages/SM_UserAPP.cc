@@ -67,6 +67,7 @@ int SM_UserAPP::createNewAppRequestFull(std::string strApp, std::string strAppTy
     APP_Request appRQ;
 
     appRQ.startTime=startTime;
+    appRQ.finishTime=finishTime;
     appRQ.strIp=strIp;
     appRQ.strApp=strApp;
     appRQ.strAppType=strAppType;
@@ -161,16 +162,20 @@ SM_UserAPP* SM_UserAPP::dup(std::string strVmId) const
     pRet= new SM_UserAPP();
     pRet->setVmId(strVmId.c_str());
     pRet->setUserID(getUserID());
+    pRet->setFinished(getFinished());
 
     for(int i=0 ; i < getAppArraySize (); i++)
       {
         APP_Request appReq = getApp (i);
-        if (strVmId.compare(appReq.vmId) == 0)
+        if (strVmId.compare(appReq.vmId) == 0) {
             pRet->createNewAppRequestFull (appReq.strApp, appReq.strAppType, appReq.strIp, appReq.vmId, appReq.startTime, appReq.finishTime, appReq.eState, appReq.pMsgTimeout);
+            if (appReq.eState == appFinishedOK || appReq.eState == appFinishedTimeout || appReq.eState == appFinishedError)
+                finished++;
+        }
+
       }
 
     pRet->setNFinishedApps(finished);
-    pRet->setFinished(pRet->getAppArraySize() <= finished);
 
     // Reserve memory to trace!
     pRet->setTraceArraySize (getTraceArraySize());
@@ -180,25 +185,6 @@ SM_UserAPP* SM_UserAPP::dup(std::string strVmId) const
         pRet->addNodeTrace (trace[i].first, trace[i].second);
 
     return pRet;
-}
-
-void SM_UserAPP::resetUnfinishedApps(std::string strVmId)
-{
-    int finishedApps = 0;
-
-    for (int i = 0; i < getAppArraySize(); i++)
-      {
-        APP_Request appReq = getApp(i);
-        if (strVmId.compare(appReq.vmId) == 0 && appReq.eState != appFinishedOK)
-          {
-            changeStateByIndex(i, appReq.strApp, appWaiting);
-          }
-        appReq = getApp(i);
-        if (appReq.eState == appFinishedOK || appReq.eState == appFinishedTimeout || appReq.eState == appFinishedError)
-            finishedApps++;
-      }
-    setNFinishedApps(finishedApps);
-    setFinished(finishedApps == getAppArraySize());
 }
 
 void SM_UserAPP::update(SM_UserAPP* newData)
@@ -216,6 +202,7 @@ void SM_UserAPP::update(SM_UserAPP* newData)
                 if (appReq.strApp.compare(appReq2.strApp) == 0)
                   {
                     changeStateByIndex(i, appReq.strApp, appReq2.eState);
+                    if(appReq2.pMsgTimeout != nullptr) getApp(i).pMsgTimeout = appReq2.pMsgTimeout;
                     break;
                   }
               }
@@ -233,7 +220,6 @@ void SM_UserAPP::update(SM_UserAPP* newData)
     //    addNodeTrace(newData->trace[i].first, newData->trace[i].second);
 
     setNFinishedApps(totalFinished);
-    setFinished(totalFinished >= getAppArraySize());
 }
 
 int SM_UserAPP::findRequestIndex(std::string strService, std::string strVmId)

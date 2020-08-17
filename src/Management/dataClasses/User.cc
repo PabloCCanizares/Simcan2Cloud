@@ -1,4 +1,4 @@
-#include "User_.h"
+#include "User.h"
 
 User::User(std::string type, int numInstances){
     this->type = type;

@@ -6,7 +6,7 @@ CloudUserInstance::CloudUserInstance (CloudUser    *ptrUser,
                                       unsigned int  userNumber,
                                       int           currentInstanceIndex,
                                       int           totalUserInstances)
-                  : UserInstance((CloudUser*) ptrUser, userNumber, currentInstanceIndex, totalUserInstances)
+                  : UserInstance(ptrUser, userNumber, currentInstanceIndex, totalUserInstances)
 {
 
     UserVmReference* vmReference;

@@ -20,6 +20,7 @@
 #include "Management/UserGenerators/UserGenerator_simple/UserGenerator_simple.h"
 #include "Messages/SM_UserVM_Cost_m.h"
 #include "Management/dataClasses/CloudUserPriority.h"
+#include "Management/dataClasses/CloudUserInstancePriority.h"
 
 using namespace omnetpp;
 
@@ -29,42 +30,26 @@ class UserGeneratorCost : public UserGenerator_simple
     /**Hasmap to accelerate the management of the users*/
         std::map<std::string, int> extensionTimeHashMap;
         std::map<std::string, bool> priorizedHashMap;
-        double offerAcceptanceRate;
+        cPar* offerAcceptanceDistribution;
         double offerCostIncrease;
 
     virtual void initialize() override;
 
     virtual void initializeHashMaps();
 
-    /**
-     * Updates the status of a user
-     */
-    virtual void updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState state) override;
+    virtual CloudUserInstance* handleResponseAccept(SIMCAN_Message *userVm_RAW) override;
 
-    virtual CloudUser* findUserTypeById (std::string userId);
+    virtual CloudUserInstance* handleResponseReject(SIMCAN_Message *msg) override;
 
-  public:
-    /**
-     * Builds an App request given a user
-     */
-    virtual SM_UserAPP* createAppRequest(SM_UserVM* userVm) override;
+//    virtual SM_UserVM* createVmRequest(CloudUserInstance *pUserInstance) override;
 
-    /**
-     * Handles the App response sent from the CloudProvider
-     * @param userApp incoming message
-     */
-    //virtual void handleUserAppResponse(SIMCAN_Message* userApp) override;
+//
+//    /**
+//     * Updates the status of a user
+//     */
+//    virtual void updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState state) override;
 
-    /**
-     * Handles the VM response received from the CloudProvider
-     * @param userVm incoming message
-     */
-    //virtual void handleUserVmResponse(SM_UserVM* userVm) override;
-
-    /**
-     * Calculates the statistics of the experiment.
-     */
-    virtual void calculateStatistics() override;
+    virtual CloudUserInstance* handleResponseAppTimeout(SIMCAN_Message *msg) override;
 
     virtual bool hasToExtendVm(SM_UserAPP* userApp);
 
@@ -72,10 +57,40 @@ class UserGeneratorCost : public UserGenerator_simple
 
     virtual void endExecution(SM_UserAPP* userApp);
 
-    /**
-     * Builds the VM request which corresponds with the provided user instance.
-     */
-    virtual SM_UserVM* createVmRequest(CloudUserInstance* pUserInstance) override;
+    virtual SM_UserVM* createVmMessage() override;
+
+    virtual CloudUserInstance* createCloudUserInstance(CloudUser *ptrUser, unsigned int  totalUserInstance, unsigned int  userNumber, int currentInstanceIndex, int totalUserInstances) override;
+
+//
+//  public:
+//    /**
+//     * Builds an App request given a user
+//     */
+//    virtual SM_UserAPP* createAppRequest(SM_UserVM* userVm) override;
+//
+//    /**
+//     * Handles the App response sent from the CloudProvider
+//     * @param userApp incoming message
+//     */
+//    //virtual void handleUserAppResponse(SIMCAN_Message* userApp) override;
+//
+//    /**
+//     * Handles the VM response received from the CloudProvider
+//     * @param userVm incoming message
+//     */
+//    //virtual void handleUserVmResponse(SM_UserVM* userVm) override;
+//
+//    /**
+//     * Calculates the statistics of the experiment.
+//     */
+    virtual void calculateStatistics() override;
+//
+
+//
+//    /**
+//     * Builds the VM request which corresponds with the provided user instance.
+//     */
+//    virtual SM_UserVM* createVmRequest(CloudUserInstance* pUserInstance) override;
 };
 
 #endif

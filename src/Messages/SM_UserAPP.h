@@ -46,7 +46,6 @@ public:
     virtual SM_UserAPP* dup(std::string strVmId) const;
 
     virtual void update(SM_UserAPP* newData);
-    virtual void resetUnfinishedApps(std::string strVmId);
 
 private:
     //APP_Request* findRequest(std::string strService,std::string strIp);

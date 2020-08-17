@@ -351,7 +351,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAccept(SIMCAN_Message *us
 }
 
 CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *userVm_RAW) {
-    CloudUserInstance *pUserInstance;
+    CloudUserInstance *pUserInstance = nullptr;
     SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(userVm_RAW);
 
     if (userVm != nullptr) {
@@ -386,18 +386,22 @@ CloudUserInstance* UserGenerator_simple::handleResponseReject(SIMCAN_Message *us
 CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message *msg) {
     CloudUserInstance *pUserInstance = nullptr;
     SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
+    std::string strVmId;
 
     if (userApp != nullptr) {
+        strVmId = userApp->getVmId();
         //Print a debug trace ...
         userApp->printUserAPP();
 
         EV_INFO << __func__ << " - Init" << endl;
 
-        updateVmUserStatus(userApp->getUserID(), userApp->getVmId(), vmFinished);
+        updateVmUserStatus(userApp->getUserID(), strVmId, vmFinished);
 
         pUserInstance = userHashMap.at(userApp->getUserID());
         if (pUserInstance != nullptr)
-            emit(okSignal[userApp->getVmId()], pUserInstance->getId());
+            emit(okSignal[strVmId], pUserInstance->getId());
+
+        deleteIfEphemeralMessage(msg);
 
         EV_INFO << __func__ << " - End" << endl;
     }
@@ -411,8 +415,10 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppAccept(SIMCAN_Message 
 CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message *msg) {
     CloudUserInstance *pUserInstance;
     SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
+    string strVmid;
 
     if (userApp != nullptr) {
+        strVmid = userApp->getVmId();
         //Print a debug trace ...
         userApp->printUserAPP();
 
@@ -422,7 +428,7 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
         //Recover the user instance, and get the VmRequest
         pUserInstance = userHashMap.at(userApp->getUserID());
         if (pUserInstance != nullptr) {
-            emit(failSignal[userApp->getVmId()], pUserInstance->getId());
+            emit(failSignal[strVmid], pUserInstance->getId());
 
             if (hasToSubscribeVm(userApp)) {
                 recoverVmAndsubscribe(userApp);
@@ -431,10 +437,10 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
                 //End of the protocol, exit!!
                 finishUser(pUserInstance);
                 pUserInstance->setTimeoutMaxRentTime();
-
-                cancelAndDeleteMessages(pUserInstance);
             }
         }
+
+        deleteIfEphemeralMessage(msg);
 
         EV_INFO << __func__ << " - End" << endl;
     }
@@ -448,11 +454,9 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppReject(SIMCAN_Message 
 void UserGenerator_simple::updateUserApp(SM_UserAPP *userApp) {
     CloudUserInstance *pUserInstance = userHashMap.at(userApp->getUserID());
     std::string strVmId = userApp->getVmId();
-    SM_UserAPP *full = pUserInstance->getRequestAppMsg(),
-               *newMsg = userApp->dup(strVmId);
+    SM_UserAPP *full = pUserInstance->getRequestAppMsg();
 
     full->update(userApp);
-    newMsg->resetUnfinishedApps(strVmId);
 }
 
 CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message *msg) {
@@ -473,17 +477,16 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
           {
             emit(failSignal[strVmId], pUserInstance->getId());
 
-            if (strVmId.compare("") == 0) //Global timeout
+            if (strVmId.empty()) //Global timeout
               {
                 if (hasToSubscribeVm(userApp))
                     recoverVmAndsubscribe(userApp);
                 else
                     updateVmUserStatus(userApp->getUserID(), "", vmFinished);
-                // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
               }
             else //Individual VM timeout
               {
-                //The next step is to send a subscription to the cloudprovider
+                //The next step is to send a subscription to the cloudprovide
                 //Recover the user instance, and get the VmRequest
 
                 if (hasToSubscribeVm(userApp))
@@ -491,23 +494,13 @@ CloudUserInstance* UserGenerator_simple::handleResponseAppTimeout(SIMCAN_Message
                     recoverVmAndsubscribe(userApp, strVmId);
                     //pUserInstance->setRequestApp(userApp, strVmId);
                     updateUserApp(userApp);
-                  } // TODO: Comprobar si ha terminado y hacer cancelAndDeleteMessages (pUserInstace)
+                  }
                 else
                   {
                     updateVmUserStatus(userApp->getUserID(), strVmId, vmFinished);
                   }
               }
-
-
-
-            if (!pUserInstance->hasSubscribed())
-              {
-                //End of the protocol, exit!!
-                finishUser(pUserInstance);
-                pUserInstance->setTimeoutMaxRentTime();
-
-                cancelAndDeleteMessages(pUserInstance);
-              }
+            deleteIfEphemeralMessage(msg);
           }
 
 
@@ -540,6 +533,8 @@ CloudUserInstance* UserGenerator_simple::handleSubNotify(SIMCAN_Message *userVm_
             emit(notifySignal[userVm->getStrVmId()], pUserInstance->getId());
             execute(pUserInstance, userVm);
         }
+
+        deleteIfEphemeralMessage(userVm_RAW);
     }
     else {
         error("Could not cast SIMCAN_Message to SM_UserVM (wrong operation code?)");
@@ -572,6 +567,8 @@ CloudUserInstance* UserGenerator_simple::handleSubTimeout(SIMCAN_Message *userVm
             pUserInstance->setTimeoutMaxSubscribed();
             emit(timeoutSignal[userVm->getStrVmId()], pUserInstance->getId());
           }
+
+        deleteIfEphemeralMessage(userVm_RAW);
     }
     else {
         error("Could not cast SIMCAN_Message to SM_UserVM (wrong operation code?)");
@@ -704,15 +701,16 @@ bool UserGenerator_simple::allVmsFinished(std::string strUserId) {
     bool result = true;
 
     if (pUserInstance != nullptr)
-        result = pUserInstance->allVmsFinished();
 
+        result = pUserInstance->allVmsFinished();
     return result;
 }
 
-void UserGenerator_simple::updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState state) {
+void UserGenerator_simple::updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState stateNew) {
     CloudUserInstance *pUserInstance;
     VmInstanceCollection *pVmCollection;
     VmInstance *pVmInstance;
+    tVmState stateOld;
     int nCollectionNumber,
         nInstances;
 
@@ -733,11 +731,14 @@ void UserGenerator_simple::updateVmUserStatus(std::string strUserId, std::string
                     pVmInstance = pVmCollection->getVmInstance(j);
                     if (pVmInstance != nullptr)
                       {
-                        if (strVmId.compare("") == 0 || strVmId.compare(pVmInstance->getVmInstanceId()) == 0)
+                        if (strVmId.empty() || strVmId.compare(pVmInstance->getVmInstanceId()) == 0)
                           {
-                            pVmInstance->setState(state);
-                            if (state == vmFinished)
+                            stateOld = pVmInstance->getState();
+                            pVmInstance->setState(stateNew);
+                            if (stateOld != vmFinished && stateNew == vmFinished)
                                 pUserInstance->addFinishedVMs(1);
+                            else if (stateOld == vmFinished && stateNew != vmFinished)
+                                pUserInstance->addFinishedVMs(-1);
                           }
                       }
                   }
@@ -781,7 +782,6 @@ void UserGenerator_simple::submitService(SM_UserVM *userVm) {
         try
           {
             pAppRq = pUserInstance->getRequestAppMsg()->dup(userVm->getStrVmId());
-            pAppRq->resetUnfinishedApps(userVm->getStrVmId());
           }
         catch (const std::logic_error &e)
           {
@@ -849,7 +849,7 @@ SM_UserVM* UserGenerator_simple::createVmRequest(
 
         if (nCollectionNumber > 0 && userId.size() > 0) {
             //Creation of the message
-            pUserRet = new SM_UserVM();
+            pUserRet = createVmMessage();
             pUserRet->setUserID(userId.c_str());
             pUserRet->setIsResponse(false);
             pUserRet->setOperation(SM_VM_Req);
@@ -1160,10 +1160,14 @@ void UserGenerator_simple::calculateStatistics() {
                     << " " << dNoWaitUsers << " " << dWaitUsers << endl;
 }
 
+SM_UserVM* UserGenerator_simple::createVmMessage() {
+    return new SM_UserVM();
+}
+
 SM_UserVM* UserGenerator_simple::createFakeVmRequest()
 {
     SM_UserVM *userVm;
-    userVm = new SM_UserVM();
+    userVm = createVmMessage();
 
     //Simple
     userVm->setUserID("Pepe-hardcore");
@@ -1179,4 +1183,19 @@ SM_UserVM* UserGenerator_simple::createFakeVmRequest()
     userVm->setOperation(SM_VM_Req);
 
     return userVm;
+}
+
+void UserGenerator_simple::deleteIfEphemeralMessage(SIMCAN_Message *msg) {
+    SM_UserVM *userVm = dynamic_cast<SM_UserVM*>(msg);
+    SM_UserAPP *userApp = dynamic_cast<SM_UserAPP*>(msg);
+    string strVmId;
+
+    if (userVm != nullptr)
+        strVmId = userVm->getStrVmId();
+
+    if (userApp != nullptr)
+        strVmId = userApp->getVmId();
+
+    if (!strVmId.empty())
+        delete msg;
 }

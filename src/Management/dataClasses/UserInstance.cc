@@ -1,6 +1,6 @@
 #include "UserInstance.h"
 
-UserInstance::UserInstance(CloudUser *ptrUser, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances){
+UserInstance::UserInstance(User *ptrUser, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances){
 
     std::ostringstream osStream;
     UserAppReference* appReference;

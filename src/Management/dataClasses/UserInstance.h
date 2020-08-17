@@ -60,7 +60,7 @@ class UserInstance{
          * @param currentInstanceIndex User instance. First instance of this user must be 0.
          * @param totalUserInstances Total number of user instances to be created for this <b>userNumber</b>.
          */
-        UserInstance(CloudUser *ptrUser, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances);
+        UserInstance(User *ptrUser, unsigned int userNumber, int currentInstanceIndex, int totalUserInstances);
 
         /**
          * Destructor

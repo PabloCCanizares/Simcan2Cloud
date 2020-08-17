@@ -59,6 +59,7 @@ OBJS = \
     $O/Management/dataClasses/AppParameter.o \
     $O/Management/dataClasses/CloudUser.o \
     $O/Management/dataClasses/CloudUserInstance.o \
+    $O/Management/dataClasses/CloudUserInstancePriority.o \
     $O/Management/dataClasses/CloudUserPriority.o \
     $O/Management/dataClasses/DataCenter.o \
     $O/Management/dataClasses/DataCenter_CpuType.o \
@@ -72,7 +73,7 @@ OBJS = \
     $O/Management/dataClasses/RackInfo.o \
     $O/Management/dataClasses/RackInstances.o \
     $O/Management/dataClasses/Sla.o \
-    $O/Management/dataClasses/User_.o \
+    $O/Management/dataClasses/User.o \
     $O/Management/dataClasses/UserAppReference.o \
     $O/Management/dataClasses/UserInstance.o \
     $O/Management/dataClasses/UserVmReference.o \

@@ -189,9 +189,19 @@ protected:
      */
     virtual void updateVmUserStatus(std::string strUserId, std::string strVmId, tVmState state);
 
+    /**
+     * Updates the state of the apps of a certain user with the info provided by a SM_UserAPP message
+     * @param userApp A pointer to the SM_UserAPP message which contains the new information
+     */
+    void updateUserApp(SM_UserAPP *userApp);
+
+    virtual SM_UserVM* createVmMessage();
+
     inline static bool compareArrivalTime(CloudUserInstance *a, CloudUserInstance *b) {
         return a->getArrival2Cloud() < b->getArrival2Cloud();
     }
+
+    virtual void deleteIfEphemeralMessage(SIMCAN_Message *msg);
 
 private:
 
@@ -215,11 +225,6 @@ private:
      */
     void recoverVmAndsubscribe(SM_UserAPP *userApp, std::string strVmId);
 
-    /**
-     * Updates the state of the apps of a certain user with the info provided by a SM_UserAPP message
-     * @param userApp A pointer to the SM_UserAPP message which contains the new information
-     */
-    void updateUserApp(SM_UserAPP *userApp);
 
     /**
      * Generates a Single VM SM_UserVM
