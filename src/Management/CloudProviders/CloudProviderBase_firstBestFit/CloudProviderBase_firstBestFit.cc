@@ -344,8 +344,6 @@ void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp, 
                 //Notify the user the end of the execution
                 acceptAppRequest(pUserApp, strVmId);
 
-                if (pUserApp->allAppsFinishedOK())
-                    handlingAppsRqMap.erase(strUsername);
               }
             else
               {
