@@ -10,7 +10,7 @@ void DataCenterManager::initialize(){
     int result;
 
     // Init super-class
-    CloudManagerBase::initialize();
+    //CloudManagerBase::initialize();
 
         // Get parameters from module
         showDataCenterConfig = par ("showDataCenterConfig");

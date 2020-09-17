@@ -20,6 +20,9 @@ class CloudProvider_firstBestFit : public CloudProviderBase_firstBestFit{
 
         bool checkReservedFirst;
 
+        /** Vector that contains the types of slas generated in the current simulation */
+        std::vector<Sla*> slaTypes;
+
 //        std::vector<SM_UserVM_Finish*> pendingVmRentTimeoutMessages;
 
         /** Destructor*/
@@ -31,6 +34,37 @@ class CloudProvider_firstBestFit : public CloudProviderBase_firstBestFit{
         virtual void initializeDataCenterCollection() override;
 
         virtual void initializeRequestHandlers() override;
+
+        virtual void parseConfig() override;
+
+        /**
+         * Parses each sla type used in the simulation. These slas are allocated in the <b>slaTypes</b> vector.
+         *
+         * @return If the parsing process is successfully executed, this method returns SC_OK. In other case, it returns SC_ERROR.
+         */
+        virtual int parseSlasList();
+
+        /**
+         * Parses each user type used in the simulation. These users are allocated in the <b>userTypes</b> vector.
+         *
+         * @return If the parsing process is successfully executed, this method returns SC_OK. In other case, it returns SC_ERROR.
+         */
+        virtual int parseUsersList() override;
+
+        /**
+         * Converts the parsed sla into string format.
+         *
+         * @return A string containing the parsed slas.
+         */
+        std::string slasToString();
+
+        /**
+         * Search for a specific type of CloudUser.
+         *
+         * @param userType Type of a user.
+         * @return If the requested type of user is located in the userTypes vector, then a pointer to its object is returned. In other case, \a nullptr is returned.
+         */
+         Sla* findSla (std::string slaType);
 
         virtual void loadNodes() override;
 

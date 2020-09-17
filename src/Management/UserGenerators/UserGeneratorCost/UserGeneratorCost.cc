@@ -183,6 +183,93 @@ CloudUserInstance* UserGeneratorCost::handleResponseAppTimeout(SIMCAN_Message *m
     return pUserInstance;
 }
 
+
+void UserGeneratorCost::parseConfig() {
+    int result;
+
+        // Init super-class
+        cSIMCAN_Core::initialize();
+
+        // Init module parameters
+        showApps = par ("showApps");
+
+        // Parse application list
+        result = parseAppList();
+
+        // Something goes wrong...
+        if (result == SC_ERROR){
+            error ("Error while parsing application list.");
+        }
+        else if (showApps){
+            EV_DEBUG << appsToString ();
+        }
+
+        // Init module parameters
+        showUsersVms = par ("showUsersVms");
+
+        // Parse VMs list
+        result = parseVmsList();
+
+        // Something goes wrong...
+        if (result == SC_ERROR){
+         error ("Error while parsing VMs list");
+        }
+        else if (showUsersVms){
+           EV_DEBUG << vmsToString ();
+        }
+
+        // Init module parameters
+        showSlas = par ("showSlas");
+
+        // Parse sla list
+        result = parseSlasList();
+
+        //Something goes wrong...
+        if (result == SC_ERROR){
+           error ("Error while parsing slas list");
+        }
+        else if (showSlas){
+           EV_DEBUG << slasToString ();
+        }
+
+        // Parse user list
+        result = parseUsersList();
+
+        // Something goes wrong...
+        if (result == SC_ERROR){
+           error ("Error while parsing users list");
+        }
+        else if (showUsersVms){
+           EV_DEBUG << usersToString ();
+        }
+}
+
+int UserGeneratorCost::parseSlasList (){
+    int result;
+    const char *slaListChr;
+
+    slaListChr= par ("slaList");
+    SlaListParser slaParser(slaListChr, &vmTypes);
+    result = slaParser.parse();
+    if (result == SC_OK) {
+        slaTypes = slaParser.getResult();
+    }
+    return result;
+}
+
+int UserGeneratorCost::parseUsersList (){
+    int result;
+    const char *userListChr;
+
+    userListChr= par ("userList");
+    UserPriorityListParser userParser(userListChr, &vmTypes, &appTypes, &slaTypes);
+    result = userParser.parse();
+    if (result == SC_OK) {
+        userTypes = userParser.getResult();
+    }
+    return result;
+}
+
 bool UserGeneratorCost::hasToExtendVm(SM_UserAPP* userApp)
 {
     double dRandom;
@@ -796,6 +883,49 @@ CloudUserInstance* UserGeneratorCost::createCloudUserInstance(CloudUser *ptrUser
 //      }
 //      */
 //}
+std::string UserGeneratorCost::slasToString (){
+
+    std::ostringstream info;
+    int i;
+
+        // Main text for the users of this manager
+        info << std::endl << slaTypes.size() << " Slas parsed from ManagerBase in " << getFullPath() << endl << endl;
+
+        for (i=0; i<slaTypes.size(); i++){
+            info << "\tSla[" << i << "]  --> " << slaTypes.at(i)->toString() << endl;
+        }
+
+        info << "---------------- End of parsed Slas in " << getFullPath() << " ----------------" << endl;
+
+    return info.str();
+}
+
+Sla* UserGeneratorCost::findSla (std::string slaType){
+
+    std::vector<Sla*>::iterator it;
+    Sla* result;
+    bool found;
+
+        // Init
+        found = false;
+        result = nullptr;
+        it = slaTypes.begin();
+
+        // Search...
+        while((!found) && (it != slaTypes.end())){
+
+            if ((*it)->getType() == slaType){
+                found = true;
+                result = (*it);
+            }
+            else
+                it++;
+        }
+
+    return result;
+}
+
+
 void UserGeneratorCost::calculateStatistics() {
     double dInitTime, dEndTime, dExecTime, dSubTime, dMaxSub, dTotalSub,  dMeanSub, dNoWaitUsers, dWaitUsers;
     double dUserCost, dTotalCost, dMeanCost, dBaseCost, dRentingBaseCost, dOfferCost, dTotalOfferCost;

@@ -30,9 +30,6 @@ class CloudManagerBase: public cSIMCAN_Core{
         /** Vector that contains the types of VM used in the current simulation */
         std::vector<VirtualMachine*> vmTypes;
 
-        /** Vector that contains the types of slas generated in the current simulation */
-        std::vector<Sla*> slaTypes;
-
         /** Vector that contains the types of users generated in the current simulation */
         std::vector<CloudUser*> userTypes;
 
@@ -45,6 +42,11 @@ class CloudManagerBase: public cSIMCAN_Core{
          * Initialize method. Invokes the parsing process to allocate the existing VMs and users in the corresponding data structures.
          */
         virtual void initialize();
+
+        /**
+         * Parses the config of the simulation.
+         */
+        virtual void parseConfig();
 
         /**
          * Parses each application type used in the simulation.
@@ -60,13 +62,6 @@ class CloudManagerBase: public cSIMCAN_Core{
          * @return If the parsing process is successfully executed, this method returns SC_OK. In other case, it returns SC_ERROR.
          */
         virtual int parseVmsList();
-
-        /**
-         * Parses each sla type used in the simulation. These slas are allocated in the <b>slaTypes</b> vector.
-         *
-         * @return If the parsing process is successfully executed, this method returns SC_OK. In other case, it returns SC_ERROR.
-         */
-        virtual int parseSlasList();
 
         /**
          * Parses each user type used in the simulation. These users are allocated in the <b>userTypes</b> vector.
@@ -90,13 +85,6 @@ class CloudManagerBase: public cSIMCAN_Core{
         std::string vmsToString();
 
         /**
-         * Converts the parsed sla into string format.
-         *
-         * @return A string containing the parsed slas.
-         */
-        std::string slasToString();
-
-        /**
          * Converts the parsed user into string format.
          *
          * @return A string containing the parsed users.
@@ -118,14 +106,6 @@ class CloudManagerBase: public cSIMCAN_Core{
          * @return If the requested type of VM is located in the vmTypes vector, then a pointer to its object is returned. In other case, a \a nullptr is returned.
          */
          VirtualMachine* findVirtualMachine (std::string vmType);
-
-        /**
-         * Search for a specific type of CloudUser.
-         *
-         * @param userType Type of a user.
-         * @return If the requested type of user is located in the userTypes vector, then a pointer to its object is returned. In other case, \a nullptr is returned.
-         */
-         Sla* findSla (std::string slaType);
 
 
        /**
