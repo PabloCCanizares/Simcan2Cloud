@@ -84,6 +84,8 @@ CloudUserInstance* UserGeneratorCost::handleResponseAccept(SIMCAN_Message *userV
        priorizedHashMap[userVm->getUserID()] = true;
 
     UserGenerator_simple::handleResponseAccept(userVm_RAW);
+    
+    return pUserInstance;
 }
 
 CloudUserInstance* UserGeneratorCost::handleResponseReject(SIMCAN_Message *userVm_RAW) {
