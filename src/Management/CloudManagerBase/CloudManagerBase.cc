@@ -8,15 +8,15 @@ CloudManagerBase::~CloudManagerBase(){
 
 
 void CloudManagerBase::initialize(){
+    // Init super-class
+    cSIMCAN_Core::initialize();
+
     parseConfig();
 
 }
 
 void CloudManagerBase::parseConfig() {
     int result;
-
-    // Init super-class
-    cSIMCAN_Core::initialize();
 
     // Init module parameters
     showApps = par ("showApps");
