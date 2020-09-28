@@ -37,6 +37,9 @@ int DataCenterManager::parseDataCenterConfig (){
     return 0;
 }
 
+void DataCenterManager::parseConfig() {
+
+}
 
 std::string DataCenterManager::dataCenterToString (){
 

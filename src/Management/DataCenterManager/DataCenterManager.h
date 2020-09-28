@@ -62,6 +62,8 @@ class DataCenterManager: public CloudManagerBase{
         * @param sm Response message.
         */
         virtual void processResponseMessage (SIMCAN_Message *sm);
+
+        virtual void parseConfig() override;
 };
 
 #endif
