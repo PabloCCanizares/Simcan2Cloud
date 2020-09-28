@@ -125,7 +125,7 @@ void UserGenerator_simple::generateShuffledUsers()
 {
     int nRandom, nSize;
 
-    srand((int)33); //TODO: semilla. Comprobar si con las semillas del .ini se puede omitir esta. Así se controla mejor la aletoriedad solo desde el fichero .ini.
+    srand((int)33); //TODO: semilla. Comprobar si con las semillas del .ini se puede omitir esta. AsÃ­ se controla mejor la aletoriedad solo desde el fichero .ini.
     EV_INFO << "UserGenerator::generateShuffledUsers - Init" << endl;
 
     nSize = userInstances.size();
@@ -238,7 +238,7 @@ void UserGenerator_simple::handleUserReqGenMessage(cMessage *msg)
         emit(requestSignal, pUserInstance->getId());
         sendRequestMessage(userVm, toCloudProviderGate);
 
-        //TODO: ¿Dejamos este mensaje o lo quitamos?
+        //TODO: Â¿Dejamos este mensaje o lo quitamos?
         EV_FATAL << "#___ini#" << m_nUsersSent << " "
                         << (simTime() - m_dInitSim) / 3600 << endl;
       }
@@ -1014,7 +1014,7 @@ void UserGenerator_simple::finish() {
     printFinal();
 }
 
-//TODO: Las salidas se podrian hacer con omnet. Como hago lo de los emit, así se puede analizar facil con python y apliaciones van añadiendo no
+//TODO: Las salidas se podrian hacer con omnet. Como hago lo de los emit, asÃ­ se puede analizar facil con python y apliaciones van aÃ±adiendo no
 // tienen que implmentar todo el metodo de nuevo.
 void UserGenerator_simple::printExperiments_phase1() {
     int nIndex, nSize;
@@ -1157,7 +1157,7 @@ void UserGenerator_simple::calculateStatistics() {
     //Print the experiments data
     EV_FATAL << "#___3d#" << dMeanSub << endl;
     EV_FATAL << "#___t#" << dMaxSub << " " << dMeanSub << " " << nTotalTimeouts
-                    << " " << dNoWaitUsers << " " << dWaitUsers << endl;
+                    << " " << dNoWaitUsers << " " << dWaitUsers << " " << nSize << endl;
 }
 
 SM_UserVM* UserGenerator_simple::createVmMessage() {
