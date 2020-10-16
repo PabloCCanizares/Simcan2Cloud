@@ -216,7 +216,20 @@ SimTime UserGenerator_simple::getNextTime(CloudUserInstance *pUserInstance, SimT
       }
     else
       {
-        next = SimTime(distribution->doubleValue()) + m_dInitSim;
+        do {
+            next = SimTime(distribution->doubleValue());
+        } while (next < 0 || next > durationOfCycle);
+
+        if (numberOfCycles > 1) {
+            int cycle;
+            do {
+                cycle = cycleDistribution->intValue();
+            } while (cycle < 1 || cycle > numberOfCycles);
+
+            next *= cycle;
+        }
+
+        next += m_dInitSim;
       }
 
     return next;

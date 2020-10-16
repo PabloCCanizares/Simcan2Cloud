@@ -41,6 +41,10 @@ class UserGeneratorBase: public CloudManagerBase{
         /** Flag for generating all the user instances at once */
         bool intervalBetweenUsers;
 
+        int numberOfCycles;
+
+        double durationOfCycle;
+
         bool shuffleUsers;
 
         /**< Starting time delay */
@@ -48,6 +52,8 @@ class UserGeneratorBase: public CloudManagerBase{
 
         /** Interval gap between users arrivals */
         cPar *distribution;
+
+        cPar *cycleDistribution;
 
         /**
          * Destructor
