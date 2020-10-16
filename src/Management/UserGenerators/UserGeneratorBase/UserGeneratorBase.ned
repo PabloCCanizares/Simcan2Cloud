@@ -11,6 +11,7 @@ simple UserGeneratorBase extends CloudManagerBase{
 		bool intervalBetweenUsers = default (false);			// By default, each user arrives at a specific time
 		int numberOfCycles = default (1);						// Number of cycles
 		double durationOfCycle @unit(s) = default (1d);			// Duration of a cycle
+		bool isolateCycle = default (true);						// If false, interference patterns may be generated between the cycle distributions
 		bool shuffleUsers = default (false);					// By default, each user arrives at a specific time
 		volatile double distribution @unit(s);					// Interval gap between users arrivals if not intervalBetweenUsers. Distribution of the users otherwise.
 		volatile int cycleDistribution = default (0);			// Distribution of users between cycles.

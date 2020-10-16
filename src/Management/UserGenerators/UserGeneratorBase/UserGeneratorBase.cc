@@ -17,6 +17,7 @@ void UserGeneratorBase::initialize(){
     intervalBetweenUsers = par ("intervalBetweenUsers");
     numberOfCycles = par ("numberOfCycles");
     durationOfCycle = par ("durationOfCycle");
+    isolateCycle = par ("isolateCycle");
     cycleDistribution = &par ("cycleDistribution");
     shuffleUsers = par ("shuffleUsers");
     showUserInstances = par ("showUserInstances");

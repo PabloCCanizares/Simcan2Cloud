@@ -45,6 +45,8 @@ class UserGeneratorBase: public CloudManagerBase{
 
         double durationOfCycle;
 
+        bool isolateCycle;
+
         bool shuffleUsers;
 
         /**< Starting time delay */
