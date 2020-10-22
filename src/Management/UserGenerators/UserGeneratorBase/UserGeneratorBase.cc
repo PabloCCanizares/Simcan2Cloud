@@ -147,8 +147,9 @@ string UserGeneratorBase::usersIstancesToString (){
             // Init iterator for the current user type
             usersIterator = (*globalIterator).begin();
 
-            // Print user type
-            info << "\tUser type:" << (*usersIterator)->getType() << "  -  #instances: " << (*globalIterator).size() << endl << endl;
+            if (usersIterator != (*globalIterator).end())
+                // Print user type
+                info << "\tUser type:" << (*usersIterator)->getType() << "  -  #instances: " << (*globalIterator).size() << endl << endl;
 
             while (usersIterator != (*globalIterator).end()){
 
