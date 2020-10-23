@@ -234,7 +234,7 @@ SimTime UserGenerator_simple::getNextTime(CloudUserInstance *pUserInstance, SimT
             next = SimTime(distribution->doubleValue());
         }
 
-        next += next + offset + m_dInitSim;
+        next = m_dInitSim + next + offset;
       }
 
     return next;
