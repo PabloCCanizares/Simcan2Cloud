@@ -5,6 +5,12 @@
 Define_Module(CloudProviderBase_firstBestFit);
 
 CloudProviderBase_firstBestFit::~CloudProviderBase_firstBestFit(){
+    std::map<std::string, SM_UserAPP*>::iterator it;
+
+    //TODO: Provisional, clean when user finished.
+    for (it = handlingAppsRqMap.begin(); it != handlingAppsRqMap.end(); it++)
+        cancelAndDelete(it->second);
+
     handlingAppsRqMap.clear();
     acceptedUsersRqMap.clear();
 }
@@ -324,6 +330,19 @@ void CloudProviderBase_firstBestFit::handleAppExecEndSingle(cMessage *msg) {
       }
 }
 
+void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp) {
+    std::string strUsername;
+
+    if (pUserApp != nullptr)
+      {
+        strUsername = pUserApp->getUserID();
+        if (pUserApp->allAppsFinished())
+          {
+            handlingAppsRqMap.erase(strUsername);
+          }
+      }
+}
+
 void CloudProviderBase_firstBestFit::checkAllAppsFinished(SM_UserAPP* pUserApp, std::string strVmId) {
     std::string strUsername;
 
@@ -425,6 +444,8 @@ void CloudProviderBase_firstBestFit::handleExecVmRentTimeout(cMessage *msg) {
                       }
                     // Check the result and send it
                     checkAllAppsFinished(pUserApp, strVmId);
+                    //Check to remove from map
+                    //checkAllAppsFinished(pUserApp);
 
 
     //                else
