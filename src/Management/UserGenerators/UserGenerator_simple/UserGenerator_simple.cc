@@ -617,10 +617,11 @@ void UserGenerator_simple::cancelAndDeleteMessages(CloudUserInstance *pUserInsta
         cancelAndDelete(pVmMessage);
         pUserInstance->setRequestVmMsg(nullptr);
     }
-    if (pAppMessage) {
-        cancelAndDelete(pAppMessage);
-        pUserInstance->setRequestApp(nullptr);
-    }
+    //TODO: Fix delete messages in CP maps when user is finished
+//    if (pAppMessage) {
+//        cancelAndDelete(pAppMessage);
+//        pUserInstance->setRequestApp(nullptr);
+//    }
     if (pSubscribeVmMessage)
         cancelAndDelete(pSubscribeVmMessage);
 
