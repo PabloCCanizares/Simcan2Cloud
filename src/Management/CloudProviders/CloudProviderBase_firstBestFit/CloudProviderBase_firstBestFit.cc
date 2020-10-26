@@ -6,10 +6,27 @@ Define_Module(CloudProviderBase_firstBestFit);
 
 CloudProviderBase_firstBestFit::~CloudProviderBase_firstBestFit(){
     std::map<std::string, SM_UserAPP*>::iterator it;
+    SM_UserAPP* userApp;
 
     //TODO: Provisional, clean when user finished.
-    for (it = handlingAppsRqMap.begin(); it != handlingAppsRqMap.end(); it++)
-        cancelAndDelete(it->second);
+    for (it = handlingAppsRqMap.begin(); it != handlingAppsRqMap.end(); it++) {
+        userApp = it->second;
+        if (userApp != nullptr) {
+
+            for (unsigned int nIndex=0; nIndex<userApp->getAppArraySize(); nIndex++)
+            {
+                APP_Request& userAppReq = userApp->getApp(nIndex);
+                if (userAppReq.pMsgTimeout!=nullptr)
+                {
+                    cancelAndDelete(userAppReq.pMsgTimeout);
+                    userAppReq.pMsgTimeout = nullptr;
+                }
+            }
+            cancelAndDelete(userApp);
+        }
+
+    }
+
 
     handlingAppsRqMap.clear();
     acceptedUsersRqMap.clear();
